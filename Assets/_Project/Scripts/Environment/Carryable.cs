@@ -96,6 +96,7 @@ namespace KungFuCrashout.Props
         float fallSpeed;
         float travelled;
         readonly List<Collider2D> overlaps = new List<Collider2D>();
+        Fighter parriedBy;      // set for the frame a fighter parries this item (for the catch)
         readonly HashSet<Fighter> ignoredThisFlight = new HashSet<Fighter>(); // e.g. already KO'd
 
         void Awake()
@@ -103,6 +104,9 @@ namespace KungFuCrashout.Props
             spriteRenderer = GetComponent<SpriteRenderer>();
             restSortingOrder = spriteRenderer.sortingOrder;
             halfWidth = spriteRenderer.bounds.extents.x;
+
+            // Spawned from a prefab (which can't reference scene objects): find the stage ourselves.
+            if (!stage) stage = FindFirstObjectByType<StageBounds>();
 
             // Rest on the stage ground if we know it, otherwise wherever it was placed.
             groundY = stage ? stage.GroundY + spriteRenderer.bounds.extents.y : transform.position.y;
@@ -135,6 +139,20 @@ namespace KungFuCrashout.Props
             State = ItemState.Carried;
             spriteRenderer.sortingOrder = carriedSortingOrder;
             PickedUp?.Invoke(carrier);
+            return true;
+        }
+
+        /// <summary>Caught out of the air (parry): straight into the catcher's hands, from any state but Carried.</summary>
+        public bool Catch(Fighter catcher)
+        {
+            if (State == ItemState.Carried || !catcher) return false;
+
+            Thrower = null;
+            fallSpeed = 0f;
+            Carrier = catcher;
+            State = ItemState.Carried;
+            spriteRenderer.sortingOrder = carriedSortingOrder;
+            PickedUp?.Invoke(catcher);
             return true;
         }
 
@@ -196,7 +214,12 @@ namespace KungFuCrashout.Props
             // Fighters first: an item that reaches a fighter and the floor in the same frame still hits.
             if (hitsFighters && TryHitFighter(from, p))
             {
+                var catcher = parriedBy;
+                parriedBy = null;
                 EndFlight(popUp: true);
+                // Perfect block on a thrown item = CATCH: straight into the parrier's hands.
+                if (catcher && catcher.CatchesParriedItems && catcher.TryGetComponent(out ItemHolder h) && h.TryCatch(this))
+                    Debug.Log($"[{catcher.name}] CAUGHT {name} with a parry");
                 return;
             }
 
@@ -232,6 +255,7 @@ namespace KungFuCrashout.Props
 
             var thrower = Thrower;
             var result = target.ReceiveThrownHit(thrower, hitData, ThrowDirection);
+            if (result == HitResult.Parried) parriedBy = target;
             if (result == HitResult.Ignored)
             {
                 ignoredThisFlight.Add(target); // e.g. already KO'd: fly on through

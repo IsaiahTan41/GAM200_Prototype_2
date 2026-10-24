@@ -111,7 +111,7 @@ namespace KungFuCrashout.DebugTools
                 System.Action<Fighter, AttackData> onParried = (a, atk) =>
                 {
                     stats[fighter].parries++;
-                    Pop(fighter, $"PERFECT BLOCK!  frame {fighter.LastParryFrame}/{fighter.ParryWindowFrames}" +
+                    Pop(fighter, $"PERFECT BLOCK!  frame {fighter.LastParryFrame}/{fighter.LastParryWindowFrames}" +
                                  (fighter.Stamina ? "  0 stamina" : ""), Yellow, big: true);
                 };
                 System.Action onBroken = () =>
@@ -131,8 +131,14 @@ namespace KungFuCrashout.DebugTools
                 fighter.WallBounced += onWallBounce;
                 fighter.WallSplatted += onSplat;
                 fighter.GotUp += onGotUp;
+
+                var holder = fighter.GetComponent<KungFuCrashout.Props.ItemHolder>();
+                System.Action<KungFuCrashout.Props.Carryable> onCaught = item => Pop(fighter, "CAUGHT!", Yellow, big: true);
+                if (holder) holder.Caught += onCaught;
+
                 unsubscribe.Add(() =>
                 {
+                    if (holder) holder.Caught -= onCaught;
                     fighter.Downed -= onDowned;
                     fighter.GroundBounced -= onBounce;
                     fighter.WallBounced -= onWallBounce;

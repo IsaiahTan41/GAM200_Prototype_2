@@ -110,6 +110,12 @@ namespace KungFuCrashout.Fighters
         [SerializeField, Range(1, 30)] int parryWindowFrames = 9;
         [Tooltip("The frame rate the parry frames are counted at (fixed, so the window is the same on every phone, whatever its real fps).")]
         [SerializeField, Range(30, 120)] int parryFrameRate = 60;
+        [Tooltip("PARRY WINDOW FOR THROWN ITEMS, in frames (same Parry Frame Rate): a thrown item that reaches you within this " +
+                 "many frames of pressing block is parried. Separate from melee, so catching can be tuned on its own.")]
+        [SerializeField, Range(1, 30)] int thrownParryWindowFrames = 12;
+        [Tooltip("Parrying a thrown item CATCHES it: it goes straight into your hands (needs an ItemHolder, and your hands must be empty). " +
+                 "Off = the item is knocked away as before.")]
+        [SerializeField] bool catchThrownItemsOnParry = true;
         [Tooltip("A parry (perfect block) costs no stamina: no hold drain during the parry window and nothing for the parried hit.")]
         [SerializeField] bool parryCostsNoStamina = true;
         [Tooltip("If you block again within this many seconds of the last block ending, you get no parry window (stops mashing).")]
@@ -264,6 +270,15 @@ namespace KungFuCrashout.Fighters
         /// <summary>Parry window length in seconds (Parry Window Frames ÷ Parry Frame Rate).</summary>
         float parryWindow => parryWindowFrames / (float)Mathf.Max(1, parryFrameRate);
         public int ParryWindowFrames => parryWindowFrames;
+        public int ThrownParryWindowFrames => thrownParryWindowFrames;
+        /// <summary>Parrying a thrown item catches it (read by Carryable).</summary>
+        public bool CatchesParriedItems => catchThrownItemsOnParry;
+        /// <summary>Window (frames) the last parry was judged against: melee or thrown.</summary>
+        public int LastParryWindowFrames { get; private set; }
+        float thrownParryWindow => thrownParryWindowFrames / (float)Mathf.Max(1, parryFrameRate);
+        /// <summary>True during the thrown-item parry window at the start of a block.</summary>
+        public bool IsThrownParryActive =>
+            State == FighterState.Blocking && parryAvailable && Time.time - blockStartTime <= thrownParryWindow;
         public int ParryFrameRate => parryFrameRate;
         /// <summary>Frames since block was pressed (1 = the first frame), counted at Parry Frame Rate.</summary>
         public int BlockFrame => Mathf.FloorToInt((Time.time - blockStartTime) * Mathf.Max(1, parryFrameRate)) + 1;
@@ -544,6 +559,7 @@ namespace KungFuCrashout.Fighters
             if (attackerInFront && IsParryActive)
             {
                 LastParryFrame = Mathf.Clamp(BlockFrame, 1, parryWindowFrames);
+                LastParryWindowFrames = parryWindowFrames;
                 parryAvailable = false; // one parry per press; later hits in this block are normal blocks
                 if (stamina) stamina.Restore(parryStaminaRefund);
                 attacker.OnParried(this);
@@ -555,7 +571,7 @@ namespace KungFuCrashout.Fighters
             // ── Block: no damage (or chip), costs stamina, blockstun, small pushback. ──
             if (attackerInFront && State == FighterState.Blocking)
             {
-                RecordMissedParry();
+                RecordMissedParry(parryWindowFrames);
                 return BlockHit(attacker, attack, awayFromAttacker);
             }
 
@@ -659,13 +675,13 @@ namespace KungFuCrashout.Fighters
             return HitResult.Hit;
         }
 
-        void RecordMissedParry()
+        void RecordMissedParry(int windowFrames)
         {
             if (isAutoBlock) return;
-            LastBlockFramesEarly = parryAvailable ? Mathf.Max(1, BlockFrame - parryWindowFrames) : 0;
+            LastBlockFramesEarly = parryAvailable ? Mathf.Max(1, BlockFrame - windowFrames) : 0;
             if (logStateChanges)
                 Debug.Log(parryAvailable ? $"[{name}] blocked on frame {BlockFrame}: {LastBlockFramesEarly} frame(s) too early for a parry " +
-                                           $"(window = first {parryWindowFrames})"
+                                           $"(window = first {windowFrames})"
                                          : $"[{name}] blocked: no parry window (pressed again within Parry Cooldown)");
         }
 
@@ -711,21 +727,22 @@ namespace KungFuCrashout.Fighters
             }
 
             // ── Parry: deflected, no damage. The thrower is NOT stunned (they're across the stage). ──
-            if (fromFront && IsParryActive)
+            if (fromFront && IsThrownParryActive)
             {
-                LastParryFrame = Mathf.Clamp(BlockFrame, 1, parryWindowFrames);
+                LastParryFrame = Mathf.Clamp(BlockFrame, 1, thrownParryWindowFrames);
+                LastParryWindowFrames = thrownParryWindowFrames;
                 parryAvailable = false;
                 if (stamina) stamina.Restore(parryStaminaRefund);
                 Parried?.Invoke(thrower, data);
                 HitByItem?.Invoke(thrower, data, HitResult.Parried, direction);
-                if (logStateChanges) Debug.Log($"[{name}] PERFECT BLOCK (parry) vs a thrown {data.name} on frame {LastParryFrame}/{parryWindowFrames}");
+                if (logStateChanges) Debug.Log($"[{name}] PERFECT BLOCK (parry) vs a thrown {data.name} on frame {LastParryFrame}/{thrownParryWindowFrames}");
                 return HitResult.Parried;
             }
 
             // ── Block: no damage (or chip), costs stamina, blockstun, pushback along the throw. ──
             if (fromFront && State == FighterState.Blocking)
             {
-                RecordMissedParry();
+                RecordMissedParry(thrownParryWindowFrames);
                 var blocked = BlockHit(thrower, data, push);
                 HitByItem?.Invoke(thrower, data, blocked, direction);
                 return blocked;
@@ -1259,7 +1276,7 @@ namespace KungFuCrashout.Fighters
 
             // Released early? Keep blocking until the parry window has played out (so a quick tap
             // still gets a full parry window) and until blockstun is over.
-            bool parryWindowOver = Time.time - blockStartTime >= parryWindow;
+            bool parryWindowOver = Time.time - blockStartTime >= Mathf.Max(parryWindow, thrownParryWindow);
             if (!blockHeld && parryWindowOver && blockstunTimer <= 0f) EndBlock();
         }
 

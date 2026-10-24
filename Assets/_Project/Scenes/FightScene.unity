@@ -1376,6 +1376,8 @@ MonoBehaviour:
   jumpCooldown: 0.1
   parryWindowFrames: 9
   parryFrameRate: 60
+  thrownParryWindowFrames: 12
+  catchThrownItemsOnParry: 1
   parryCostsNoStamina: 1
   parryCooldown: 0.5
   parryStun: 0.6
@@ -1568,6 +1570,15 @@ MonoBehaviour:
   windUpTime: 0.4
   hitsPerString: 1
   useHeavy: 0
+  spawnWithItem: 1
+  itemPrefab: {fileID: 5539498569802291080, guid: 6e94765320b07fb47ab5842d8019e1c3, type: 3}
+  throwHeldItem: 1
+  holdBeforeThrow: 1.5
+  throwWindUpTime: 0.5
+  maxThrowDistance: 0
+  respawnInterval: 3
+  spawnOnStart: 1
+  despawnAfter: 4
   guard: 0
   guardChance: 0.4
   guardHoldTime: 1.5
@@ -3066,6 +3077,8 @@ MonoBehaviour:
   jumpCooldown: 0.1
   parryWindowFrames: 9
   parryFrameRate: 60
+  thrownParryWindowFrames: 12
+  catchThrownItemsOnParry: 1
   parryCostsNoStamina: 1
   parryCooldown: 0.5
   parryStun: 0.6
@@ -3272,6 +3285,15 @@ MonoBehaviour:
   windUpTime: 0.4
   hitsPerString: 1
   useHeavy: 0
+  spawnWithItem: 0
+  itemPrefab: {fileID: 0}
+  throwHeldItem: 1
+  holdBeforeThrow: 1.5
+  throwWindUpTime: 0.5
+  maxThrowDistance: 0
+  respawnInterval: 3
+  spawnOnStart: 1
+  despawnAfter: 4
   guard: 0
   guardChance: 0.4
   guardHoldTime: 1.5

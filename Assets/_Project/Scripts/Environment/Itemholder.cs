@@ -34,6 +34,8 @@ namespace KungFuCrashout.Props
         public event Action<Carryable> PickedUp;
         public event Action<Carryable> Dropped;
         public event Action<Carryable, Vector2> Threw;
+        /// <summary>Caught a thrown item with a parry (also fires PickedUp).</summary>
+        public event Action<Carryable> Caught;
 
         Fighter fighter;
 
@@ -70,6 +72,17 @@ namespace KungFuCrashout.Props
             Held = item;
             PickedUp?.Invoke(item);
             Debug.Log($"[{name}] picked up {item.name}");
+            return true;
+        }
+
+        /// <summary>Catch an item out of the air (perfect block). Ignores range and state, but needs empty hands.</summary>
+        public bool TryCatch(Carryable item)
+        {
+            if (!item || IsCarrying || fighter.State == FighterState.KO || !item.Catch(fighter)) return false;
+
+            Held = item;
+            PickedUp?.Invoke(item);
+            Caught?.Invoke(item);
             return true;
         }
 

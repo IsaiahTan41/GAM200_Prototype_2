@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using KungFuCrashout.Fighters;
+using KungFuCrashout.Props;
 
 namespace KungFuCrashout.DebugTools
 {
@@ -13,6 +15,11 @@ namespace KungFuCrashout.DebugTools
     ///    reach you. If it won't attack, DefenseDebugHUD shows why over its head (and the Console warns
     ///    once about setup problems: no attacks assigned, no Opponent, AIController still on, etc.).
     ///  • M3: can guard, so you can test your attacks being blocked or parried
+    ///  • ITEM THROWER (toggle): spawns holding an item (the Item Prefab, e.g. CrateItem), carries it exactly like
+    ///    the player (ItemHolder: same carry pose, dropped when hit, same throw), and after Hold Before Throw
+    ///    winds up ("!") and throws it in a straight horizontal line at you. A new item appears in its hands
+    ///    Respawn Interval seconds after the last one left them. Spawned items that end up lying on the stage
+    ///    are tidied away after Despawn After (you can still grab them before that).
     ///
     /// The "Random After Hit" guard is the Udemy sample AI's Defend roll (Random.Range after each hit).
     ///
@@ -63,6 +70,26 @@ namespace KungFuCrashout.DebugTools
         [Tooltip("Use the heavy attack instead of light hits.")]
         [SerializeField] bool useHeavy;
 
+        [Header("Item thrower (item / parry testing)")]
+        [Tooltip("Spawn holding an item and throw it at the opponent; a new one appears after Respawn Interval.")]
+        [SerializeField] bool spawnWithItem = false;
+        [Tooltip("The item to spawn, e.g. Assets/_Project/Prefabs/CrateItem (needs a Carryable).")]
+        [SerializeField] Carryable itemPrefab;
+        [Tooltip("Throw the held item. Off = just carry it (it still drops when hit).")]
+        [SerializeField] bool throwHeldItem = true;
+        [Tooltip("Seconds after getting a new item before winding up the throw.")]
+        [SerializeField, Min(0f)] float holdBeforeThrow = 1.5f;
+        [Tooltip("Warning before the throw (seconds). The HUD shows \"!\" over the dummy. 0 = no warning.")]
+        [SerializeField, Min(0f)] float throwWindUpTime = 0.5f;
+        [Tooltip("Only throw when the opponent is within this distance (world units). 0 = from anywhere.")]
+        [SerializeField, Min(0f)] float maxThrowDistance = 0f;
+        [Tooltip("Seconds after an item leaves its hands (thrown, dropped when hit) before a new one appears.")]
+        [SerializeField, Min(0f)] float respawnInterval = 3f;
+        [Tooltip("Spawn the first item as soon as the scene starts.")]
+        [SerializeField] bool spawnOnStart = true;
+        [Tooltip("Spawned items lying on the stage are removed after this many seconds (unless someone picks them up). 0 = keep them.")]
+        [SerializeField, Min(0f)] float despawnAfter = 4f;
+
         [Header("Guard (M3 testing)")]
         [SerializeField] GuardMode guard = GuardMode.Never;
         [Tooltip("Random After Hit: chance to start blocking after each hit.")]
@@ -72,6 +99,12 @@ namespace KungFuCrashout.DebugTools
 
         Fighter fighter;
         Health health;
+        ItemHolder holder;
+        float nextSpawnTime;
+        float throwAt = -1f;            // when the held item may start its throw wind-up
+        float throwWindUpUntil = -1f;
+        readonly Dictionary<Carryable, float> spawned = new Dictionary<Carryable, float>(); // item → time it came to rest (-1 = not resting)
+        readonly List<Carryable> scratch = new List<Carryable>();
         IFighterCommands commands;
         Vector3 startPosition;
         float lastHitTime;
@@ -84,8 +117,10 @@ namespace KungFuCrashout.DebugTools
 
         /// <summary>Turn close-range attacks on/off (e.g. from a UI button).</summary>
         public bool AttackWhenClose { get => attackWhenClose; set => attackWhenClose = value; }
-        /// <summary>True during the warning before an attack.</summary>
-        public bool IsWindingUp => windUpUntil >= 0f;
+        /// <summary>True during the warning before an attack or an item throw.</summary>
+        public bool IsWindingUp => windUpUntil >= 0f || throwWindUpUntil >= 0f;
+        /// <summary>Turn the item thrower on/off (e.g. from a UI button).</summary>
+        public bool SpawnWithItem { get => spawnWithItem; set => spawnWithItem = value; }
         /// <summary>Centre-to-centre distance the dummy attacks from.</summary>
         public float EffectiveRange => autoRange ? AutoRange() : attackRange;
         /// <summary>Why it isn't attacking right now (null = it is, or will on the next beat). For the debug HUD.</summary>
@@ -103,6 +138,22 @@ namespace KungFuCrashout.DebugTools
             health = GetComponent<Health>();
             commands = fighter;
             startPosition = transform.position;
+
+            holder = GetComponent<ItemHolder>();
+            if (spawnWithItem) EnsureHolder();
+        }
+
+        void EnsureHolder()
+        {
+            if (holder) return;
+            holder = gameObject.AddComponent<ItemHolder>();
+            Debug.LogWarning($"[{name}] TrainingDummy: Spawn With Item needs an ItemHolder, so one was added for this session. " +
+                             "Add an ItemHolder to this fighter in the Inspector so the carry / throw poses work too.", this);
+        }
+
+        void Start()
+        {
+            nextSpawnTime = spawnOnStart ? Time.time : Time.time + respawnInterval;
         }
 
         void OnEnable()
@@ -145,9 +196,13 @@ namespace KungFuCrashout.DebugTools
 
         void Update()
         {
+            TidySpawnedItems();
+
             // Get back up after a KO.
             if (koTime >= 0f)
             {
+                throwWindUpUntil = -1f;
+                nextSpawnTime = Time.time + respawnInterval;
                 SetHolding(false);
                 windUpUntil = -1f;
                 stringRunning = false;
@@ -165,6 +220,8 @@ namespace KungFuCrashout.DebugTools
                 health.ResetHealth();
 
             UpdateGuard();
+            if (spawnWithItem) UpdateItem();
+            else throwWindUpUntil = -1f;
 
             if (attackWhenClose) UpdateAttacks();
             else { windUpUntil = -1f; stringRunning = false; Status = null; }
@@ -219,11 +276,108 @@ namespace KungFuCrashout.DebugTools
             }
 
             // Start the next wind-up.
-            if (inRange && Time.time >= nextAttackTime && CanAttackNow() && !stringRunning)
+            if (inRange && Time.time >= nextAttackTime && CanAttackNow() && !stringRunning && throwWindUpUntil < 0f)
             {
                 windUpUntil = Time.time + windUpTime;
                 float jitter = 1f + Random.Range(-intervalJitter, intervalJitter);
                 nextAttackTime = windUpUntil + attackInterval * jitter;
+            }
+        }
+
+        // ───────────── Item thrower ─────────────
+
+        void UpdateItem()
+        {
+            EnsureHolder();
+            if (!itemPrefab)
+            {
+                if (!itemPrefab && lastWarning != "no item prefab")
+                {
+                    Debug.LogWarning($"[{name}] TrainingDummy: Spawn With Item is on but Item Prefab is empty (drag in Prefabs/CrateItem).", this);
+                    lastWarning = "no item prefab";
+                }
+                return;
+            }
+
+            // Empty-handed: a new item after Respawn Interval, once free to take it.
+            if (!holder.IsCarrying)
+            {
+                throwWindUpUntil = -1f;
+                if (Time.time >= nextSpawnTime && FreeToTakeItem()) SpawnIntoHands();
+                return;
+            }
+
+            if (!throwHeldItem) return;
+            var target = fighter.Opponent;
+
+            // Wind-up finished → throw straight across, toward the opponent.
+            if (throwWindUpUntil >= 0f)
+            {
+                if (Time.time < throwWindUpUntil) return;
+                throwWindUpUntil = -1f;
+                int dir = target ? (target.X >= fighter.X ? 1 : -1) : fighter.Facing;
+                if (holder.Throw(new Vector2(dir, 0f)))
+                    nextSpawnTime = Time.time + respawnInterval;
+                else
+                    throwAt = Time.time + 0.2f; // stunned / busy: try again shortly
+                return;
+            }
+
+            bool targetOk = target && target.State != FighterState.KO &&
+                            (maxThrowDistance <= 0f || Mathf.Abs(target.X - fighter.X) <= maxThrowDistance);
+            if (Time.time >= throwAt && targetOk && holder.CanThrow && !IsWindingUpAttack && !stringRunning &&
+                fighter.State != FighterState.Attacking)
+                throwWindUpUntil = Time.time + throwWindUpTime;
+        }
+
+        bool IsWindingUpAttack => windUpUntil >= 0f;
+
+        bool FreeToTakeItem()
+        {
+            var s = fighter.State;
+            return !fighter.ControlsLocked && (s == FighterState.Idle || s == FighterState.Blocking ||
+                                               s == FighterState.Dashing || s == FighterState.Airborne);
+        }
+
+        void SpawnIntoHands()
+        {
+            var item = Instantiate(itemPrefab, transform.position, Quaternion.identity);
+            item.name = $"{itemPrefab.name} ({name})";
+            if (!holder.TryPickUp(item))
+            {
+                Destroy(item.gameObject); // couldn't take it this frame; try again shortly
+                nextSpawnTime = Time.time + 0.2f;
+                return;
+            }
+            spawned[item] = -1f;
+            throwAt = Time.time + holdBeforeThrow;
+            // The item was the next thing to happen: a new respawn timer starts once it leaves our hands.
+            nextSpawnTime = float.MaxValue;
+        }
+
+        /// <summary>Remove spawned items that have been lying on the stage for Despawn After seconds.</summary>
+        void TidySpawnedItems()
+        {
+            if (spawned.Count == 0) return;
+
+            // Lost the item without throwing it (dropped when hit, KO): start the respawn timer.
+            if (holder && !holder.IsCarrying && nextSpawnTime == float.MaxValue)
+                nextSpawnTime = Time.time + respawnInterval;
+
+            scratch.Clear();
+            scratch.AddRange(spawned.Keys);
+            foreach (var item in scratch)
+            {
+                if (!item) { spawned.Remove(item); continue; }
+                if (item.State != Carryable.ItemState.OnStage) { spawned[item] = -1f; continue; }
+                if (despawnAfter <= 0f) continue;
+
+                if (spawned[item] < 0f) spawned[item] = Time.time;
+                else if (Time.time - spawned[item] >= despawnAfter)
+                {
+                    spawned.Remove(item);
+                    Destroy(item.gameObject);
+                }
             }
         }
 
