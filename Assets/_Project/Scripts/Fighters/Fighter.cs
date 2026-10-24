@@ -116,6 +116,10 @@ namespace KungFuCrashout.Fighters
         [SerializeField] float parryCooldown = 0.5f;
         [Tooltip("How long an attacker is stunned after being parried (seconds). Long enough to punish with a full combo.")]
         [SerializeField] float parryStun = 0.6f;
+        [Tooltip("Parrying a melee attack pushes the attacker back a little (they slide away while parry-stunned).")]
+        [SerializeField] bool parryKnocksBack = true;
+        [Tooltip("How far the parried attacker slides back (world units). Uses the normal knockback slide time.")]
+        [SerializeField, Min(0f)] float parryKnockback = 0.6f;
         [Tooltip("Blocks and parries only work against hits from the front. Turn off to block cross-ups too.")]
         [SerializeField] bool blockOnlyFromFront = true;
 
@@ -673,6 +677,11 @@ namespace KungFuCrashout.Fighters
             StopAirDrift();
             hitstunTimer = parryStun;
             IsParryStunned = true;
+
+            // The parrier's settings decide the push: a short slide away from them.
+            if (defender && defender.parryKnocksBack && defender.parryKnockback > 0f)
+                StartSlide((defender.X < X ? 1 : -1) * defender.parryKnockback);
+
             IsGuardBroken = false;
             ComboHitsTaken = 0;
             SetState(FighterState.Hitstun);

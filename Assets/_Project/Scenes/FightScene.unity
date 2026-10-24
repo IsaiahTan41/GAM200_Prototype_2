@@ -1379,6 +1379,8 @@ MonoBehaviour:
   parryCostsNoStamina: 1
   parryCooldown: 0.5
   parryStun: 0.6
+  parryKnocksBack: 1
+  parryKnockback: 0.6
   blockOnlyFromFront: 1
   autoBlockAtNeutral: 1
   autoBlockKnockbackScale: 1
@@ -3067,13 +3069,15 @@ MonoBehaviour:
   parryCostsNoStamina: 1
   parryCooldown: 0.5
   parryStun: 0.6
+  parryKnocksBack: 1
+  parryKnockback: 0.6
   blockOnlyFromFront: 1
   autoBlockAtNeutral: 1
   autoBlockKnockbackScale: 1
   damageOnlyWhenStaggered: 1
-  heavyAttackStaggers: 0
+  heavyAttackStaggers: 1
   heavyStaggerData: {fileID: 0}
-  heavyStaggerDealsDamage: 0
+  heavyStaggerDealsDamage: 1
   bounceWhenHitStunned: 1
   stunnedBounceSpeed: 3.5
   bounceWhenHitDowned: 1
