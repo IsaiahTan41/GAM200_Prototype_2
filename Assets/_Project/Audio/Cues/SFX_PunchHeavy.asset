@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2791658c364a7604596868d555ef149c, type: 3}
+  m_Name: SFX_PunchHeavy
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 152193ca509f9d34fb81777a9b014eb7, type: 3}
+  - {fileID: 8300000, guid: d60b25c826ccc9448bcdc67c13e6007d, type: 3}
+  - {fileID: 8300000, guid: 029f46a813bd3074ebad87545787f17e, type: 3}
+  resourceOverride: {fileID: 0}
+  order: 0
+  avoidRepeatingLast: 2
+  volume: 1
+  volumeVariation: 0.1
+  pitch: 0.95
+  pitchVariation: 0.04
+  maxVoices: 2
+  cooldown: 0.03
+  priority: 32
