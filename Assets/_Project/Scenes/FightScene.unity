@@ -1558,6 +1558,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c88198c1fc71ebb47996eba2ff670c2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.DebugTools.TrainingDummy
+  behaviourMode: 1
   practiceMode: 0
   resetDelayAfterKO: 1.5
   refillAfterIdle: 3
@@ -1570,7 +1571,7 @@ MonoBehaviour:
   windUpTime: 0.4
   hitsPerString: 1
   useHeavy: 0
-  spawnWithItem: 1
+  spawnWithItem: 0
   itemPrefab: {fileID: 5539498569802291080, guid: 6e94765320b07fb47ab5842d8019e1c3, type: 3}
   throwHeldItem: 1
   holdBeforeThrow: 1.5
@@ -1579,6 +1580,21 @@ MonoBehaviour:
   respawnInterval: 3
   spawnOnStart: 1
   despawnAfter: 4
+  stateMachine:
+    walkSpeed: 2.5
+    dashWhenFartherThan: 4
+    dashPause: 1
+    attackWindUp: 0.5
+    heavyChance: 0.2
+    restTime: 0.9
+    restJitter: 0.25
+    fetchItems: 1
+    fetchSearchRange: 6
+    onlyFetchIfCloserThanPlayer: 1
+    fetchGiveUpTime: 4
+    throwRange: 7
+    throwWindUp: 0.6
+    logStateChanges: 0
   guard: 0
   guardChance: 0.4
   guardHoldTime: 1.5
@@ -3273,6 +3289,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c88198c1fc71ebb47996eba2ff670c2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.DebugTools.TrainingDummy
+  behaviourMode: 0
   practiceMode: 0
   resetDelayAfterKO: 1.5
   refillAfterIdle: 3
@@ -3294,6 +3311,21 @@ MonoBehaviour:
   respawnInterval: 3
   spawnOnStart: 1
   despawnAfter: 4
+  stateMachine:
+    walkSpeed: 2.5
+    dashWhenFartherThan: 4
+    dashPause: 1
+    attackWindUp: 0.5
+    heavyChance: 0.2
+    restTime: 0.9
+    restJitter: 0.25
+    fetchItems: 1
+    fetchSearchRange: 6
+    onlyFetchIfCloserThanPlayer: 1
+    fetchGiveUpTime: 4
+    throwRange: 7
+    throwWindUp: 0.6
+    logStateChanges: 0
   guard: 0
   guardChance: 0.4
   guardHoldTime: 1.5

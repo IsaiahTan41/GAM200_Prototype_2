@@ -15,6 +15,10 @@ namespace KungFuCrashout.DebugTools
     ///    reach you. If it won't attack, DefenseDebugHUD shows why over its head (and the Console warns
     ///    once about setup problems: no attacks assigned, no Opponent, AIController still on, etc.).
     ///  • M3: can guard, so you can test your attacks being blocked or parried
+    ///  • BEHAVIOUR MODE: Dummy = everything below (stands still, options for attacks / guard / items).
+    ///    State Machine = a simple, beatable enemy (EnemyStateMachine): walks / dashes in, fetches and throws items,
+    ///    telegraphs attacks with "!" and rests after each one. Switch any time, even while playing.
+    ///    Practice Mode and Spawn With Item work in both modes.
     ///  • ITEM THROWER (toggle): spawns holding an item (the Item Prefab, e.g. CrateItem), carries it exactly like
     ///    the player (ItemHolder: same carry pose, dropped when hit, same throw), and after Hold Before Throw
     ///    winds up ("!") and throws it in a straight horizontal line at you. A new item appears in its hands
@@ -42,6 +46,19 @@ namespace KungFuCrashout.DebugTools
             /// <summary>Parries every attack it sees coming (tests parry stun on the player).</summary>
             ParryEverything
         }
+
+        public enum BehaviourMode
+        {
+            /// <summary>The training dummy: stays put; Attack When Close / Guard / Item thrower options below.</summary>
+            Dummy,
+            /// <summary>Simple enemy AI: approach, fetch items, attack, throw, rest (State Machine settings below).</summary>
+            StateMachine
+        }
+
+        [Header("Behaviour")]
+        [Tooltip("Dummy: the training dummy (settings below). State Machine: a simple enemy that moves, fetches and throws items " +
+                 "and attacks with clear warnings (State Machine settings at the bottom). Can be switched while playing.")]
+        [SerializeField] BehaviourMode behaviourMode = BehaviourMode.Dummy;
 
         [Tooltip("ON: revive after a KO and refill health when left alone (endless practice). OFF: health 0 = dead, no refill.")]
         [SerializeField] bool practiceMode = false;
@@ -90,6 +107,9 @@ namespace KungFuCrashout.DebugTools
         [Tooltip("Spawned items lying on the stage are removed after this many seconds (unless someone picks them up). 0 = keep them.")]
         [SerializeField, Min(0f)] float despawnAfter = 4f;
 
+        [Header("State Machine mode (Behaviour Mode = State Machine)")]
+        [SerializeField] EnemyStateMachine.Settings stateMachine = new EnemyStateMachine.Settings();
+
         [Header("Guard (M3 testing)")]
         [SerializeField] GuardMode guard = GuardMode.Never;
         [Tooltip("Random After Hit: chance to start blocking after each hit.")]
@@ -118,7 +138,13 @@ namespace KungFuCrashout.DebugTools
         /// <summary>Turn close-range attacks on/off (e.g. from a UI button).</summary>
         public bool AttackWhenClose { get => attackWhenClose; set => attackWhenClose = value; }
         /// <summary>True during the warning before an attack or an item throw.</summary>
-        public bool IsWindingUp => windUpUntil >= 0f || throwWindUpUntil >= 0f;
+        public bool IsWindingUp => windUpUntil >= 0f || throwWindUpUntil >= 0f ||
+                                   (behaviourMode == BehaviourMode.StateMachine && fsm != null && fsm.IsWindingUp);
+        /// <summary>Switch between the dummy and the state machine (e.g. from a UI button).</summary>
+        public BehaviourMode Mode { get => behaviourMode; set => behaviourMode = value; }
+
+        EnemyStateMachine fsm;
+        BehaviourMode lastMode;
         /// <summary>Turn the item thrower on/off (e.g. from a UI button).</summary>
         public bool SpawnWithItem { get => spawnWithItem; set => spawnWithItem = value; }
         /// <summary>Centre-to-centre distance the dummy attacks from.</summary>
@@ -147,7 +173,7 @@ namespace KungFuCrashout.DebugTools
         {
             if (holder) return;
             holder = gameObject.AddComponent<ItemHolder>();
-            Debug.LogWarning($"[{name}] TrainingDummy: Spawn With Item needs an ItemHolder, so one was added for this session. " +
+            Debug.LogWarning($"[{name}] TrainingDummy: carrying items (Spawn With Item / State Machine) needs an ItemHolder, so one was added for this session. " +
                              "Add an ItemHolder to this fighter in the Inspector so the carry / throw poses work too.", this);
         }
 
@@ -201,6 +227,7 @@ namespace KungFuCrashout.DebugTools
             // Get back up after a KO.
             if (koTime >= 0f)
             {
+                fsm?.Reset();
                 throwWindUpUntil = -1f;
                 nextSpawnTime = Time.time + respawnInterval;
                 SetHolding(false);
@@ -218,6 +245,31 @@ namespace KungFuCrashout.DebugTools
             // Refill when left alone.
             if (practiceMode && refillAfterIdle > 0f && health.Current < health.Max && Time.time - lastHitTime >= refillAfterIdle)
                 health.ResetHealth();
+
+            // Switched mode (Inspector / script): start clean.
+            if (behaviourMode != lastMode)
+            {
+                lastMode = behaviourMode;
+                fsm?.Reset();
+                windUpUntil = throwWindUpUntil = -1f;
+                stringRunning = false;
+                SetHolding(false);
+            }
+
+            if (behaviourMode == BehaviourMode.StateMachine)
+            {
+                // The state machine does the moving, fetching, attacking and throwing.
+                // Spawn With Item still puts a fresh item in its hands; the state machine decides when to throw it.
+                if (spawnWithItem) UpdateItem(allowThrow: false);
+                if (fsm == null)
+                {
+                    EnsureHolder();
+                    fsm = new EnemyStateMachine(fighter, holder, stateMachine, () => EffectiveRange);
+                }
+                fsm.Tick(Time.deltaTime);
+                Status = fsm.Label;
+                return;
+            }
 
             UpdateGuard();
             if (spawnWithItem) UpdateItem();
@@ -286,7 +338,7 @@ namespace KungFuCrashout.DebugTools
 
         // ───────────── Item thrower ─────────────
 
-        void UpdateItem()
+        void UpdateItem(bool allowThrow = true)
         {
             EnsureHolder();
             if (!itemPrefab)
@@ -307,7 +359,7 @@ namespace KungFuCrashout.DebugTools
                 return;
             }
 
-            if (!throwHeldItem) return;
+            if (!throwHeldItem || !allowThrow) return;
             var target = fighter.Opponent;
 
             // Wind-up finished → throw straight across, toward the opponent.

@@ -68,7 +68,23 @@ namespace KungFuCrashout.Props
         [SerializeField, Min(0f)] float dropDistance = 0.8f;
         [SerializeField, Min(0.1f)] float gravity = 30f;
 
+        [Header("Lifetime")]
+        [Tooltip("Destroyed this many seconds after it appears (spawn / scene start). If someone is holding it then, it's dropped first; " +
+                 "if it's flying, it goes when the flight ends. 0 = lasts forever.")]
+        [SerializeField, Min(0f)] float lifetime = 40f;
+        [Tooltip("After being held this many times (by any fighter: pick-ups and catches), the NEXT throw is its last: " +
+                 "it's destroyed when that throw ends. 0 = no limit.")]
+        [SerializeField, Min(0)] int maxHolds = 3;
+
         public ItemState State { get; private set; } = ItemState.OnStage;
+        /// <summary>How many times it has been picked up or caught.</summary>
+        public int TimesHeld { get; private set; }
+        /// <summary>Seconds until the lifetime runs out (infinity when Lifetime = 0).</summary>
+        public float TimeLeft => lifetime > 0f ? Mathf.Max(0f, lifetime - (Time.time - bornTime)) : float.PositiveInfinity;
+
+        float bornTime;
+        bool lastThrow;         // held Max Holds times: this throw is the final one
+        bool destroyWhenLanded;
         public Fighter Carrier { get; private set; }
         public bool IsAvailable => State == ItemState.OnStage;
         public float X => transform.position.x;
@@ -119,8 +135,12 @@ namespace KungFuCrashout.Props
             }
         }
 
+        void Start() => bornTime = Time.time;
+
         void LateUpdate()
         {
+            if (CheckExpired()) return;
+
             switch (State)
             {
                 case ItemState.Carried: FollowCarrier(Time.deltaTime); break;
@@ -137,6 +157,7 @@ namespace KungFuCrashout.Props
 
             Carrier = carrier;
             State = ItemState.Carried;
+            TimesHeld++;
             spriteRenderer.sortingOrder = carriedSortingOrder;
             PickedUp?.Invoke(carrier);
             return true;
@@ -151,6 +172,8 @@ namespace KungFuCrashout.Props
             fallSpeed = 0f;
             Carrier = catcher;
             State = ItemState.Carried;
+            TimesHeld++;
+            destroyWhenLanded = false; // caught mid-air: it lives on for one more throw
             spriteRenderer.sortingOrder = carriedSortingOrder;
             PickedUp?.Invoke(catcher);
             return true;
@@ -185,6 +208,7 @@ namespace KungFuCrashout.Props
             Carrier = null;
             Thrower = thrower;
             ThrowDirection = direction.normalized;
+            lastThrow = maxHolds > 0 && TimesHeld >= maxHolds;
             travelled = 0f;
             ignoredThisFlight.Clear();
             transform.rotation = Quaternion.identity;
@@ -267,8 +291,30 @@ namespace KungFuCrashout.Props
             return true;
         }
 
+        /// <summary>Lifetime over or last throw finished: remove the item. True if it's being destroyed.</summary>
+        bool CheckExpired()
+        {
+            bool timeUp = lifetime > 0f && Time.time - bornTime >= lifetime;
+            bool finished = destroyWhenLanded && State != ItemState.Carried;
+            if (!timeUp && !finished) return false;
+
+            if (State == ItemState.Thrown) return false; // let the flight (and its hit) finish first
+            if (State == ItemState.Carried)
+            {
+                if (!timeUp) return false;
+                // Let go properly so the holder isn't left "carrying" a destroyed item.
+                var holder = Carrier ? Carrier.GetComponent<ItemHolder>() : null;
+                if (holder && holder.Held == this) holder.Drop(); else Drop();
+            }
+
+            Debug.Log($"[{name}] destroyed ({(timeUp ? "lifetime over" : $"held {TimesHeld}x, last throw done")})");
+            Destroy(gameObject);
+            return true;
+        }
+
         void EndFlight(bool popUp)
         {
+            if (lastThrow) destroyWhenLanded = true; // removed next frame unless it was caught this frame
             Thrower = null;
             fallSpeed = popUp ? -hitPopSpeed : 0f; // negative = moving up; Fall() adds gravity
             spriteRenderer.sortingOrder = restSortingOrder;

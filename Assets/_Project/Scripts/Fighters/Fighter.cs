@@ -262,6 +262,8 @@ namespace KungFuCrashout.Fighters
         /// <summary>The light combo and heavy, read-only. The AI uses these to judge its reach.</summary>
         public IReadOnlyList<AttackData> LightCombo => lightCombo;
         public AttackData HeavyAttackData => heavyAttack;
+        /// <summary>How far one dash travels (world units).</summary>
+        public float DashDistance => dashDistance;
 
         /// <summary>True during the parry window at the start of a block.</summary>
         public bool IsParryActive =>
