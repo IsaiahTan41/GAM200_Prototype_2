@@ -166,3 +166,5 @@ MonoBehaviour:
   hitPopSpeed: 4
   dropDistance: 0.8
   gravity: 30
+  lifetime: 300
+  maxHolds: 9

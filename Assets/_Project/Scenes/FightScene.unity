@@ -333,8 +333,8 @@ RectTransform:
   - {fileID: 1557946014}
   m_Father: {fileID: 996149284}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 0.97117877}
+  m_AnchorMin: {x: 0.028821243, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -939,7 +939,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Controls.TouchInputHandler
   fighter: {fileID: 1960580398}
-  swipeThreshold: 0.08
+  swipeThreshold: 0.05
   diagonalMinAngle: 25
   verticalMinAngle: 65
   holdTime: 0.2
@@ -974,13 +974,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Controls.TapAnywhereInputHandler
   fighter: {fileID: 1960580398}
-  blockInput: 2
-  blockGesture: 2
+  blockInput: 1
+  blockGesture: 1
   holdForHeavy: 1
   latchDownSwipeBlock: 1
   twoFingerWindow: 0.12
-  swipeThreshold: 0.08
-  holdTime: 0.2
+  swipeThreshold: 0.05
+  holdTime: 0.3
   inputZoneTop: 0.85
   diagonalMinAngle: 25
   verticalMinAngle: 65
@@ -1388,9 +1388,9 @@ MonoBehaviour:
   autoBlockAtNeutral: 1
   autoBlockKnockbackScale: 1
   damageOnlyWhenStaggered: 1
-  heavyAttackStaggers: 1
+  heavyAttackStaggers: 0
   heavyStaggerData: {fileID: 0}
-  heavyStaggerDealsDamage: 1
+  heavyStaggerDealsDamage: 0
   bounceWhenHitStunned: 1
   stunnedBounceSpeed: 3.5
   bounceWhenHitDowned: 1
@@ -1572,10 +1572,10 @@ MonoBehaviour:
   windUpTime: 0.4
   hitsPerString: 1
   useHeavy: 1
-  spawnWithItem: 0
+  spawnWithItem: 1
   itemPrefab: {fileID: 5539498569802291080, guid: 6e94765320b07fb47ab5842d8019e1c3, type: 3}
   throwHeldItem: 1
-  holdBeforeThrow: 1.5
+  holdBeforeThrow: 3
   throwWindUpTime: 0.5
   maxThrowDistance: 0
   respawnInterval: 3
@@ -1589,7 +1589,7 @@ MonoBehaviour:
     heavyChance: 0.2
     restTime: 0.9
     restJitter: 0.25
-    fetchItems: 1
+    fetchItems: 0
     fetchSearchRange: 6
     onlyFetchIfCloserThanPlayer: 1
     fetchGiveUpTime: 4
@@ -2459,6 +2459,7 @@ GameObject:
   - component: {fileID: 1695142244}
   - component: {fileID: 1695142246}
   - component: {fileID: 1695142245}
+  - component: {fileID: 1695142247}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -2586,6 +2587,23 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1695142247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1695142243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 725e29823adfdf248b66fee2e7cc0605, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.SpriteOutline
+  colour: {r: 1, g: 0, b: 0, a: 0.9}
+  thickness: 0.05
+  silhouetteMaterial: {fileID: 2100000, guid: b569d74899dc5cc4ba6a8f88c4efa465, type: 2}
+  followArtAlpha: 1
+  showOutline: 1
 --- !u!1 &1712340603
 GameObject:
   m_ObjectHideFlags: 0
@@ -2785,7 +2803,7 @@ Camera:
   far clip plane: 5000
   field of view: 40
   orthographic: 1
-  orthographic size: 11.794445
+  orthographic size: 2.564767
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -2810,7 +2828,7 @@ Transform:
   m_GameObject: {fileID: 1950963569}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.1450843, y: 9.405166, z: 4.2844915}
+  m_LocalPosition: {x: 1.1450843, y: 1.0799954, z: 4.2844915}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3072,8 +3090,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   minSeparation: 1
   dashDistance: 2.5
-  dashDuration: 0.18
-  dashCooldown: 0.15
+  dashDuration: 0.15
+  dashCooldown: 0.05
   dashCurve:
     serializedVersion: 2
     m_Curve:
@@ -3105,10 +3123,10 @@ MonoBehaviour:
   maxFallSpeed: 20
   minDiagonalAngle: 25
   maxDiagonalAngle: 70
-  jumpCooldown: 0.1
+  jumpCooldown: 0.05
   parryWindowFrames: 12
   parryFrameRate: 60
-  thrownParryWindowFrames: 12
+  thrownParryWindowFrames: 30
   catchThrownItemsOnParry: 1
   parryCostsNoStamina: 1
   parryCooldown: 0.5
@@ -3119,7 +3137,7 @@ MonoBehaviour:
   autoBlockAtNeutral: 1
   autoBlockKnockbackScale: 1
   damageOnlyWhenStaggered: 1
-  heavyAttackStaggers: 1
+  heavyAttackStaggers: 0
   heavyStaggerData: {fileID: 0}
   heavyStaggerDealsDamage: 1
   bounceWhenHitStunned: 1
@@ -3518,7 +3536,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 40
-    OrthographicSize: 11.794445
+    OrthographicSize: 2.564767
     NearClipPlane: 0.1
     FarClipPlane: 5000
     Dutch: 0
@@ -3545,7 +3563,7 @@ Transform:
   m_GameObject: {fileID: 2044561920}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.2699399, y: 8.36405, z: -10}
+  m_LocalPosition: {x: -1.2699399, y: 0.03887987, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
