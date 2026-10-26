@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.AttackData
   damage: 4
   weight: 0
-  startup: 0.07
+  startup: 0.12
   active: 0.07
   recovery: 0.15
   hitboxOffset: {x: 0.75, y: 0.2}
