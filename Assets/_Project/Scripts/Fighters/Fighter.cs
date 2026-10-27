@@ -87,6 +87,15 @@ namespace KungFuCrashout.Fighters
         [SerializeField] AnimationCurve dashCurve =
             new AnimationCurve(new Keyframe(0f, 0f, 0f, 2f), new Keyframe(1f, 1f, 0f, 0f));
 
+        [Header("Movement invincibility")]
+        [Tooltip("The first moments of a dash or jump are invincible: melee hits and thrown items pass through " +
+                 "(the fighter flickers meanwhile). Off = dashes and jumps can be hit from the first frame.")]
+        [SerializeField] bool invincibleMovementStartup = true;
+        [Tooltip("Invincible seconds at the start of a dash.")]
+        [SerializeField, Min(0f)] float dashInvincibleTime = 0.1f;
+        [Tooltip("Invincible seconds at the start of a jump.")]
+        [SerializeField, Min(0f)] float jumpInvincibleTime = 0.1f;
+
         [Header("Jump")]
         [Tooltip("Direction of the straight jump (swipe up). (0, 1) = straight up. Tilt it, e.g. (0.2, 1), for a slight forward drift (x is flipped to the facing side).")]
         [SerializeField] Vector2 verticalJumpVector = new Vector2(0f, 1f);
@@ -105,6 +114,9 @@ namespace KungFuCrashout.Fighters
         [SerializeField, Min(0f)] float jumpCooldown = 0.1f;
 
         [Header("Block / Parry")]
+        [Tooltip("Melee attacks can be parried (block pressed within Parry Window Frames). Off = a well-timed block against " +
+                 "a punch / kick is just a normal block. Thrown items are set separately (Thrown Parry Window Frames / catch).")]
+        [SerializeField] bool canParryMelee = true;
         [Tooltip("PARRY (perfect block) WINDOW, in frames: a hit that lands within this many frames of pressing block is a parry. " +
                  "Press too early (the hit lands after the window) = normal block. 9 frames @ 60 fps = 0.15 s.")]
         [SerializeField, Range(1, 30)] int parryWindowFrames = 9;
@@ -272,6 +284,8 @@ namespace KungFuCrashout.Fighters
         /// <summary>Parry window length in seconds (Parry Window Frames ÷ Parry Frame Rate).</summary>
         float parryWindow => parryWindowFrames / (float)Mathf.Max(1, parryFrameRate);
         public int ParryWindowFrames => parryWindowFrames;
+        /// <summary>Melee attacks can be parried (Can Parry Melee). Can be switched at runtime, e.g. per difficulty.</summary>
+        public bool CanParryMelee { get => canParryMelee; set => canParryMelee = value; }
         public int ThrownParryWindowFrames => thrownParryWindowFrames;
         /// <summary>Parrying a thrown item catches it (read by Carryable).</summary>
         public bool CatchesParriedItems => catchThrownItemsOnParry;
@@ -449,6 +463,8 @@ namespace KungFuCrashout.Fighters
 
             if (State == FighterState.Blocking) EndBlock();
 
+            if (invincibleMovementStartup) invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + dashInvincibleTime);
+
             dashStartX = X;
             dashTargetX = ClampToStage(dashStartX + Mathf.Sign(direction) * dashDistance);
             dashElapsed = 0f;
@@ -558,7 +574,7 @@ namespace KungFuCrashout.Fighters
             bool attackerInFront = !blockOnlyFromFront || awayFromAttacker == -Facing;
 
             // ── Parry: block pressed just before the hit. No damage, the attacker is stunned. ──
-            if (attackerInFront && IsParryActive)
+            if (attackerInFront && canParryMelee && IsParryActive)
             {
                 LastParryFrame = Mathf.Clamp(BlockFrame, 1, parryWindowFrames);
                 LastParryWindowFrames = parryWindowFrames;
@@ -573,7 +589,8 @@ namespace KungFuCrashout.Fighters
             // ── Block: no damage (or chip), costs stamina, blockstun, small pushback. ──
             if (attackerInFront && State == FighterState.Blocking)
             {
-                RecordMissedParry(parryWindowFrames);
+                if (canParryMelee) RecordMissedParry(parryWindowFrames);
+                else LastBlockFramesEarly = 0;
                 return BlockHit(attacker, attack, awayFromAttacker);
             }
 
@@ -1114,6 +1131,8 @@ namespace KungFuCrashout.Fighters
         {
             if (!CanStartAction || IsAirborne || Time.time < nextJumpTime) return;
             if (State == FighterState.Blocking) EndBlock();
+
+            if (invincibleMovementStartup) invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + jumpInvincibleTime);
 
             restY = transform.position.y;
             IsAirborne = true;

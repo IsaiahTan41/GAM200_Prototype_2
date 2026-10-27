@@ -70,6 +70,12 @@ namespace KungFuCrashout.Props
         [SerializeField] RadiusUnits heldItemRadiusUnits = RadiusUnits.WorldUnits;
         [Tooltip("How far a finger that started on the carried item must move to throw, as a fraction of the screen's short side.")]
         [SerializeField, Range(0.02f, 0.3f)] float throwSwipeThreshold = 0.06f;
+        [Tooltip("Snap the throw to set angles (Throw Snap Angle apart, starting from straight right), " +
+                 "so a slightly crooked swipe still flies straight across or exactly diagonal. Off = exact swipe direction.")]
+        [SerializeField] bool snapThrowDirection = true;
+        [Tooltip("Degrees between the allowed throw directions. 45 = 8 directions (across, diagonals, up, down); " +
+                 "90 = 4 directions; 30 = 12 directions.")]
+        [SerializeField, Range(5f, 180f)] float throwSnapAngle = 45f;
         [Tooltip("Lifting a finger from the carried item without swiping drops it. Turn off if that happens by accident.")]
         [SerializeField] bool tapCarriedItemToDrop = true;
 
@@ -185,7 +191,16 @@ namespace KungFuCrashout.Props
             onCarriedItem.Remove(id); // it's a swipe now, not a tap; the claim stays until the finger lifts
 
             // The camera is orthographic and unrotated, so screen direction = world direction.
-            holder.Throw(delta.normalized);
+            holder.Throw(SnapThrow(delta.normalized));
+        }
+
+        /// <summary>Round a throw direction to the nearest multiple of Throw Snap Angle (when snapping is on).</summary>
+        Vector2 SnapThrow(Vector2 dir)
+        {
+            if (!snapThrowDirection || throwSnapAngle <= 0f) return dir;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            float snapped = Mathf.Round(angle / throwSnapAngle) * throwSnapAngle * Mathf.Deg2Rad;
+            return new Vector2(Mathf.Cos(snapped), Mathf.Sin(snapped));
         }
 
         // ───────────── Two-finger swipe down ─────────────
