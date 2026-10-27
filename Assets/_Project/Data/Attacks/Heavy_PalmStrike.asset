@@ -24,4 +24,5 @@ MonoBehaviour:
   chipDamage: 0.2
   blockstun: 0.35
   blockPushback: 0.8
+  blockStaminaCost: 999
   lunge: 0.4

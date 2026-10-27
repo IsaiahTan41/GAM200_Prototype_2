@@ -95,6 +95,30 @@ namespace KungFuCrashout.Fighters
         [SerializeField, Min(0f)] float dashInvincibleTime = 0.1f;
         [Tooltip("Invincible seconds at the start of a jump.")]
         [SerializeField, Min(0f)] float jumpInvincibleTime = 0.1f;
+        [Tooltip("No back-to-back invincibility: a dash / jump started within Invincibility Cooldown of the last invincible " +
+                 "one gets none (stops chaining dodges). Off = every dash / jump is invincible at the start.")]
+        [SerializeField] bool limitInvincibilityChaining = true;
+        [Tooltip("Seconds after an invincible dash / jump starts before the next one can be invincible again.")]
+        [SerializeField, Min(0f)] float invincibilityCooldown = 0.45f;
+
+        [Header("Combo breaker")]
+        [Tooltip("Dashing while stunned by hits breaks out of the combo (hitstun cancelled, the dash goes off with its usual " +
+                 "startup invincibility), as long as the attacker isn't mid-hit. Off = no dashing in hitstun.")]
+        [SerializeField] bool comboBreaker = true;
+        [Tooltip("Only allowed when the attacker isn't in an attack's startup / active frames (the GDD's 'when the enemy is " +
+                 "not actively hitting them'). Off = any time in hitstun.")]
+        [SerializeField] bool breakOnlyWhenAttackerNotHitting = true;
+        [Tooltip("Seconds before another combo break is allowed.")]
+        [SerializeField, Min(0f)] float comboBreakerCooldown = 2f;
+        [Tooltip("Also allow breaking out of a parry stun or a guard-break stun. Off = those punish windows can't be escaped.")]
+        [SerializeField] bool breakParryAndGuardBreakStun = false;
+
+        [Header("Movement buffer")]
+        [Tooltip("A dash / jump input that arrives a moment too early (end of an attack, dash, landing or cooldown) is " +
+                 "remembered and fires on the first frame it can, instead of being dropped.")]
+        [SerializeField] bool bufferMovement = true;
+        [Tooltip("How long a too-early dash / jump is remembered (seconds).")]
+        [SerializeField, Range(0.02f, 0.4f)] float movementBufferTime = 0.15f;
 
         [Header("Jump")]
         [Tooltip("Direction of the straight jump (swipe up). (0, 1) = straight up. Tilt it, e.g. (0.2, 1), for a slight forward drift (x is flipped to the facing side).")]
@@ -175,13 +199,25 @@ namespace KungFuCrashout.Fighters
         [SerializeField, Min(0f)] float bounceGravity = 30f;
 
         [Header("Block stamina (needs a Stamina component)")]
-        [Tooltip("Stamina drained per second while blocking.")]
+        [Tooltip("Stamina is ONLY spent by blocking basic / charged (melee) attacks. Tick to also drain it while holding block " +
+                 "(Block Hold Stamina Per Second).")]
+        [SerializeField] bool holdingBlockDrainsStamina = false;
+        [Tooltip("Tick to also charge stamina for blocking a thrown item (its Damage × Block Stamina Per Damage).")]
+        [SerializeField] bool blockingItemsCostsStamina = false;
+        [Tooltip("Holding Block Drains Stamina ON: stamina drained per second while blocking.")]
         [SerializeField, Min(0f)] float blockHoldStaminaPerSecond = 8f;
         [Tooltip("Stamina a blocked hit costs, per point of its damage. 2 = a 5-damage jab costs 10.")]
         [SerializeField, Min(0f)] float blockStaminaPerDamage = 2f;
         [Tooltip("Stamina given back by a successful parry.")]
         [SerializeField, Min(0f)] float parryStaminaRefund = 10f;
-        [Tooltip("How long the guard-broken blocker is stunned (seconds).")]
+        [Tooltip("A guard break (stamina ran out while blocking) staggers EXACTLY like a thrown item: knocked into the air, " +
+                 "lands Downed and takes damage meanwhile. Off = the old short stun (Guard Break Stun), no damage window.")]
+        [SerializeField] bool guardBreakStaggers = true;
+        [Tooltip("Launch / Downed settings for that stagger. Empty = the stage crate's Hit Data, so it matches an item hit exactly.")]
+        [SerializeField] ThrowableData guardBreakStaggerData;
+        [Tooltip("Running out of stamina just by HOLDING block also breaks the guard (stagger). Off = the block simply drops.")]
+        [SerializeField] bool holdingDrainBreaksGuard = true;
+        [Tooltip("Guard Break Staggers OFF: how long the guard-broken blocker is stunned (seconds).")]
         [SerializeField, Min(0f)] float guardBreakStun = 0.7f;
         [Tooltip("Off = a block negates ALL damage. On = the attack's Chip Damage fraction still gets through (never lethal).")]
         [SerializeField] bool chipDamageOnBlock = false;
@@ -254,6 +290,8 @@ namespace KungFuCrashout.Fighters
         public event Action BlockRefused;
         /// <summary>Knocked into a stage wall and bounced off it: (wall side, -1 left / +1 right).</summary>
         public event Action<int> WallBounced;
+        /// <summary>Dashed out of a combo (combo breaker).</summary>
+        public event Action ComboBroken;
 
         // ───────────── Public read-only state ─────────────
 
@@ -448,6 +486,8 @@ namespace KungFuCrashout.Fighters
             // Only turn around when neutral, never mid-attack / mid-dash / mid-hitstun.
             if (State == FighterState.Idle || State == FighterState.Blocking) FaceOpponent();
 
+            UpdateMoveBuffer();
+
             UpdateColour();
             UpdateHitboxVisual();
         }
@@ -458,17 +498,94 @@ namespace KungFuCrashout.Fighters
 
         public void Dash(int direction)
         {
-            if (direction == 0 || !CanStartAction) return;
-            if (Time.time < nextDashTime) return;
+            if (direction == 0) return;
+            if (!TryDash(direction)) BufferMove(MoveKind.Dash, new Vector2(direction, 0f));
+        }
+
+        /// <summary>Start a dash now if allowed (including a combo break out of hitstun). False = not now.</summary>
+        bool TryDash(int direction)
+        {
+            if (Time.time < nextDashTime) return false;
+
+            bool breaking = false;
+            if (!CanStartAction)
+            {
+                if (!CanComboBreak()) return false;
+                breaking = true;
+            }
 
             if (State == FighterState.Blocking) EndBlock();
 
-            if (invincibleMovementStartup) invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + dashInvincibleTime);
+            if (breaking)
+            {
+                // Combo breaker: drop the stun and the knockback slide, dash out.
+                hitstunTimer = 0f;
+                kbElapsed = float.MaxValue;
+                ComboHitsTaken = 0;
+                IsParryStunned = false;
+                IsGuardBroken = false;
+                nextComboBreakTime = Time.time + comboBreakerCooldown;
+                ComboBroken?.Invoke();
+                if (logStateChanges) Debug.Log($"[{name}] COMBO BREAKER");
+            }
+
+            GrantMoveInvincibility(dashInvincibleTime);
 
             dashStartX = X;
             dashTargetX = ClampToStage(dashStartX + Mathf.Sign(direction) * dashDistance);
             dashElapsed = 0f;
+            pendingMove = MoveKind.None;
             SetState(FighterState.Dashing);
+            return true;
+        }
+
+        /// <summary>In hitstun from hits (not launched / Downed), off cooldown, and the attacker isn't mid-hit.</summary>
+        bool CanComboBreak()
+        {
+            if (!comboBreaker || ControlsLocked || State != FighterState.Hitstun) return false;
+            if (IsLaunched || IsAirborne || Time.time < nextComboBreakTime) return false;
+            if (!breakParryAndGuardBreakStun && (IsParryStunned || IsGuardBroken)) return false;
+            if (breakOnlyWhenAttackerNotHitting && opponent && opponent.State == FighterState.Attacking &&
+                (opponent.Phase == AttackPhase.Startup || opponent.Phase == AttackPhase.Active)) return false;
+            return true;
+        }
+
+        /// <summary>Startup invincibility for a dash / jump, unless one was granted too recently.</summary>
+        void GrantMoveInvincibility(float seconds)
+        {
+            if (!invincibleMovementStartup || seconds <= 0f) return;
+            if (limitInvincibilityChaining && Time.time < nextMoveInvincibleTime) return;
+            invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + seconds);
+            nextMoveInvincibleTime = Time.time + invincibilityCooldown;
+        }
+
+        // ───────────── Movement buffer ─────────────
+
+        enum MoveKind { None, Dash, Jump }
+        MoveKind pendingMove;
+        Vector2 pendingMoveDir;
+        float pendingMoveTime;
+        float nextComboBreakTime, nextMoveInvincibleTime;
+
+        void BufferMove(MoveKind kind, Vector2 dir)
+        {
+            if (!bufferMovement || ControlsLocked || State == FighterState.KO) return;
+            pendingMove = kind;
+            pendingMoveDir = dir;
+            pendingMoveTime = Time.time;
+        }
+
+        /// <summary>Fire a remembered dash / jump as soon as it's allowed; forget it after Movement Buffer Time.</summary>
+        void UpdateMoveBuffer()
+        {
+            if (pendingMove == MoveKind.None) return;
+            if (!bufferMovement || Time.time - pendingMoveTime > movementBufferTime || State == FighterState.KO)
+            {
+                pendingMove = MoveKind.None;
+                return;
+            }
+            bool done = pendingMove == MoveKind.Dash ? TryDash(pendingMoveDir.x > 0f ? 1 : -1) : TryStartJump(pendingMoveDir);
+            if (done) pendingMove = MoveKind.None;
         }
 
         public void Attack()
@@ -647,19 +764,23 @@ namespace KungFuCrashout.Fighters
         ThrowableData HeavyStaggerFor(AttackData attack)
         {
             if (!heavyAttackStaggers || !attack || attack != heavyAttack) return null;
-            if (!heavyStaggerData)
-            {
-                // Match the crate: borrow the first stage item's hit settings (looked up once).
-                foreach (var item in FindObjectsByType<KungFuCrashout.Props.Carryable>(FindObjectsSortMode.None))
-                    if (item.HitData) { heavyStaggerData = item.HitData; break; }
-                if (!heavyStaggerData)
-                {
-                    heavyStaggerData = ScriptableObject.CreateInstance<ThrowableData>();
-                    heavyStaggerData.ApplyThrowDefaults();
-                    heavyStaggerData.name = "Heavy stagger (crate defaults)";
-                }
-            }
-            return heavyStaggerData;
+            return ResolveStaggerData(ref heavyStaggerData, "Heavy stagger");
+        }
+
+        /// <summary>
+        /// The stagger settings to use: the assigned asset, else the stage crate's Hit Data (so it matches an item hit
+        /// exactly), else crate defaults. Looked up once and remembered in the field.
+        /// </summary>
+        ThrowableData ResolveStaggerData(ref ThrowableData field, string label)
+        {
+            if (field) return field;
+            foreach (var item in FindObjectsByType<KungFuCrashout.Props.Carryable>(FindObjectsSortMode.None))
+                if (item.HitData) { field = item.HitData; return field; }
+
+            field = ScriptableObject.CreateInstance<ThrowableData>();
+            field.ApplyThrowDefaults();
+            field.name = label + " (crate defaults)";
+            return field;
         }
 
         /// <summary>
@@ -801,7 +922,11 @@ namespace KungFuCrashout.Fighters
         /// </summary>
         HitResult BlockHit(Fighter attacker, AttackData attack, int push, float pushDistance = -1f)
         {
-            float cost = attack.damage * blockStaminaPerDamage;
+            // Manual blocks use the attack's own Block Stamina Cost when set (e.g. a heavy that always breaks the guard).
+            float cost = !isAutoBlock && attack.blockStaminaCost >= 0f ? attack.blockStaminaCost
+                                                                        : attack.damage * blockStaminaPerDamage;
+            // Only melee (basic / charged) attacks cost stamina unless Blocking Items Costs Stamina is on.
+            if (attack is ThrowableData && !blockingItemsCostsStamina) cost = 0f;
             bool paid = !stamina || stamina.Spend(cost);
 
             // Off by default: a block negates all damage. Chip, when on, can never KO.
@@ -820,19 +945,33 @@ namespace KungFuCrashout.Fighters
                 Debug.Log($"[{name}] blocked {attack.name}: {taken:0.#} damage, -{LastBlockStaminaCost:0.#} stamina" +
                           (stamina ? $" ({stamina.Current:0}/{stamina.Max:0} left)" : ""));
 
-            if (!paid) GuardBreak();
+            if (!paid) GuardBreak(push);
             return HitResult.Blocked;
         }
 
-        /// <summary>Out of stamina mid-block: the block drops and we're stunned, open to punishment.</summary>
-        void GuardBreak()
+        /// <summary>
+        /// Out of stamina mid-block: the block drops and we're staggered, open to punishment.
+        /// Guard Break Staggers on = the same as a thrown item's clean hit: launched (push = +1 right / -1 left),
+        /// lands Downed (damage window, flashing health bar, camera punch-in). Off = a short stun only.
+        /// </summary>
+        void GuardBreak(int push)
         {
             blockstunTimer = 0f;
             parryAvailable = false;
             lastBlockEndTime = Time.time;
-            hitstunTimer = guardBreakStun;
             IsGuardBroken = true;
             ComboHitsTaken = 0;
+
+            var data = guardBreakStaggers ? ResolveStaggerData(ref guardBreakStaggerData, "Guard break stagger") : null;
+            if (data)
+            {
+                CancelAttack();
+                kbElapsed = float.MaxValue; // no slide; the launch moves us
+                Launch(data.LaunchVelocity(new Vector2(push, 0f), push, false), data);
+                hitstunTimer = data.hitstun;
+            }
+            else hitstunTimer = guardBreakStun;
+
             SetState(FighterState.Hitstun);
             GuardBroken?.Invoke();
             if (logStateChanges) Debug.Log($"[{name}] GUARD BREAK");
@@ -952,6 +1091,7 @@ namespace KungFuCrashout.Fighters
         /// <summary>Back to full health and neutral. Used by the training dummy and round resets (M7).</summary>
         public void ResetFighter(Vector3? position = null)
         {
+            pendingMove = MoveKind.None;
             CancelAttack();
             blockHeld = false;
             blockstunTimer = 0f;
@@ -1129,10 +1269,16 @@ namespace KungFuCrashout.Fighters
 
         void StartJump(Vector2 direction)
         {
-            if (!CanStartAction || IsAirborne || Time.time < nextJumpTime) return;
-            if (State == FighterState.Blocking) EndBlock();
+            if (!TryStartJump(direction)) BufferMove(MoveKind.Jump, direction);
+        }
 
-            if (invincibleMovementStartup) invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + jumpInvincibleTime);
+        bool TryStartJump(Vector2 direction)
+        {
+            if (!CanStartAction || IsAirborne || Time.time < nextJumpTime) return false;
+            if (State == FighterState.Blocking) EndBlock();
+            pendingMove = MoveKind.None;
+
+            GrantMoveInvincibility(jumpInvincibleTime);
 
             restY = transform.position.y;
             IsAirborne = true;
@@ -1142,6 +1288,7 @@ namespace KungFuCrashout.Fighters
             SetState(FighterState.Airborne);
             Jumped?.Invoke(direction.normalized);
             if (logStateChanges) Debug.Log($"[{name}] jumps toward {direction.normalized}");
+            return true;
         }
 
         /// <summary>
@@ -1283,11 +1430,16 @@ namespace KungFuCrashout.Fighters
             if (blockstunTimer > 0f) blockstunTimer -= dt;
 
             // Holding block drains stamina. Run dry (outside blockstun) and the block drops.
-            if (stamina && blockHoldStaminaPerSecond > 0f && !(parryCostsNoStamina && IsParryActive))
+            if (stamina && holdingBlockDrainsStamina && blockHoldStaminaPerSecond > 0f && !(parryCostsNoStamina && IsParryActive))
             {
                 stamina.Spend(blockHoldStaminaPerSecond * dt);
                 if (stamina.IsExhausted && blockstunTimer <= 0f)
                 {
+                    if (holdingDrainBreaksGuard && !isAutoBlock)
+                    {
+                        GuardBreak(-Facing); // staggered backwards
+                        return;
+                    }
                     EndBlock();
                     BlockRefused?.Invoke();
                     if (logStateChanges) Debug.Log($"[{name}] block dropped: out of stamina");

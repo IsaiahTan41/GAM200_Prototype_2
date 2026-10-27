@@ -75,6 +75,9 @@ namespace KungFuCrashout.Props
         [Tooltip("After being held this many times (by any fighter: pick-ups and catches), the NEXT throw is its last: " +
                  "it's destroyed when that throw ends. 0 = no limit.")]
         [SerializeField, Min(0)] int maxHolds = 3;
+        [Tooltip("Thrown into a block (shield) and NOT caught = destroyed on impact: a normal block, or a parry that " +
+                 "couldn't catch it (hands full / catching off). Off = it bounces off and stays in play.")]
+        [SerializeField] bool breakOnShield = true;
 
         public ItemState State { get; private set; } = ItemState.OnStage;
         /// <summary>How many times it has been picked up or caught.</summary>
@@ -113,6 +116,7 @@ namespace KungFuCrashout.Props
         float travelled;
         readonly List<Collider2D> overlaps = new List<Collider2D>();
         Fighter parriedBy;      // set for the frame a fighter parries this item (for the catch)
+        bool hitShield;         // set for the frame it hits a block or parry
         readonly HashSet<Fighter> ignoredThisFlight = new HashSet<Fighter>(); // e.g. already KO'd
 
         void Awake()
@@ -239,11 +243,22 @@ namespace KungFuCrashout.Props
             if (hitsFighters && TryHitFighter(from, p))
             {
                 var catcher = parriedBy;
+                bool shield = hitShield;
                 parriedBy = null;
+                hitShield = false;
                 EndFlight(popUp: true);
                 // Perfect block on a thrown item = CATCH: straight into the parrier's hands.
                 if (catcher && catcher.CatchesParriedItems && catcher.TryGetComponent(out ItemHolder h) && h.TryCatch(this))
+                {
                     Debug.Log($"[{catcher.name}] CAUGHT {name} with a parry");
+                    return;
+                }
+                // Hit a shield and wasn't caught: it breaks.
+                if (shield && breakOnShield)
+                {
+                    Debug.Log($"[{name}] broke on a block");
+                    Destroy(gameObject);
+                }
                 return;
             }
 
@@ -280,6 +295,7 @@ namespace KungFuCrashout.Props
             var thrower = Thrower;
             var result = target.ReceiveThrownHit(thrower, hitData, ThrowDirection);
             if (result == HitResult.Parried) parriedBy = target;
+            hitShield = result == HitResult.Blocked || result == HitResult.Parried;
             if (result == HitResult.Ignored)
             {
                 ignoredThisFlight.Add(target); // e.g. already KO'd: fly on through

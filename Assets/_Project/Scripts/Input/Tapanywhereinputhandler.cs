@@ -83,6 +83,9 @@ namespace KungFuCrashout.Controls
         [SerializeField, Range(30f, 89f)] float verticalMinAngle = 65f;
         [Tooltip("Downward swipes steeper than this (degrees below horizontal) block.")]
         [SerializeField, Range(10f, 89f)] float downSwipeMinAngle = 45f;
+        [Tooltip("After a swipe, the same finger can swipe again once it stops or turns back (multiple dashes in a row " +
+                 "without lifting). Off = one swipe per touch.")]
+        [SerializeField] bool chainSwipes = true;
 
         [Header("Double press")]
         [Tooltip("Max seconds between the first tap's release and the second press.")]
@@ -105,6 +108,9 @@ namespace KungFuCrashout.Controls
             public double startTime;
             public GestureState state;
             public bool latchedBlock; // this finger's down swipe latched the block
+            public Vector2 last;      // position last frame (for Chain Swipes)
+            public Vector2 swipeDir;  // direction of this finger's last swipe
+            public bool chained;      // re-armed after a swipe: never a tap / hold
         }
 
         readonly Dictionary<int, TrackedTouch> tracked = new Dictionary<int, TrackedTouch>();
@@ -143,6 +149,7 @@ namespace KungFuCrashout.Controls
         }
         static float ShortSide => Mathf.Min(Screen.width, Screen.height);
         static double Now => Time.unscaledTimeAsDouble;
+        static double NowTime => Now;
 
         void Awake() => commands = fighter;
 
@@ -204,7 +211,9 @@ namespace KungFuCrashout.Controls
                 {
                     case TouchPhase.Moved:
                     case TouchPhase.Stationary:
+                        TryRearm(touch.screenPosition, tt);
                         Evaluate(touch, tt);
+                        tt.last = touch.screenPosition;
                         break;
 
                     case TouchPhase.Ended:
@@ -238,7 +247,8 @@ namespace KungFuCrashout.Controls
                 startTime = Now,
                 // Touches claimed by another handler (e.g. tapping a stage item) are not fight input.
                 state = TouchClaims.IsClaimed(touch.touchId) || start.y > Screen.height * inputZoneTop
-                    ? GestureState.Ignored : GestureState.Pending
+                    ? GestureState.Ignored : GestureState.Pending,
+                last = start
             };
             tracked[touch.touchId] = tt;
 
@@ -314,12 +324,13 @@ namespace KungFuCrashout.Controls
                 }
 
                 tt.state = GestureState.Swiped;
+                tt.swipeDir = delta.normalized;
                 HandleSwipe(delta, angle, downward, tt);
                 return;
             }
 
             // Hold: stayed still long enough.
-            if (tt.state == GestureState.Pending && holdForHeavy && Now - tt.startTime >= holdTime)
+            if (tt.state == GestureState.Pending && holdForHeavy && !tt.chained && Now - tt.startTime >= holdTime)
             {
                 tt.state = GestureState.Holding;
                 ReleaseLatch();
@@ -387,7 +398,7 @@ namespace KungFuCrashout.Controls
                 Report("Release → Block end");
                 return;
             }
-            if (tt.state != GestureState.Pending) return;
+            if (tt.state != GestureState.Pending || tt.chained) return;
 
             lastTapTime = Now;
             lastTapPos = tt.start;
@@ -449,6 +460,25 @@ namespace KungFuCrashout.Controls
             blockLatched = false;
             ApplyBlock(was);
             Debug.Log("[TapAnywhere] Latched block dropped");
+        }
+
+        /// <summary>
+        /// Chain Swipes: after a swipe, the same finger can swipe again once it stops or turns back
+        /// (dash → dash, dash → jump) without lifting. A re-armed finger never becomes a tap or hold.
+        /// </summary>
+        void TryRearm(Vector2 pos, TrackedTouch tt)
+        {
+            if (!chainSwipes || tt.state != GestureState.Swiped) return;
+            Vector2 frame = pos - tt.last;
+            float still = ShortSide * 0.004f;
+            bool stopped = frame.magnitude < still;
+            bool turnedBack = !stopped && Vector2.Dot(frame, tt.swipeDir) < 0f;
+            if (!stopped && !turnedBack) return;
+
+            tt.start = pos;
+            tt.startTime = NowTime;
+            tt.state = GestureState.Pending;
+            tt.chained = true;
         }
 
         void Report(string gesture)

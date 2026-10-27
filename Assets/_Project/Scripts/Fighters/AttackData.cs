@@ -53,6 +53,10 @@ namespace KungFuCrashout.Fighters
         [Min(0f)] public float blockstun = 0f;
         [Tooltip("How far the blocker slides back (world units).")]
         [Min(0f)] public float blockPushback = 0.25f;
+        [Tooltip("Stamina this attack takes from a MANUAL block. -1 = automatic (Damage × the blocker's Block Stamina Per Damage). " +
+                 "A value at or above the blocker's max stamina (e.g. 999) always breaks the guard. " +
+                 "Auto-blocks at neutral always use the automatic cost.")]
+        public float blockStaminaCost = -1f;
 
         [Header("Movement")]
         [Tooltip("How far the attacker steps forward during startup. Keeps combos in range.")]

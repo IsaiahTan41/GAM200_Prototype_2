@@ -25,6 +25,9 @@ namespace KungFuCrashout.Sound
 
         public static AudioManager Instance { get; private set; }
 
+        /// <summary>Overall sound-effects volume (0–1), e.g. from the Options menu. Applies to every cue played from now on.</summary>
+        public static float SfxVolume { get; set; } = 1f;
+
         class Voice
         {
             public AudioSource source;
@@ -83,7 +86,7 @@ namespace KungFuCrashout.Sound
             var src = voice.source;
             src.Stop();
             src.priority = cue.priority;
-            src.volume = cue.NextVolume();
+            src.volume = cue.NextVolume() * Mathf.Clamp01(SfxVolume);
             src.pitch = cue.NextPitch();
 
             if (cue.resourceOverride)

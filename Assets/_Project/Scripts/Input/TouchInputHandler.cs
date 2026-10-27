@@ -38,6 +38,9 @@ namespace KungFuCrashout.Controls
         [SerializeField, Range(0.05f, 0.6f)] float holdTime = 0.2f;
         [Tooltip("Touches that START above this height (fraction of screen, from the bottom) are ignored. 0.85 leaves the top 15% for the HUD.")]
         [SerializeField, Range(0.2f, 1f)] float inputZoneTop = 0.85f;
+        [Tooltip("After a swipe, the same finger can swipe again once it stops or turns back (multiple dashes in a row " +
+                 "without lifting). Off = one swipe per touch.")]
+        [SerializeField] bool chainSwipes = true;
 
         [Header("Editor / debug")]
         [Tooltip("Lets the mouse act as a finger in the Game view. Turn off if you get double inputs in the Simulator view.")]
@@ -53,6 +56,9 @@ namespace KungFuCrashout.Controls
             public double startTime;
             public Side side;
             public GestureState state;
+            public Vector2 last;      // position last frame (for Chain Swipes)
+            public Vector2 swipeDir;  // direction of this finger's last swipe
+            public bool chained;      // re-armed after a swipe: never a tap / hold / block
         }
 
         readonly Dictionary<int, TrackedTouch> tracked = new Dictionary<int, TrackedTouch>();
@@ -62,6 +68,7 @@ namespace KungFuCrashout.Controls
 
         /// <summary>The screen's short side in pixels (its height in landscape).</summary>
         static float ShortSide => Mathf.Min(Screen.width, Screen.height);
+        static double NowTime => Time.unscaledTimeAsDouble;
 
         void Awake() => commands = fighter;
 
@@ -98,7 +105,9 @@ namespace KungFuCrashout.Controls
                 {
                     case TouchPhase.Moved:
                     case TouchPhase.Stationary:
+                        TryRearm(touch.screenPosition, tt);
                         Evaluate(touch, tt);
+                        tt.last = touch.screenPosition;
                         break;
 
                     case TouchPhase.Ended:
@@ -124,7 +133,8 @@ namespace KungFuCrashout.Controls
                 side = start.x < Screen.width * 0.5f ? Side.Left : Side.Right,
                 // Touches claimed by another handler (e.g. tapping a stage item) are not fight input.
                 state = TouchClaims.IsClaimed(touch.touchId) || start.y > Screen.height * inputZoneTop
-                    ? GestureState.Ignored : GestureState.Pending
+                    ? GestureState.Ignored : GestureState.Pending,
+                last = start
             };
             tracked[touch.touchId] = tt;
 
@@ -150,7 +160,8 @@ namespace KungFuCrashout.Controls
             if (delta.magnitude >= threshold)
             {
                 tt.state = GestureState.Swiped;
-                if (tt.side == Side.Left) commands.BlockEnd();
+                tt.swipeDir = delta.normalized;
+                if (tt.side == Side.Left && !tt.chained) commands.BlockEnd();
 
                 // 0° = sideways, +90° = straight up, -90° = straight down.
                 float angle = Mathf.Atan2(delta.y, Mathf.Abs(delta.x)) * Mathf.Rad2Deg;
@@ -179,7 +190,7 @@ namespace KungFuCrashout.Controls
             }
 
             // Hold (right side only): held long enough without drifting into a swipe.
-            if (tt.side == Side.Right &&
+            if (tt.side == Side.Right && !tt.chained &&
                 Time.unscaledTimeAsDouble - tt.startTime >= holdTime &&
                 delta.magnitude < threshold)
             {
@@ -192,7 +203,7 @@ namespace KungFuCrashout.Controls
         void CancelClaimed(TrackedTouch tt)
         {
             // A pending left finger is holding the instant block: let it go.
-            if (tt.state == GestureState.Pending && tt.side == Side.Left) commands.BlockEnd();
+            if (tt.state == GestureState.Pending && tt.side == Side.Left && !tt.chained) commands.BlockEnd();
             tt.state = GestureState.Ignored;
             Report("Finger taken by item gesture");
         }
@@ -200,7 +211,7 @@ namespace KungFuCrashout.Controls
         /// <summary>A finger lifted. Anything still Pending was a tap.</summary>
         void Release(TrackedTouch tt)
         {
-            if (tt.state != GestureState.Pending) return;
+            if (tt.state != GestureState.Pending || tt.chained) return;
 
             if (tt.side == Side.Left)
             {
@@ -212,6 +223,25 @@ namespace KungFuCrashout.Controls
                 commands.Attack();
                 Report("Right tap → Attack");
             }
+        }
+
+        /// <summary>
+        /// Chain Swipes: after a swipe, the same finger can swipe again once it stops or turns back
+        /// (dash → dash, dash → jump) without lifting. A re-armed finger never becomes a tap or hold.
+        /// </summary>
+        void TryRearm(Vector2 pos, TrackedTouch tt)
+        {
+            if (!chainSwipes || tt.state != GestureState.Swiped) return;
+            Vector2 frame = pos - tt.last;
+            float still = ShortSide * 0.004f;
+            bool stopped = frame.magnitude < still;
+            bool turnedBack = !stopped && Vector2.Dot(frame, tt.swipeDir) < 0f;
+            if (!stopped && !turnedBack) return;
+
+            tt.start = pos;
+            tt.startTime = NowTime;
+            tt.state = GestureState.Pending;
+            tt.chained = true;
         }
 
         void Report(string gesture)
