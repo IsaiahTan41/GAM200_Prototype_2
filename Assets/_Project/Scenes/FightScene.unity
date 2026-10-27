@@ -3763,6 +3763,8 @@ GameObject:
   - component: {fileID: 1061516965}
   - component: {fileID: 1061516966}
   - component: {fileID: 1061516967}
+  - component: {fileID: 1061516968}
+  - component: {fileID: 1061516969}
   m_Layer: 0
   m_Name: Opponent
   m_TagString: Untagged
@@ -4100,6 +4102,38 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Props.ItemHolder
   pickUpRange: 1.5
   dropWhenHit: 1
+--- !u!114 &1061516968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1061516959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1818dad3d6ee63049b6ff8efecaa0bca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterMovementSfx
+  dashCue: {fileID: 11400000, guid: bbe472b472902d64598bc6c6bca786f7, type: 2}
+  jumpCue: {fileID: 11400000, guid: a2242d031fd667246bac0ac4ad7ac25d, type: 2}
+  landCue: {fileID: 0}
+--- !u!114 &1061516969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1061516959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e39ac906425d6c4e81f14226bbd0c08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterDefenseSfx
+  blockCue: {fileID: 11400000, guid: 83b4bc7e9932a29458230b8e15caa9a3, type: 2}
+  catchCue: {fileID: 11400000, guid: 83b4bc7e9932a29458230b8e15caa9a3, type: 2}
+  staggerCue: {fileID: 11400000, guid: 471ffe808684da34d891c615960f7613, type: 2}
+  onGuardBreak: 1
+  onItemStagger: 1
 --- !u!1 &1081457650
 GameObject:
   m_ObjectHideFlags: 0
@@ -7845,6 +7879,8 @@ GameObject:
   - component: {fileID: 1960580403}
   - component: {fileID: 1960580404}
   - component: {fileID: 1960580405}
+  - component: {fileID: 1960580406}
+  - component: {fileID: 1960580407}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -8182,6 +8218,38 @@ MonoBehaviour:
   regenPerSecond: 30
   regenDelay: 0.6
   recoverAt: 0.3
+--- !u!114 &1960580406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960580397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1818dad3d6ee63049b6ff8efecaa0bca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterMovementSfx
+  dashCue: {fileID: 11400000, guid: bbe472b472902d64598bc6c6bca786f7, type: 2}
+  jumpCue: {fileID: 11400000, guid: a2242d031fd667246bac0ac4ad7ac25d, type: 2}
+  landCue: {fileID: 0}
+--- !u!114 &1960580407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960580397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e39ac906425d6c4e81f14226bbd0c08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterDefenseSfx
+  blockCue: {fileID: 11400000, guid: 83b4bc7e9932a29458230b8e15caa9a3, type: 2}
+  catchCue: {fileID: 11400000, guid: 83b4bc7e9932a29458230b8e15caa9a3, type: 2}
+  staggerCue: {fileID: 11400000, guid: 471ffe808684da34d891c615960f7613, type: 2}
+  onGuardBreak: 1
+  onItemStagger: 1
 --- !u!1 &1978094154
 GameObject:
   m_ObjectHideFlags: 0

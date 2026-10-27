@@ -166,5 +166,9 @@ MonoBehaviour:
   hitPopSpeed: 4
   dropDistance: 0.8
   gravity: 30
+  throwCue: {fileID: 11400000, guid: b9d07d56ae1b8ff47b51fee7d23daf6a, type: 2}
+  breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
+  breakSoundOnLifetimeEnd: 0
   lifetime: 300
   maxHolds: 9
+  breakOnShield: 1

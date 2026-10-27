@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using KungFuCrashout.Core;
 using KungFuCrashout.Fighters;
+using KungFuCrashout.Sound;
 
 namespace KungFuCrashout.Props
 {
@@ -67,6 +68,16 @@ namespace KungFuCrashout.Props
         [Tooltip("How far in front of the carrier the item lands when dropped.")]
         [SerializeField, Min(0f)] float dropDistance = 0.8f;
         [SerializeField, Min(0.1f)] float gravity = 30f;
+
+        [Header("Sound")]
+        [Tooltip("Whoosh played (through AudioManager) the moment this item is thrown. Empty = silent throw. " +
+                 "Set by KungFu Crashout → Set Up Item Throw Audio.")]
+        [SerializeField] SfxCue throwCue;
+        [Tooltip("Smash played when the item BREAKS: hits a block without being caught, or its last throw (Max Holds) ends. " +
+                 "Never on pick-up or catch. Set by KungFu Crashout → Set Up Item Audio.")]
+        [SerializeField] SfxCue breakCue;
+        [Tooltip("Also play the break sound when the item simply runs out of Lifetime. Off = it vanishes quietly.")]
+        [SerializeField] bool breakSoundOnLifetimeEnd = false;
 
         [Header("Lifetime")]
         [Tooltip("Destroyed this many seconds after it appears (spawn / scene start). If someone is holding it then, it's dropped first; " +
@@ -218,6 +229,7 @@ namespace KungFuCrashout.Props
             transform.rotation = Quaternion.identity;
             spriteRenderer.sortingOrder = carriedSortingOrder; // stay in front while flying
             State = ItemState.Thrown;
+            AudioManager.Play(throwCue); // safe with no cue / no AudioManager
             Thrown?.Invoke(thrower, ThrowDirection);
             return true;
         }
@@ -257,7 +269,7 @@ namespace KungFuCrashout.Props
                 if (shield && breakOnShield)
                 {
                     Debug.Log($"[{name}] broke on a block");
-                    Destroy(gameObject);
+                    Break(withSound: true);
                 }
                 return;
             }
@@ -307,6 +319,13 @@ namespace KungFuCrashout.Props
             return true;
         }
 
+        /// <summary>Remove the item for good, with the break sound when asked (never used for pick-ups or catches).</summary>
+        void Break(bool withSound)
+        {
+            if (withSound) AudioManager.Play(breakCue);
+            Destroy(gameObject);
+        }
+
         /// <summary>Lifetime over or last throw finished: remove the item. True if it's being destroyed.</summary>
         bool CheckExpired()
         {
@@ -324,7 +343,7 @@ namespace KungFuCrashout.Props
             }
 
             Debug.Log($"[{name}] destroyed ({(timeUp ? "lifetime over" : $"held {TimesHeld}x, last throw done")})");
-            Destroy(gameObject);
+            Break(withSound: !timeUp || breakSoundOnLifetimeEnd);
             return true;
         }
 

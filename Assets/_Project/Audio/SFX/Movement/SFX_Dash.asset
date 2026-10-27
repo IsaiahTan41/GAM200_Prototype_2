@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2791658c364a7604596868d555ef149c, type: 3}
+  m_Name: SFX_Dash
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 18571c31d32db8d43b797f8c04e3c757, type: 3}
+  - {fileID: 8300000, guid: 9c5d63ce74f9ed94aa982bcf51181e14, type: 3}
+  - {fileID: 8300000, guid: fc8d1e50293dfaa478ebbbfc84317321, type: 3}
+  - {fileID: 8300000, guid: cf18c09ae3d66764b98c03f33339f181, type: 3}
+  - {fileID: 8300000, guid: b774573ef6c41e64eb4fc04d624218a8, type: 3}
+  - {fileID: 8300000, guid: cb86079bda0bf8c4198feda8691dc894, type: 3}
+  resourceOverride: {fileID: 0}
+  order: 0
+  avoidRepeatingLast: 2
+  volume: 0.7
+  volumeVariation: 0.1
+  pitch: 1
+  pitchVariation: 0.08
+  maxVoices: 2
+  cooldown: 0.05
+  priority: 128

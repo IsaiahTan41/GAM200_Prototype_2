@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2791658c364a7604596868d555ef149c, type: 3}
+  m_Name: SFX_Block
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 2c068e73ee036b34381a48c2a7252c04, type: 3}
+  - {fileID: 8300000, guid: 3f340a27af44ce94f96d30a0e97ab69c, type: 3}
+  - {fileID: 8300000, guid: f717e0fc5e40022409db94944f6d4007, type: 3}
+  - {fileID: 8300000, guid: 534363a172ef96d4fb6a1ad62fd32e46, type: 3}
+  - {fileID: 8300000, guid: ef223b527fd650946869a2fc8675ade6, type: 3}
+  - {fileID: 8300000, guid: d04c0d5aff8f67d43acd912a6ff726b6, type: 3}
+  resourceOverride: {fileID: 0}
+  order: 0
+  avoidRepeatingLast: 2
+  volume: 1
+  volumeVariation: 0.05
+  pitch: 1
+  pitchVariation: 0.05
+  maxVoices: 3
+  cooldown: 0.04
+  priority: 32
