@@ -12,6 +12,7 @@ namespace KungFuCrashout.Controls
     ///   W / ↑  jump up          Q / E  jump up-left / up-right (45°)
     ///   J      attack           K      heavy attack
     ///   Space  hold to block (tap for parry)
+    ///   U      side special (Elbow Slide, the way you face)   I  up special (Uppercut)   O  down special (Leg Sweep)
     ///
     /// Place in: Assets/_Project/Scripts/Input/KeyboardDebugInput.cs
     /// </summary>
@@ -41,6 +42,10 @@ namespace KungFuCrashout.Controls
 
             if (kb.jKey.wasPressedThisFrame) commands.Attack();
             if (kb.kKey.wasPressedThisFrame) commands.HeavyAttack();
+
+            if (kb.uKey.wasPressedThisFrame) commands.Special(SpecialMove.Side, fighter ? fighter.Facing : 1);
+            if (kb.iKey.wasPressedThisFrame) commands.Special(SpecialMove.Up, 0);
+            if (kb.oKey.wasPressedThisFrame) commands.Special(SpecialMove.Down, 0);
 
             if (kb.spaceKey.wasPressedThisFrame) commands.BlockStart();
             if (kb.spaceKey.wasReleasedThisFrame) commands.BlockEnd();

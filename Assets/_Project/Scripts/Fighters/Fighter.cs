@@ -87,6 +87,23 @@ namespace KungFuCrashout.Fighters
         [SerializeField] AnimationCurve dashCurve =
             new AnimationCurve(new Keyframe(0f, 0f, 0f, 2f), new Keyframe(1f, 1f, 0f, 0f));
 
+        [Header("Special moves (directional swipe + tap)")]
+        [Tooltip("Swipe sideways + tap. Default: Elbow Slide (gap closer).")]
+        [SerializeField] AttackData sideSpecial;
+        [Tooltip("Swipe up + tap. Default: Uppercut (launcher).")]
+        [SerializeField] AttackData upSpecial;
+        [Tooltip("Swipe down + tap. Default: 180° Leg Sweep (hits both sides).")]
+        [SerializeField] AttackData downSpecial;
+        [Tooltip("A special can cancel a dash that's still going (movement first, then the special).")]
+        [SerializeField] bool specialsCancelDash = true;
+        [Tooltip("The Up special can start while still rising from a jump (cancels the rise into the launcher).")]
+        [SerializeField] bool upSpecialFromRisingJump = true;
+        [Tooltip("A special can cancel a light / heavy attack once it has connected (hit or blocked): combo into it.")]
+        [SerializeField] bool specialsCancelOnHit = true;
+        [Tooltip("Juggle limit: how many melee hits this fighter can take while launched in the air. Further hits whiff " +
+                 "until they land.")]
+        [SerializeField, Range(1, 10)] int maxJuggleHits = 3;
+
         [Header("Movement invincibility")]
         [Tooltip("The first moments of a dash or jump are invincible: melee hits and thrown items pass through " +
                  "(the fighter flickers meanwhile). Off = dashes and jumps can be hit from the first frame.")]
@@ -290,6 +307,8 @@ namespace KungFuCrashout.Fighters
         public event Action BlockRefused;
         /// <summary>Knocked into a stage wall and bounced off it: (wall side, -1 left / +1 right).</summary>
         public event Action<int> WallBounced;
+        /// <summary>A special move started (its AttackData).</summary>
+        public event Action<AttackData> SpecialStarted;
         /// <summary>Dashed out of a combo (combo breaker).</summary>
         public event Action ComboBroken;
 
@@ -312,6 +331,13 @@ namespace KungFuCrashout.Fighters
         /// <summary>The light combo and heavy, read-only. The AI uses these to judge its reach.</summary>
         public IReadOnlyList<AttackData> LightCombo => lightCombo;
         public AttackData HeavyAttackData => heavyAttack;
+        /// <summary>This fighter's special for a direction (null = none set).</summary>
+        public AttackData SpecialFor(SpecialMove move) =>
+            move == SpecialMove.Side ? sideSpecial : move == SpecialMove.Up ? upSpecial : downSpecial;
+        /// <summary>True while one of the specials is the current attack.</summary>
+        public bool IsDoingSpecial => State == FighterState.Attacking && comboIndex == SpecialIndex;
+        /// <summary>Melee hits taken during the current launch (juggle).</summary>
+        public int JuggleHitsTaken { get; private set; }
         /// <summary>How far one dash travels (world units).</summary>
         public float DashDistance => dashDistance;
 
@@ -588,6 +614,46 @@ namespace KungFuCrashout.Fighters
             if (done) pendingMove = MoveKind.None;
         }
 
+        const int SpecialIndex = -2; // comboIndex while doing a special (not part of the light combo, not the heavy)
+        bool attackConnected;        // the current attack has hit or been blocked (for cancel-on-hit)
+
+        /// <summary>
+        /// Directional special. Allowed from neutral / block, out of a dash that's still going (Specials Cancel Dash),
+        /// rising from a jump (Up only, Up Special From Rising Jump), or cancelling an attack that connected
+        /// (Specials Cancel On Hit). A special can't cancel another special.
+        /// </summary>
+        public bool Special(SpecialMove move, int direction)
+        {
+            var attack = SpecialFor(move);
+            if (!attack || ControlsLocked) return false;
+
+            bool ok = CanStartAction;
+            if (!ok && State == FighterState.Dashing && specialsCancelDash) ok = true;
+            if (!ok && move == SpecialMove.Up && upSpecialFromRisingJump && IsAirborne && !IsLaunched &&
+                State == FighterState.Airborne && airVelocity.y > 0f) ok = true;
+            if (!ok && specialsCancelOnHit && State == FighterState.Attacking && comboIndex != SpecialIndex &&
+                attackConnected && Phase != AttackPhase.Startup) ok = true;
+            if (!ok) return false;
+
+            // Cancelling a dash / rising jump: the dash ends here, and its startup invincibility doesn't carry over
+            // into the attack (the special itself is never invincible).
+            if (State == FighterState.Dashing || State == FighterState.Airborne)
+            {
+                if (State == FighterState.Dashing) nextDashTime = Time.time + dashCooldown;
+                if (invulnerableUntil > Time.time && invulnerableUntil <= Time.time + Mathf.Max(dashInvincibleTime, jumpInvincibleTime))
+                    invulnerableUntil = Time.time;
+            }
+            pendingMove = MoveKind.None;
+
+            StartAttack(attack, SpecialIndex);
+            // A side special goes the way it was swiped (it can slide away from the opponent too).
+            if (move == SpecialMove.Side && direction != 0) Facing = direction > 0 ? 1 : -1;
+
+            SpecialStarted?.Invoke(attack);
+            if (logStateChanges) Debug.Log($"[{name}] SPECIAL {move}: {attack.name}");
+            return true;
+        }
+
         public void Attack()
         {
             if (ControlsLocked || lightCombo == null || lightCombo.Length == 0) return;
@@ -723,8 +789,12 @@ namespace KungFuCrashout.Fighters
                 return BlockHit(attacker, attack, awayFromAttacker, push);
             }
 
+            // ── Juggle limit: a launched fighter can only take so many melee hits before landing. ──
+            if (IsLaunched && JuggleHitsTaken >= maxJuggleHits) return HitResult.Ignored;
+
             // ── Clean hit ──
             bool wasStunned = State == FighterState.Hitstun; // hitstun, guard break or parry stun (before this hit)
+            if (IsLaunched) JuggleHitsTaken++;
             // Still reeling from the last hit? Then this one is part of a combo.
             // A parried attacker starts a fresh combo count when punished.
             bool comboContinues = State == FighterState.Hitstun && !IsParryStunned;
@@ -748,6 +818,15 @@ namespace KungFuCrashout.Fighters
             bool ko = health.IsDead;
             StartSlide(awayFromAttacker * attack.knockback * (ko ? koKnockbackMultiplier : 1f));
             if (wasStunned && bounceWhenHitStunned) HitBounce(stunnedBounceSpeed);
+
+            // Launcher (e.g. the Uppercut): into the air, same air physics as an item launch.
+            if (attack.launchOnHit)
+            {
+                if (!IsLaunched) JuggleHitsTaken = 0;
+                kbElapsed = float.MaxValue; // the launch moves us, not the slide
+                var dir = new Vector2(attack.launchDirection.x * awayFromAttacker, Mathf.Abs(attack.launchDirection.y));
+                Launch(attack.launchOnHit.LaunchVelocity(dir, awayFromAttacker, ko), attack.launchOnHit);
+            }
 
             if (ko)
             {
@@ -1140,6 +1219,7 @@ namespace KungFuCrashout.Fighters
             comboIndex = index;
             bufferedLight = bufferedHeavy = false;
             hitThisAttack.Clear();
+            attackConnected = false;
 
             FaceOpponent();
             Phase = AttackPhase.Startup;
@@ -1168,6 +1248,7 @@ namespace KungFuCrashout.Fighters
                     break;
 
                 case AttackPhase.Active:
+                    if (attack.activeTravel > 0f) MoveX(Facing * attack.activeTravel * dt / Mathf.Max(0.01f, attack.active));
                     CheckHits();
                     if (State != FighterState.Attacking) return; // we got parried mid-swing
 
@@ -1212,6 +1293,7 @@ namespace KungFuCrashout.Fighters
                 var result = target.ReceiveHit(this, attack);
                 if (result == HitResult.Ignored) continue;
 
+                if (result == HitResult.Hit || result == HitResult.Blocked) attackConnected = true;
                 HitConnected?.Invoke(target, attack, result);
                 if (result == HitResult.Hit) HitLanded?.Invoke(target, attack);
                 if (result == HitResult.Parried) return; // our attack is over
@@ -1346,6 +1428,7 @@ namespace KungFuCrashout.Fighters
         {
             bool wasLaunched = IsLaunched;
             var data = launchData;
+            JuggleHitsTaken = 0;
             float landingVx = airVelocity.x;
 
             IsAirborne = false;

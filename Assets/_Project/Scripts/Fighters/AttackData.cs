@@ -61,6 +61,17 @@ namespace KungFuCrashout.Fighters
         [Header("Movement")]
         [Tooltip("How far the attacker steps forward during startup. Keeps combos in range.")]
         [Min(0f)] public float lunge = 0.15f;
+        [Tooltip("SPECIALS: how far the attacker travels forward DURING the active frames, hitbox out the whole way " +
+                 "(e.g. the Elbow Slide gap closer). 0 = stands still while hitting.")]
+        [Min(0f)] public float activeTravel = 0f;
+
+        [Header("Launch on hit (specials)")]
+        [Tooltip("A clean hit launches the target into the air with these settings (e.g. the Uppercut). Its Downed Time = 0 " +
+                 "lands them on their feet (pure juggle); above 0 = they land Downed (a stagger). Empty = no launch.")]
+        public ThrowableData launchOnHit;
+        [Tooltip("Launch direction for a target on your right (x is mirrored). (0.1, 1) = nearly straight up. " +
+                 "The angle is kept inside the Launch On Hit asset's Min / Max Launch Angle.")]
+        public Vector2 launchDirection = new Vector2(0.1f, 1f);
 
         public float TotalDuration => startup + active + recovery;
         public float Blockstun => blockstun > 0f ? blockstun : hitstun * 0.6f;

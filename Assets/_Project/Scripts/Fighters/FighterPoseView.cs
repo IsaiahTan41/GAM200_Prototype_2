@@ -40,6 +40,12 @@ namespace KungFuCrashout.Fighters
         [SerializeField] Sprite attack;
         [Tooltip("Heavy attack active frames. Empty = Attack.")]
         [SerializeField] Sprite heavyAttack;
+        [Tooltip("Side special (Elbow Slide). Empty = Heavy Attack / Attack pose.")]
+        [SerializeField] Sprite sideSpecialPose;
+        [Tooltip("Up special (Uppercut). Empty = Heavy Attack / Attack pose.")]
+        [SerializeField] Sprite upSpecialPose;
+        [Tooltip("Down special (Leg Sweep). Empty = Heavy Attack / Attack pose.")]
+        [SerializeField] Sprite downSpecialPose;
         [Tooltip("Attack recovery. Empty = the attack pose is held through recovery.")]
         [SerializeField] Sprite recovery;
         [Tooltip("Shown for Throw Pose Time after throwing an item.")]
@@ -235,8 +241,16 @@ namespace KungFuCrashout.Fighters
                     return First(hitstun, idle);
 
                 case FighterState.Attacking:
-                    bool heavy = fighter.CurrentAttack && fighter.CurrentAttack == fighter.HeavyAttackData;
+                    var cur = fighter.CurrentAttack;
+                    bool heavy = cur && cur == fighter.HeavyAttackData;
                     Sprite hit = heavy ? First(heavyAttack, attack) : attack;
+                    if (fighter.IsDoingSpecial)
+                    {
+                        Sprite special = cur == fighter.SpecialFor(SpecialMove.Side) ? sideSpecialPose
+                                       : cur == fighter.SpecialFor(SpecialMove.Up) ? upSpecialPose
+                                       : downSpecialPose;
+                        hit = First(special, heavyAttack, attack);
+                    }
                     return fighter.Phase switch
                     {
                         AttackPhase.Startup => First(windUp, idle),

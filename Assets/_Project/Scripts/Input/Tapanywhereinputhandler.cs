@@ -95,6 +95,22 @@ namespace KungFuCrashout.Controls
         [Tooltip("ON: a single tap's attack waits until the double-press window has passed, so a double press never throws a jab first (costs that much input delay). OFF: the first tap attacks immediately.")]
         [SerializeField] bool waitForDoublePress = false;
 
+        [Header("Directional specials (swipe + tap)")]
+        [Tooltip("A tap from another finger right after a swipe turns into that direction's special: sideways = Side (Elbow " +
+                 "Slide), up = Up (Uppercut), down = Down (Leg Sweep). The movement happens first; the special takes over from it.")]
+        [SerializeField] bool directionalSpecials = true;
+        [Tooltip("Seconds after a swipe in which a tap (timed from when the finger touches down) makes the special.")]
+        [SerializeField, Range(0.03f, 0.5f)] float chordWindow = 0.15f;
+        [Tooltip("Also make the special when tapping any time the movement is still going (during the dash, or the jump), " +
+                 "even after the Chord Window. Off = only the Chord Window (taps later in a jump are air attacks).")]
+        [SerializeField] bool tapDuringMotion = true;
+        [Tooltip("Tap During Motion for jumps only counts while still rising, so an Uppercut never comes out on the way down " +
+                 "(a falling tap stays an air attack).")]
+        [SerializeField] bool jumpSpecialUntilApex = true;
+        [Tooltip("The tap that made a special may also be the first press of a Double Press block (special, then a quick " +
+                 "guard). Off = it never starts a double press.")]
+        [SerializeField] bool specialTapCanStartDoublePress = false;
+
         [Header("Editor / debug")]
         [Tooltip("Lets the mouse act as a finger in the Game view. Turn off if you get double inputs in the Simulator view.")]
         [SerializeField] bool simulateTouchInEditor = true;
@@ -111,6 +127,34 @@ namespace KungFuCrashout.Controls
             public Vector2 last;      // position last frame (for Chain Swipes)
             public Vector2 swipeDir;  // direction of this finger's last swipe
             public bool chained;      // re-armed after a swipe: never a tap / hold
+            public bool hasSpecial;   // touched down in a special's chord window / during the motion
+            public SpecialMove special;
+            public int specialDir;
+        }
+
+        // The last swipe that can lead into a special (movement first, then the special).
+        double lastSwipeTime = -1;
+        SpecialMove lastSwipeMove;
+        int lastSwipeDir;
+
+        void RecordSwipe(SpecialMove move, int dir)
+        {
+            lastSwipeTime = Now;
+            lastSwipeMove = move;
+            lastSwipeDir = dir;
+        }
+
+        /// <summary>Is the movement from the last swipe still going (dash, or jump — rising only if Until Apex)?</summary>
+        bool MotionStillGoing()
+        {
+            if (!fighter) return false;
+            switch (lastSwipeMove)
+            {
+                case SpecialMove.Side: return fighter.State == FighterState.Dashing;
+                case SpecialMove.Up:   return fighter.IsAirborne && !fighter.IsLaunched &&
+                                              (!jumpSpecialUntilApex || fighter.AirVelocity.y > 0f);
+                default:               return false;
+            }
         }
 
         readonly Dictionary<int, TrackedTouch> tracked = new Dictionary<int, TrackedTouch>();
@@ -252,6 +296,19 @@ namespace KungFuCrashout.Controls
             };
             tracked[touch.touchId] = tt;
 
+            // Touched down right after a swipe (or while its movement is still going) = this tap will be a special.
+            if (tt.state == GestureState.Pending && directionalSpecials && lastSwipeTime >= 0)
+            {
+                bool inWindow = Now - lastSwipeTime <= chordWindow;
+                bool inMotion = tapDuringMotion && MotionStillGoing();
+                if (inWindow || inMotion)
+                {
+                    tt.hasSpecial = true;
+                    tt.special = lastSwipeMove;
+                    tt.specialDir = lastSwipeDir;
+                }
+            }
+
             // Two fingers landing together = block, starting NOW (so a well-timed press is a parry).
             if (tt.state == GestureState.Pending && TwoFingerBlocks && !pairBlocking)
             {
@@ -348,21 +405,25 @@ namespace KungFuCrashout.Controls
             if (angle >= verticalMinAngle)
             {
                 commands.JumpUp();
+                RecordSwipe(SpecialMove.Up, 0);
                 Report("Swipe up → Jump");
             }
             else if (angle >= diagonalMinAngle)
             {
                 commands.JumpToward(delta.normalized);
+                RecordSwipe(SpecialMove.Up, 0);
                 Report(delta.x > 0f ? "Swipe up-right → Jump right" : "Swipe up-left → Jump left");
             }
             else if (angle > -diagonalMinAngle)
             {
                 int dir = delta.x > 0f ? 1 : -1;
                 commands.Dash(dir);
+                RecordSwipe(SpecialMove.Side, dir);
                 Report(dir > 0 ? "Swipe → Dash right" : "Swipe → Dash left");
             }
             else if (blockSwipe && latchDownSwipeBlock)
             {
+                RecordSwipe(SpecialMove.Down, 0);
                 // Latched: the finger no longer matters; the block stays until the next action.
                 tt.state = GestureState.Swiped;
                 if (blockLatched) { Report("Swipe down → still blocking"); return; }
@@ -374,12 +435,15 @@ namespace KungFuCrashout.Controls
             }
             else if (blockSwipe)
             {
+                RecordSwipe(SpecialMove.Down, 0);
                 StartBlocking(tt);
                 Report("Swipe down → Block (parry window)");
             }
             else
             {
-                Report("Swipe down-diagonal → (nothing)");
+                // Down swipe that doesn't block (e.g. Block Gesture = Double Press): only the lead-in to the Down special.
+                RecordSwipe(SpecialMove.Down, 0);
+                Report(directionalSpecials ? "Swipe down → (tap for Down special)" : "Swipe down → (nothing)");
             }
         }
 
@@ -399,6 +463,21 @@ namespace KungFuCrashout.Controls
                 return;
             }
             if (tt.state != GestureState.Pending || tt.chained) return;
+
+            // Swipe + tap = the special for that swipe's direction (the movement already happened; this takes over).
+            if (tt.hasSpecial && directionalSpecials)
+            {
+                ReleaseLatch();
+                if (commands.Special(tt.special, tt.specialDir))
+                {
+                    tapPending = false;
+                    lastSwipeTime = -1; // one special per swipe
+                    if (specialTapCanStartDoublePress) { lastTapTime = Now; lastTapPos = tt.start; }
+                    Report($"Swipe + tap → {tt.special} special");
+                    return;
+                }
+                // Couldn't start (no special set / not allowed right now): it's a normal tap.
+            }
 
             lastTapTime = Now;
             lastTapPos = tt.start;
