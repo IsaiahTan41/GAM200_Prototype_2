@@ -64,6 +64,8 @@ namespace KungFuCrashout.Fighters
         [Header("Facing")]
         [Tooltip("Tick if the drawings face LEFT. The Fighter's own turning flips them for the other side.")]
         [SerializeField] bool artFacesLeft = true;
+        [Tooltip("While dashing, the dash pose faces the way you're moving (backdashes and cross-ups included), not the opponent.")]
+        [SerializeField] bool dashFacesMovement = true;
 
         [Header("Fighter's debug box")]
         [Tooltip("Opacity of the Fighter's coloured box behind the art. 0 = hidden, ~0.25 = faint state-colour overlay for debugging.")]
@@ -180,7 +182,9 @@ namespace KungFuCrashout.Fighters
 
             var pose = PickPose();
             if (pose) art.sprite = pose;
-            art.flipX = artFacesLeft;
+            // The fighter is already turned toward the opponent (root scale = Facing). If the dash goes the other way, mirror the art.
+            bool againstDash = dashFacesMovement && fighter.DashDirection != 0 && fighter.DashDirection != fighter.Facing;
+            art.flipX = artFacesLeft ^ againstDash;
 
             // Colour: hit flash, invincibility flicker.
             Color c = Time.unscaledTime < flashUntil ? hitFlashColour : Color.white;

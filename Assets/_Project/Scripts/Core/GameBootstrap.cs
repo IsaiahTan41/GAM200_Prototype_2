@@ -29,6 +29,9 @@ namespace KungFuCrashout.Core
             Screen.autorotateToLandscapeLeft = true;
             Screen.autorotateToLandscapeRight = true;
             Screen.orientation = ScreenOrientation.AutoRotation;
+
+            // Block the URP Rendering Debugger overlay (3-finger double tap / Left Ctrl+Backspace) in development builds.
+            UnityEngine.Rendering.DebugManager.instance.enableRuntimeUI = false;
         }
     }
 }

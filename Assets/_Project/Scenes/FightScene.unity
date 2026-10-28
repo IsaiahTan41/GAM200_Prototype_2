@@ -2968,7 +2968,7 @@ MonoBehaviour:
   track: {fileID: 8300000, guid: ee7faeb81d2518b4ea362a89bf4bebbd, type: 3}
   playOnStart: 1
   persistAcrossScenes: 1
-  volume: 0.6
+  volume: 0.43
   fadeInTime: 1.5
   crossfadeTime: 1
   musicGroup: {fileID: 0}
@@ -6175,24 +6175,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.FighterPoseView
   fighter: {fileID: 1960580398}
   holder: {fileID: 0}
-  idle: {fileID: 21300000, guid: df65f9c5bbbb2764a9808c9cd6a20e66, type: 3}
-  block: {fileID: 0}
+  idle: {fileID: 21300000, guid: 2cedd704c2dae524696edca025637a9e, type: 3}
+  block: {fileID: 21300000, guid: 9e353f7d85a4dfb42b9f40810534acd0, type: 3}
   windUp: {fileID: 0}
-  attack: {fileID: 21300000, guid: 6385388002f92124ea595480f33d933f, type: 3}
-  heavyAttack: {fileID: 21300000, guid: 6385388002f92124ea595480f33d933f, type: 3}
+  attack: {fileID: 21300000, guid: 5694805fabf5a91429340c8cec9c610b, type: 3}
+  heavyAttack: {fileID: 21300000, guid: 5694805fabf5a91429340c8cec9c610b, type: 3}
   sideSpecialPose: {fileID: 0}
-  upSpecialPose: {fileID: 0}
-  downSpecialPose: {fileID: 0}
+  upSpecialPose: {fileID: 21300000, guid: c4176ebe2f39c2e4683039f51e9cf72b, type: 3}
+  downSpecialPose: {fileID: 21300000, guid: d5c1da62af190bd488aafb02dcc6a0b6, type: 3}
   recovery: {fileID: 0}
-  throwPose: {fileID: 21300000, guid: fe519cfe32edbd54e88f7d7d8c5e5204, type: 3}
+  throwPose: {fileID: 21300000, guid: d076f35f7fa4818409ac4c8beb50dc73, type: 3}
   carry: {fileID: 0}
-  hitstun: {fileID: 0}
-  downed: {fileID: 0}
-  airborne: {fileID: 0}
-  dash: {fileID: 0}
+  hitstun: {fileID: 21300000, guid: 7180783790c4cb24d9a6f0b74ba6ece6, type: 3}
+  downed: {fileID: 21300000, guid: f0de5132ab1ec594c82c30e9ff6a854a, type: 3}
+  airborne: {fileID: 21300000, guid: 8d09334ec8fffa94c94df1487fbd5646, type: 3}
+  dash: {fileID: 21300000, guid: 0c7ee05bef95b3a41893ab739388b79c, type: 3}
   ko: {fileID: 0}
   throwPoseTime: 0.3
-  artFacesLeft: 1
+  artFacesLeft: 0
+  dashFacesMovement: 1
   debugBoxAlpha: 0
   showBlockShield: 1
   shieldColour: {r: 0.35, g: 0.65, b: 1, a: 0.45}
@@ -6259,9 +6260,9 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: df65f9c5bbbb2764a9808c9cd6a20e66, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2cedd704c2dae524696edca025637a9e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 1
+  m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1.452, y: 2.0853407}
@@ -7050,6 +7051,7 @@ MonoBehaviour:
   ko: {fileID: 0}
   throwPoseTime: 0.3
   artFacesLeft: 0
+  dashFacesMovement: 1
   debugBoxAlpha: 0
   showBlockShield: 1
   shieldColour: {r: 0.35, g: 0.65, b: 1, a: 0.45}
@@ -7828,7 +7830,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1950963569}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c18a04d148c48340b030d53e71f8989, type: 3}
   m_Name: 
@@ -8073,9 +8075,9 @@ MonoBehaviour:
   stage: {fileID: 1879881582}
   displayName: Player
   lightCombo:
-  - {fileID: 11400000, guid: e1b54c9b0c5458644aca44cecd139cb3, type: 2}
-  - {fileID: 11400000, guid: b4d55730f1adcd347b476dac3d9bacde, type: 2}
-  - {fileID: 11400000, guid: fec4e5f6f6b9d5948aa95b27e6b1abf9, type: 2}
+  - {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
+  - {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
+  - {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
   heavyAttack: {fileID: 11400000, guid: 6fda1495eda6a714385fcc2f5e87efa6, type: 2}
   hurtboxLayers:
     serializedVersion: 2
@@ -8168,7 +8170,7 @@ MonoBehaviour:
   chipDamageOnBlock: 0
   knockbackSlideTime: 0.15
   koKnockbackMultiplier: 2
-  downedTipAngle: 70
+  downedTipAngle: 0
   downedFlashRate: 10
   showHitboxesInGame: 1
   logStateChanges: 1

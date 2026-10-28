@@ -319,6 +319,8 @@ namespace KungFuCrashout.Fighters
         public AttackData CurrentAttack { get; private set; }
         /// <summary>+1 = facing right, -1 = facing left.</summary>
         public int Facing { get; private set; } = 1;
+        /// <summary>+1 / -1: which way the current dash travels (0 when not dashing).</summary>
+        public int DashDirection => State == FighterState.Dashing ? (dashTargetX >= dashStartX ? 1 : -1) : 0;
         /// <summary>1, 2, 3 during the light combo; 0 otherwise.</summary>
         public int ComboStep => comboIndex + 1;
         /// <summary>How many hits in a row this fighter has taken without escaping hitstun.</summary>
