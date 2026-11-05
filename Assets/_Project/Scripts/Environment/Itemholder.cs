@@ -26,10 +26,27 @@ namespace KungFuCrashout.Props
         [Tooltip("Drop the item when hit.")]
         [SerializeField] bool dropWhenHit = true;
 
+        [Header("Carry point")]
+        [Tooltip("Where this fighter holds items. Empty = a child named \"CarryPoint\" anywhere under the fighter " +
+                 "(e.g. Visual/CarryPoint). Put it under Visual so it flips with facing and can be keyed in clips.")]
+        [SerializeField] Transform carryPoint;
+        [Tooltip("ON: held items sit on the Carry Point. OFF (or no Carry Point): each item's own Carry Distance / Angle.")]
+        [SerializeField] bool useCarryPoint = true;
+
+        [Header("Throw wind-up")]
+        [Tooltip("Throwing plays a wind-up first and the item only leaves on the release frame (the Throw Attack's " +
+                 "Startup, or its clip's HitboxOn event if the FighterAnimator has one). Getting hit during it drops " +
+                 "the item. Off, or no Throw Attack = the item leaves instantly, as before.")]
+        [SerializeField] bool throwWindup = true;
+        [Tooltip("Timing for the wind-up: Startup = time until the item leaves, Recovery = time after. No hitbox is used.")]
+        [SerializeField] AttackData throwAttack;
+
         public Carryable Held { get; private set; }
         public bool IsCarrying => Held;
         public Fighter Fighter => fighter;
         public float PickUpRange => pickUpRange;
+        /// <summary>Where held items sit, or null to use the item's own carry pose.</summary>
+        public Transform CarryPoint => useCarryPoint ? carryPoint : null;
 
         public event Action<Carryable> PickedUp;
         public event Action<Carryable> Dropped;
@@ -38,19 +55,64 @@ namespace KungFuCrashout.Props
         public event Action<Carryable> Caught;
 
         Fighter fighter;
+        bool windingUp;
+        Vector2 pendingThrowDirection;
 
-        void Awake() => fighter = GetComponent<Fighter>();
+        /// <summary>A throw has started its wind-up and the item hasn't left yet.</summary>
+        public bool IsWindingUpThrow => windingUp;
+
+        void Awake()
+        {
+            fighter = GetComponent<Fighter>();
+            if (!carryPoint) carryPoint = FindChild(transform, "CarryPoint");
+        }
+
+        FighterPoseView poseView;
+
+        /// <summary>
+        /// World position of the Carry Point, mirrored across the art's pivot while the art is drawn mirrored (backdash /
+        /// dash-through), so the item stays on the same side of the character as it looks. False = no Carry Point.
+        /// </summary>
+        public bool TryGetCarrySpot(out Vector3 position)
+        {
+            position = default;
+            var point = CarryPoint;
+            if (!point) return false;
+
+            position = point.position;
+            if (!poseView) poseView = GetComponentInChildren<FighterPoseView>();
+            if (poseView && poseView.ArtMirrored)
+            {
+                float pivotX = poseView.transform.position.x; // flipX mirrors the sprite around its pivot
+                position.x = 2f * pivotX - position.x;
+            }
+            return true;
+        }
+
+        static Transform FindChild(Transform parent, string childName)
+        {
+            foreach (Transform c in parent)
+            {
+                if (c.name == childName) return c;
+                var deeper = FindChild(c, childName);
+                if (deeper) return deeper;
+            }
+            return null;
+        }
 
         void OnEnable()
         {
             fighter.GotHit += OnGotHit;
             fighter.StateChanged += OnStateChanged;
+            fighter.ThrowReleased += OnThrowReleased;
         }
 
         void OnDisable()
         {
             fighter.GotHit -= OnGotHit;
             fighter.StateChanged -= OnStateChanged;
+            fighter.ThrowReleased -= OnThrowReleased;
+            windingUp = false;
             Drop();
         }
 
@@ -99,17 +161,40 @@ namespace KungFuCrashout.Props
 
         /// <summary>True if the held item can be thrown right now.</summary>
         public bool CanThrow =>
-            IsCarrying && !fighter.ControlsLocked &&
+            IsCarrying && !windingUp && !fighter.ControlsLocked &&
             fighter.State != FighterState.Hitstun && fighter.State != FighterState.KO &&
             fighter.State != FighterState.Downed;
 
-        /// <summary>Throw the held item along direction (world space). Returns false if nothing was thrown.</summary>
+        /// <summary>
+        /// Throw the held item along direction (world space). With Throw Wind-up this starts the wind-up and the item
+        /// leaves on the release frame. Returns false if nothing was thrown / started.
+        /// </summary>
         public bool Throw(Vector2 direction)
         {
             if (!CanThrow) return false;
 
+            if (throwWindup && throwAttack)
+            {
+                if (!fighter.StartThrow(throwAttack)) return false; // busy (attacking, stunned…)
+                windingUp = true;
+                pendingThrowDirection = direction;
+                return true;
+            }
+            return Release(direction);
+        }
+
+        /// <summary>The wind-up reached its release frame: let go now.</summary>
+        void OnThrowReleased()
+        {
+            if (!windingUp) return;
+            windingUp = false;
+            if (Held) Release(pendingThrowDirection);
+        }
+
+        bool Release(Vector2 direction)
+        {
             var item = Held;
-            if (!item.Throw(direction, fighter)) return false;
+            if (!item || !item.Throw(direction, fighter)) return false;
 
             Held = null;
             Threw?.Invoke(item, direction.normalized);
@@ -124,6 +209,9 @@ namespace KungFuCrashout.Props
 
         void OnStateChanged(FighterState previous, FighterState next)
         {
+            // Interrupted before the release frame (hit, KO…): the throw is off.
+            if (windingUp && previous == FighterState.Attacking && next != FighterState.Attacking) windingUp = false;
+
             // A KO always drops the item.
             if (next == FighterState.KO) Drop();
         }

@@ -49,6 +49,9 @@ namespace KungFuCrashout.Props
         [SerializeField, Min(0f)] float bobSpeed = 2f;
         [Tooltip("How quickly the item catches up with the carry spot. Higher = snappier.")]
         [SerializeField, Min(1f)] float followSharpness = 25f;
+        [Tooltip("ON: if the carrier's ItemHolder has a Carry Point (e.g. Visual/CarryPoint), sit there instead of using " +
+                 "Carry Distance / Angle above. The character decides where it's held.")]
+        [SerializeField] bool useCarrierCarryPoint = true;
         [Tooltip("Draw order while carried, so it shows in front of the fighter.")]
         [SerializeField] int carriedSortingOrder = 10;
 
@@ -357,11 +360,31 @@ namespace KungFuCrashout.Props
             FlightEnded?.Invoke();
         }
 
+        Fighter cachedCarrier;
+        ItemHolder carrierHolder;
+
+        /// <summary>The carrier's Carry Point position (mirrored with its art), if it has one and this item uses it.</summary>
+        bool TryGetCarrierPoint(out Vector3 position)
+        {
+            position = default;
+            if (!useCarrierCarryPoint || !Carrier) return false;
+            if (Carrier != cachedCarrier)
+            {
+                cachedCarrier = Carrier;
+                carrierHolder = Carrier.GetComponent<ItemHolder>();
+            }
+            return carrierHolder && carrierHolder.TryGetCarrySpot(out position);
+        }
+
         Vector3 CarrySpot()
         {
             int facing = Carrier.Facing;
             float rad = carryAngle * Mathf.Deg2Rad;
             float bob = bobAmount > 0f ? Mathf.Sin(Time.time * bobSpeed * Mathf.PI * 2f) * bobAmount : 0f;
+
+            // The character decides: sit on its Carry Point (flips with facing, follows any animation of the point).
+            if (TryGetCarrierPoint(out Vector3 p))
+                return new Vector3(p.x, p.y + bob, transform.position.z);
 
             Vector3 c = Carrier.transform.position;
             return new Vector3(

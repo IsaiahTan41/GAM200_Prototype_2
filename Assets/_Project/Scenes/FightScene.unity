@@ -410,8 +410,8 @@ RectTransform:
   - {fileID: 781938346}
   m_Father: {fileID: 996149284}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.028821243, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0.97117877}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2561,6 +2561,37 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &681174231
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 681174232}
+  m_Layer: 0
+  m_Name: CarryPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &681174232
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 681174231}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.26, y: 0.42, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1592441789}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &687531628
 GameObject:
   m_ObjectHideFlags: 0
@@ -3365,8 +3396,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Controls.TapAnywhereInputHandler
   fighter: {fileID: 1960580398}
-  blockInput: 2
-  blockGesture: 2
+  blockInput: 1
+  blockGesture: 1
   holdForHeavy: 1
   latchDownSwipeBlock: 1
   twoFingerWindow: 0.12
@@ -3377,14 +3408,18 @@ MonoBehaviour:
   verticalMinAngle: 65
   downSwipeMinAngle: 45
   chainSwipes: 1
+  blockingSwipeMultiplier: 3
   doublePressWindow: 0.25
   doublePressMaxDistance: 0.15
   waitForDoublePress: 0
   directionalSpecials: 1
-  chordWindow: 0.15
+  chordWindow: 0.25
   tapDuringMotion: 1
   jumpSpecialUntilApex: 1
   specialTapCanStartDoublePress: 0
+  heldTapCommitsSpecial: 1
+  specialOnTouchDown: 1
+  swipeWhileHoldingSpecial: 1
   simulateTouchInEditor: 1
   showDebugOverlay: 0
 --- !u!114 &812902267
@@ -3985,6 +4020,11 @@ MonoBehaviour:
   specialsCancelDash: 1
   upSpecialFromRisingJump: 1
   specialsCancelOnHit: 1
+  specialsCancelHeavyStartup: 1
+  bufferSpecials: 1
+  specialBufferTime: 0.15
+  upSpecialStopsRise: 1
+  upSpecialGroundSnapHeight: 0.6
   maxJuggleHits: 3
   invincibleMovementStartup: 1
   dashInvincibleTime: 0.1
@@ -4012,6 +4052,10 @@ MonoBehaviour:
   catchThrownItemsOnParry: 1
   parryCostsNoStamina: 1
   parryCooldown: 0.5
+  blockCancelsLightAttack: 1
+  blockCancelHoldTime: 0.08
+  fighterAnimator: {fileID: 0}
+  useAnimationTiming: 1
   parryStun: 0.6
   parryKnocksBack: 1
   parryKnockback: 0.6
@@ -4265,6 +4309,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Props.ItemHolder
   pickUpRange: 1.5
   dropWhenHit: 1
+  carryPoint: {fileID: 0}
+  useCarryPoint: 1
+  throwWindup: 1
+  throwAttack: {fileID: 0}
 --- !u!114 &1061516968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4976,6 +5024,84 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1420525803
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1420525805}
+  - component: {fileID: 1420525804}
+  m_Layer: 0
+  m_Name: Hitbox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!61 &1420525804
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1420525803}
+  m_Enabled: 0
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0.79999995, y: 1.5}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 2, y: 0.7}
+  m_EdgeRadius: 0
+--- !u!4 &1420525805
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1420525803}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1592441789}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1439931850
 GameObject:
   m_ObjectHideFlags: 0
@@ -6139,6 +6265,9 @@ GameObject:
   - component: {fileID: 1592441789}
   - component: {fileID: 1592441791}
   - component: {fileID: 1592441790}
+  - component: {fileID: 1592441792}
+  - component: {fileID: 1592441794}
+  - component: {fileID: 1592441793}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -6158,7 +6287,9 @@ Transform:
   m_LocalPosition: {x: 0, y: -1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1420525805}
+  - {fileID: 681174232}
   m_Father: {fileID: 1960580402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1592441790
@@ -6175,7 +6306,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.FighterPoseView
   fighter: {fileID: 1960580398}
   holder: {fileID: 0}
-  idle: {fileID: 21300000, guid: 2cedd704c2dae524696edca025637a9e, type: 3}
+  idle: {fileID: 21300000, guid: f31a9d3491c4950409331bb0d58b0f6e, type: 3}
   block: {fileID: 21300000, guid: 9e353f7d85a4dfb42b9f40810534acd0, type: 3}
   windUp: {fileID: 0}
   attack: {fileID: 21300000, guid: 5694805fabf5a91429340c8cec9c610b, type: 3}
@@ -6260,7 +6391,7 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 2cedd704c2dae524696edca025637a9e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f31a9d3491c4950409331bb0d58b0f6e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -6270,6 +6401,65 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!95 &1592441792
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592441788}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 2b1a5df523762c744b942049443203cc, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1592441793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592441788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41362ef1853acae44b7aa52e91c7fe78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.FighterAnimator
+  animator: {fileID: 1592441792}
+  attackClips:
+  - attack: {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
+    clip: {fileID: 7400000, guid: e0a562bcae5d9e74d822d888f0d7bac5, type: 2}
+  - attack: {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
+    clip: {fileID: 7400000, guid: e0a562bcae5d9e74d822d888f0d7bac5, type: 2}
+  - attack: {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
+    clip: {fileID: 7400000, guid: e0a562bcae5d9e74d822d888f0d7bac5, type: 2}
+  - attack: {fileID: 11400000, guid: f5c2720c4f8120b4ab4053b68a891334, type: 2}
+    clip: {fileID: 7400000, guid: 393ec6349e51e14419fa8b9034b9af91, type: 2}
+  hitbox: {fileID: 1420525804}
+  idleState: Idle
+--- !u!114 &1592441794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592441788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67034d198586be14ab669914e0a4d5fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.FighterAnimationEvents
+  logEvents: 0
 --- !u!1 &1599767446
 GameObject:
   m_ObjectHideFlags: 0
@@ -7720,7 +7910,7 @@ Camera:
   far clip plane: 5000
   field of view: 40
   orthographic: 1
-  orthographic size: 2.564767
+  orthographic size: 11.794445
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -7745,7 +7935,7 @@ Transform:
   m_GameObject: {fileID: 1950963569}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.1450843, y: 1.0799954, z: 4.2844915}
+  m_LocalPosition: {x: 1.1450843, y: 9.405166, z: 4.2844915}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8116,6 +8306,11 @@ MonoBehaviour:
   specialsCancelDash: 1
   upSpecialFromRisingJump: 1
   specialsCancelOnHit: 1
+  specialsCancelHeavyStartup: 1
+  bufferSpecials: 1
+  specialBufferTime: 0.15
+  upSpecialStopsRise: 1
+  upSpecialGroundSnapHeight: 0.6
   maxJuggleHits: 3
   invincibleMovementStartup: 1
   dashInvincibleTime: 0.1
@@ -8143,6 +8338,10 @@ MonoBehaviour:
   catchThrownItemsOnParry: 1
   parryCostsNoStamina: 1
   parryCooldown: 0.5
+  blockCancelsLightAttack: 1
+  blockCancelHoldTime: 0.08
+  fighterAnimator: {fileID: 1592441793}
+  useAnimationTiming: 1
   parryStun: 0.6
   parryKnocksBack: 1
   parryKnockback: 0.6
@@ -8328,6 +8527,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Props.ItemHolder
   pickUpRange: 1.5
   dropWhenHit: 1
+  carryPoint: {fileID: 0}
+  useCarryPoint: 1
+  throwWindup: 1
+  throwAttack: {fileID: 11400000, guid: f5c2720c4f8120b4ab4053b68a891334, type: 2}
 --- !u!114 &1960580404
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8813,7 +9016,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 40
-    OrthographicSize: 2.564767
+    OrthographicSize: 11.794445
     NearClipPlane: 0.1
     FarClipPlane: 5000
     Dutch: 0
@@ -8840,7 +9043,7 @@ Transform:
   m_GameObject: {fileID: 2044561920}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.2699399, y: 0.03887987, z: -10}
+  m_LocalPosition: {x: -1.2699399, y: 8.36405, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

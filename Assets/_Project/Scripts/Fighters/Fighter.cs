@@ -100,6 +100,20 @@ namespace KungFuCrashout.Fighters
         [SerializeField] bool upSpecialFromRisingJump = true;
         [Tooltip("A special can cancel a light / heavy attack once it has connected (hit or blocked): combo into it.")]
         [SerializeField] bool specialsCancelOnHit = true;
+        [Tooltip("A special can cancel the heavy (charged) attack's wind-up: hold to charge, then swipe with the other finger " +
+                 "to switch into that direction's special instead.")]
+        [SerializeField] bool specialsCancelHeavyStartup = true;
+        [Tooltip("A special asked for while the fighter is busy (attack recovery, blockstun, end of a dash…) is remembered " +
+                 "and starts as soon as it's allowed, instead of being lost (which used to turn the tap into a jab).")]
+        [SerializeField] bool bufferSpecials = true;
+        [Tooltip("How long a buffered special is remembered (seconds).")]
+        [SerializeField, Range(0.05f, 0.5f)] float specialBufferTime = 0.15f;
+        [Tooltip("Up special out of a jump: stop the jump's rise so the Uppercut comes out where you are instead of " +
+                 "carrying on upward (and missing a grounded opponent).")]
+        [SerializeField] bool upSpecialStopsRise = true;
+        [Tooltip("Up special out of a jump that's still this close to the ground (units): put the fighter back on the " +
+                 "ground first, so it's a grounded Uppercut. 0 = never.")]
+        [SerializeField, Range(0f, 2f)] float upSpecialGroundSnapHeight = 0.6f;
         [Tooltip("Juggle limit: how many melee hits this fighter can take while launched in the air. Further hits whiff " +
                  "until they land.")]
         [SerializeField, Range(1, 10)] int maxJuggleHits = 3;
@@ -173,6 +187,21 @@ namespace KungFuCrashout.Fighters
         [SerializeField] bool parryCostsNoStamina = true;
         [Tooltip("If you block again within this many seconds of the last block ending, you get no parry window (stops mashing).")]
         [SerializeField] float parryCooldown = 0.5f;
+        [Tooltip("Pressing block during your own light attack cancels it and blocks right away. The Double Press block's " +
+                 "first tap always throws a jab; without this the block only starts once that jab has finished.")]
+        [SerializeField] bool blockCancelsLightAttack = true;
+        [Tooltip("Block Cancels Light Attack waits until block has been held this long (seconds), so a quick double tap " +
+                 "while mashing doesn't cut your own combo short.")]
+        [SerializeField, Range(0f, 0.3f)] float blockCancelHoldTime = 0.08f;
+
+        [Header("Animation (frame-driven attacks)")]
+        [Tooltip("Optional: the FighterAnimator on the Visual child (found automatically). Attacks it has a clip for play " +
+                 "that whole clip; attacks without one use the sprite poses and AttackData timing as before.")]
+        [SerializeField] FighterAnimator fighterAnimator;
+        [Tooltip("ON: an attack that has a clip follows the clip's Animation Events (HitboxOn / HitboxOff / CancelOpen / " +
+                 "AttackEnd) and uses its keyed Hitbox, so the hit lands on the drawn frame. OFF: the clip only plays " +
+                 "visually; timing and hitbox come from AttackData.")]
+        [SerializeField] bool useAnimationTiming = true;
         [Tooltip("How long an attacker is stunned after being parried (seconds). Long enough to punish with a full combo.")]
         [SerializeField] float parryStun = 0.6f;
         [Tooltip("Parrying a melee attack pushes the attacker back a little (they slide away while parry-stunned).")]
@@ -475,6 +504,15 @@ namespace KungFuCrashout.Fighters
             health = GetComponent<Health>();
             if (!health) health = gameObject.AddComponent<Health>();
             stamina = GetComponent<Stamina>();
+            if (!fighterAnimator) fighterAnimator = GetComponentInChildren<FighterAnimator>(true);
+            animEvents = fighterAnimator ? fighterAnimator.GetComponent<FighterAnimationEvents>() : null;
+            if (animEvents)
+            {
+                animEvents.HitboxOnReached += OnAnimHitboxOn;
+                animEvents.HitboxOffReached += OnAnimHitboxOff;
+                animEvents.CancelOpened += OnAnimCancelOpen;
+                animEvents.AttackEnded += OnAnimAttackEnd;
+            }
 
             halfWidth = spriteRenderer.bounds.extents.x;
             restY = transform.position.y;
@@ -508,12 +546,21 @@ namespace KungFuCrashout.Fighters
                 case FighterState.Blocking:  UpdateBlock(dt); break;
             }
 
+            // Block held during our own light attack (the jab from a Double Press's first tap): cancel it and block now.
+            if (blockCancelsLightAttack && blockHeld && State == FighterState.Attacking && comboIndex >= 0 &&
+                Time.time - blockPressTime >= blockCancelHoldTime && !ControlsLocked && HasGuardStamina)
+            {
+                CancelAttack();
+                EnterBlock(allowParry: Time.time - lastBlockEndTime >= parryCooldown);
+            }
+
             // Block still held after another action finished → go back to blocking (no parry this time).
             if (State == FighterState.Idle && blockHeld && !ControlsLocked && HasGuardStamina) EnterBlock(allowParry: false);
 
             // Only turn around when neutral, never mid-attack / mid-dash / mid-hitstun.
             if (State == FighterState.Idle || State == FighterState.Blocking) FaceOpponent();
 
+            UpdateSpecialBuffer(); // before the movement buffer: a special takes over from a queued dash / jump
             UpdateMoveBuffer();
 
             UpdateColour();
@@ -527,6 +574,7 @@ namespace KungFuCrashout.Fighters
         public void Dash(int direction)
         {
             if (direction == 0) return;
+            hasPendingSpecial = false; // a newer input replaces a buffered special
             if (!TryDash(direction)) BufferMove(MoveKind.Dash, new Vector2(direction, 0f));
         }
 
@@ -617,6 +665,35 @@ namespace KungFuCrashout.Fighters
         }
 
         const int SpecialIndex = -2; // comboIndex while doing a special (not part of the light combo, not the heavy)
+        const int ThrowIndex = -3;   // comboIndex while winding up / throwing an item (no hitbox of its own)
+
+        /// <summary>Winding up or finishing an item throw (ItemHolder → Throw Wind-up).</summary>
+        public bool IsThrowing => State == FighterState.Attacking && comboIndex == ThrowIndex;
+
+        /// <summary>The throw's release frame: the wind-up's Startup ended (or the clip's HitboxOn). ItemHolder lets go here.</summary>
+        public event Action ThrowReleased;
+
+        /// <summary>
+        /// Start a throw wind-up using throwAttack's timing (or its clip on the FighterAnimator). The item leaves on
+        /// ThrowReleased. Allowed whenever an attack could start, and out of a dash (the dash ends here).
+        /// </summary>
+        public bool StartThrow(AttackData throwAttack)
+        {
+            if (!throwAttack || ControlsLocked) return false;
+            bool ok = CanStartAttack || State == FighterState.Dashing;
+            if (!ok) return false;
+
+            if (State == FighterState.Dashing)
+            {
+                nextDashTime = Time.time + dashCooldown;
+                if (invulnerableUntil > Time.time && invulnerableUntil <= Time.time + Mathf.Max(dashInvincibleTime, jumpInvincibleTime))
+                    invulnerableUntil = Time.time;
+            }
+            pendingMove = MoveKind.None;
+            hasPendingSpecial = false;
+            StartAttack(throwAttack, ThrowIndex);
+            return true;
+        }
         bool attackConnected;        // the current attack has hit or been blocked (for cancel-on-hit)
 
         /// <summary>
@@ -625,6 +702,39 @@ namespace KungFuCrashout.Fighters
         /// (Specials Cancel On Hit). A special can't cancel another special.
         /// </summary>
         public bool Special(SpecialMove move, int direction)
+        {
+            if (TryStartSpecial(move, direction)) return true;
+            if (!bufferSpecials || !SpecialFor(move) || ControlsLocked || State == FighterState.KO) return false;
+
+            // Busy right now: remember it (counts as accepted, so the tap doesn't fall through to a jab).
+            hasPendingSpecial = true;
+            pendingSpecial = move;
+            pendingSpecialDir = direction;
+            pendingSpecialTime = Time.time;
+            if (logStateChanges) Debug.Log($"[{name}] special {move} buffered");
+            return true;
+        }
+
+        float blockPressTime;
+        bool hasPendingSpecial;
+        SpecialMove pendingSpecial;
+        int pendingSpecialDir;
+        float pendingSpecialTime;
+
+        /// <summary>Fire a buffered special as soon as it's allowed; forget it after Special Buffer Time.</summary>
+        void UpdateSpecialBuffer()
+        {
+            if (!hasPendingSpecial) return;
+            if (!bufferSpecials || Time.time - pendingSpecialTime > specialBufferTime || State == FighterState.KO)
+            {
+                hasPendingSpecial = false;
+                return;
+            }
+            if (TryStartSpecial(pendingSpecial, pendingSpecialDir)) hasPendingSpecial = false;
+        }
+
+        /// <summary>Start the special now if allowed. False = not now.</summary>
+        bool TryStartSpecial(SpecialMove move, int direction)
         {
             var attack = SpecialFor(move);
             if (!attack || ControlsLocked) return false;
@@ -635,6 +745,8 @@ namespace KungFuCrashout.Fighters
                 State == FighterState.Airborne && airVelocity.y > 0f) ok = true;
             if (!ok && specialsCancelOnHit && State == FighterState.Attacking && comboIndex != SpecialIndex &&
                 attackConnected && Phase != AttackPhase.Startup) ok = true;
+            if (!ok && specialsCancelHeavyStartup && State == FighterState.Attacking && comboIndex == -1 &&
+                Phase == AttackPhase.Startup) ok = true; // -1 = the heavy
             if (!ok) return false;
 
             // Cancelling a dash / rising jump: the dash ends here, and its startup invincibility doesn't carry over
@@ -646,10 +758,29 @@ namespace KungFuCrashout.Fighters
                     invulnerableUntil = Time.time;
             }
             pendingMove = MoveKind.None;
+            hasPendingSpecial = false;
+
+            // Up special out of a jump: back on the ground if only just off it, else stop rising.
+            if (move == SpecialMove.Up && IsAirborne && !IsLaunched && State == FighterState.Airborne)
+            {
+                if (upSpecialGroundSnapHeight > 0f && transform.position.y - restY <= upSpecialGroundSnapHeight)
+                {
+                    var p = transform.position;
+                    p.y = restY;
+                    transform.position = p;
+                    Land();
+                }
+                else if (upSpecialStopsRise)
+                {
+                    airVelocity.y = Mathf.Min(airVelocity.y, 0f);
+                    launchTimer = 0f; // gravity from here
+                }
+            }
 
             StartAttack(attack, SpecialIndex);
-            // A side special goes the way it was swiped (it can slide away from the opponent too).
-            if (move == SpecialMove.Side && direction != 0) Facing = direction > 0 ? 1 : -1;
+            // A side special goes the way it was swiped (it can slide away from the opponent too): turn the whole
+            // fighter (art included), not just the hitbox / travel direction.
+            if (move == SpecialMove.Side && direction != 0) SetFacing(direction > 0 ? 1 : -1);
 
             SpecialStarted?.Invoke(attack);
             if (logStateChanges) Debug.Log($"[{name}] SPECIAL {move}: {attack.name}");
@@ -658,6 +789,7 @@ namespace KungFuCrashout.Fighters
 
         public void Attack()
         {
+            hasPendingSpecial = false; // a newer input replaces a buffered special
             if (ControlsLocked || lightCombo == null || lightCombo.Length == 0) return;
 
             // Already attacking → try to chain the next combo hit.
@@ -667,8 +799,8 @@ namespace KungFuCrashout.Fighters
                 bool hasNext = comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1];
                 if (!inLightCombo || !hasNext) return;
 
-                if (Phase == AttackPhase.Recovery) StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
-                else bufferedLight = true; // remembered, fires as soon as recovery starts
+                if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
+                else bufferedLight = true; // remembered, fires as soon as recovery starts (or the clip's CancelOpen)
                 return;
             }
 
@@ -678,6 +810,7 @@ namespace KungFuCrashout.Fighters
 
         public void HeavyAttack()
         {
+            hasPendingSpecial = false; // a newer input replaces a buffered special
             if (ControlsLocked || !heavyAttack) return;
 
             // Heavy can finish a light combo.
@@ -685,7 +818,7 @@ namespace KungFuCrashout.Fighters
             {
                 if (comboIndex < 0) return; // already doing the heavy
 
-                if (Phase == AttackPhase.Recovery) StartAttack(heavyAttack, -1);
+                if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAttack(heavyAttack, -1);
                 else bufferedHeavy = true;
                 return;
             }
@@ -697,8 +830,9 @@ namespace KungFuCrashout.Fighters
         public void BlockStart()
         {
             if (ControlsLocked) return;
+            if (!blockHeld) blockPressTime = Time.time;
             blockHeld = true;
-            if (State != FighterState.Idle) return;
+            if (State != FighterState.Idle) return; // busy: Update starts the block when it can (or cancels a light attack)
 
             if (!HasGuardStamina)
             {
@@ -1173,6 +1307,7 @@ namespace KungFuCrashout.Fighters
         public void ResetFighter(Vector3? position = null)
         {
             pendingMove = MoveKind.None;
+            hasPendingSpecial = false;
             CancelAttack();
             blockHeld = false;
             blockstunTimer = 0f;
@@ -1227,6 +1362,19 @@ namespace KungFuCrashout.Fighters
             Phase = AttackPhase.Startup;
             phaseTimer = attack.startup;
 
+            // Play this attack's clip if the FighterAnimator has one; its events then drive the phases.
+            animTiming = false;
+            animCancelOpen = false;
+            if (fighterAnimator)
+            {
+                if (fighterAnimator.TryPlay(attack, out float clipLength))
+                {
+                    animTiming = useAnimationTiming && animEvents;
+                    animSafetyTimer = clipLength + 0.1f; // a missing event can't trap the fighter in the attack
+                }
+                else fighterAnimator.Stop();
+            }
+
             SetState(FighterState.Attacking);
             AttackStarted?.Invoke(attack);
             if (logStateChanges) Debug.Log($"[{name}] starts {attack.name}");
@@ -1234,6 +1382,8 @@ namespace KungFuCrashout.Fighters
 
         void UpdateAttack(float dt)
         {
+            if (animTiming) { UpdateAnimatedAttack(dt); return; }
+
             var attack = CurrentAttack;
             phaseTimer -= dt;
 
@@ -1245,6 +1395,7 @@ namespace KungFuCrashout.Fighters
                     {
                         Phase = AttackPhase.Active;
                         phaseTimer += attack.active;
+                        if (comboIndex == ThrowIndex) ThrowReleased?.Invoke(); // the item leaves now
                         CheckHits();
                     }
                     break;
@@ -1275,16 +1426,98 @@ namespace KungFuCrashout.Fighters
             }
         }
 
+        // ───────────── Frame-driven attacks (Animation Events) ─────────────
+
+        FighterAnimationEvents animEvents;
+        bool animTiming;       // the current attack's phases come from its clip
+        bool animCancelOpen;   // CancelOpen reached: follow-ups can start now
+        float animSafetyTimer; // ends the attack if the clip's events never arrive
+
+        /// <summary>Clip-driven attack: phases change on Animation Events; lunge and travel still move the fighter.</summary>
+        void UpdateAnimatedAttack(float dt)
+        {
+            var attack = CurrentAttack;
+
+            switch (Phase)
+            {
+                case AttackPhase.Startup:
+                    // Lunge over the AttackData startup time (phaseTimer counts it down), never further.
+                    if (phaseTimer > 0f && attack.startup > 0f)
+                        MoveX(Facing * attack.lunge * Mathf.Min(dt, phaseTimer) / attack.startup);
+                    phaseTimer -= dt;
+                    break;
+
+                case AttackPhase.Active:
+                    if (attack.activeTravel > 0f && phaseTimer > 0f)
+                        MoveX(Facing * attack.activeTravel * Mathf.Min(dt, phaseTimer) / Mathf.Max(0.01f, attack.active));
+                    phaseTimer -= dt;
+                    CheckHits();
+                    if (State != FighterState.Attacking) return; // parried mid-swing
+                    break;
+            }
+
+            animSafetyTimer -= dt;
+            if (animSafetyTimer <= 0f && State == FighterState.Attacking)
+            {
+                if (logStateChanges) Debug.LogWarning($"[{name}] {attack.name}: clip events never ended the attack, ending it now.");
+                CancelAttack();
+                ReturnToNeutral();
+            }
+        }
+
+        void OnAnimHitboxOn()
+        {
+            if (!animTiming || State != FighterState.Attacking || Phase != AttackPhase.Startup) return;
+            Phase = AttackPhase.Active;
+            phaseTimer = CurrentAttack.active; // only paces activeTravel
+            if (comboIndex == ThrowIndex) { ThrowReleased?.Invoke(); return; } // throw clip: this is the release frame
+            CheckHits(); // check on this frame too, so a 1-frame active window can't be skipped
+        }
+
+        void OnAnimHitboxOff()
+        {
+            if (!animTiming || State != FighterState.Attacking || Phase != AttackPhase.Active) return;
+            Phase = AttackPhase.Recovery;
+        }
+
+        void OnAnimCancelOpen()
+        {
+            if (!animTiming || State != FighterState.Attacking) return;
+            animCancelOpen = true;
+            if (Phase == AttackPhase.Active) Phase = AttackPhase.Recovery;
+
+            // Fire anything the player queued up during this attack (same as the end of Active without a clip).
+            if (bufferedHeavy) { StartAttack(heavyAttack, -1); return; }
+            if (bufferedLight && comboIndex >= 0 && comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1])
+                StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
+        }
+
+        void OnAnimAttackEnd()
+        {
+            if (!animTiming || State != FighterState.Attacking) return;
+            CancelAttack();
+            ReturnToNeutral(); // still in the air → Airborne, else Idle
+        }
+
+        /// <summary>The current attack's hitbox in world space: the clip's keyed Hitbox, else the AttackData box.</summary>
+        void GetHitbox(AttackData attack, out Vector2 centre, out Vector2 size)
+        {
+            if (animTiming && fighterAnimator && fighterAnimator.TryGetHitbox(out centre, out size)) return;
+            centre = HitboxCentre(attack, Facing);
+            size = attack.hitboxSize;
+        }
+
         void CheckHits()
         {
             var attack = CurrentAttack;
-            if (!attack) return;
+            if (!attack || comboIndex == ThrowIndex) return; // a throw's "attack" is only timing: the item does the hitting
 
             // Make sure colliders are at this frame's positions before querying.
             Physics2D.SyncTransforms();
 
             overlapResults.Clear();
-            Physics2D.OverlapBox(HitboxCentre(attack, Facing), attack.hitboxSize, 0f, hurtboxFilter, overlapResults);
+            GetHitbox(attack, out Vector2 boxCentre, out Vector2 boxSize);
+            Physics2D.OverlapBox(boxCentre, boxSize, 0f, hurtboxFilter, overlapResults);
 
             foreach (var col in overlapResults)
             {
@@ -1308,6 +1541,9 @@ namespace KungFuCrashout.Fighters
             comboIndex = -1;
             Phase = AttackPhase.None;
             bufferedLight = bufferedHeavy = false;
+            animTiming = false;
+            animCancelOpen = false;
+            if (fighterAnimator) fighterAnimator.Stop(); // back to the sprite poses (e.g. interrupted by a hit)
         }
 
         Vector2 HitboxCentre(AttackData attack, int facing) =>
@@ -1608,8 +1844,13 @@ namespace KungFuCrashout.Fighters
             if (!opponent) return;
 
             float dx = opponent.X - X;
-            if (Mathf.Abs(dx) > 0.01f) Facing = dx > 0f ? 1 : -1;
+            SetFacing(Mathf.Abs(dx) > 0.01f ? (dx > 0f ? 1 : -1) : Facing);
+        }
 
+        /// <summary>Turn the fighter (+1 right / -1 left): sets Facing and flips the whole object, art included.</summary>
+        void SetFacing(int facing)
+        {
+            Facing = facing >= 0 ? 1 : -1;
             var s = transform.localScale;
             s.x = Mathf.Abs(s.x) * Facing;
             transform.localScale = s;
@@ -1669,17 +1910,25 @@ namespace KungFuCrashout.Fighters
         {
             if (!hitboxVisual) return;
 
-            bool show = State == FighterState.Attacking && Phase == AttackPhase.Active && CurrentAttack;
+            bool show = State == FighterState.Attacking && Phase == AttackPhase.Active && CurrentAttack && comboIndex != ThrowIndex;
             hitboxVisual.enabled = show;
             if (!show) return;
 
-            hitboxVisual.transform.position = HitboxCentre(CurrentAttack, Facing);
-            hitboxVisual.transform.localScale = new Vector3(CurrentAttack.hitboxSize.x, CurrentAttack.hitboxSize.y, 1f);
+            GetHitbox(CurrentAttack, out Vector2 boxCentre, out Vector2 boxSize);
+            hitboxVisual.transform.position = boxCentre;
+            hitboxVisual.transform.localScale = new Vector3(boxSize.x, boxSize.y, 1f);
         }
 
         void OnDestroy()
         {
             if (hitboxVisual) Destroy(hitboxVisual.gameObject);
+            if (animEvents)
+            {
+                animEvents.HitboxOnReached -= OnAnimHitboxOn;
+                animEvents.HitboxOffReached -= OnAnimHitboxOff;
+                animEvents.CancelOpened -= OnAnimCancelOpen;
+                animEvents.AttackEnded -= OnAnimAttackEnd;
+            }
         }
 
         /// <summary>Select a fighter in the Scene view to see all its attack ranges.</summary>

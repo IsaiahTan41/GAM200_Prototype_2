@@ -26,6 +26,8 @@ namespace KungFuCrashout.Controls
     ///   Two Finger Hold, or Both.
     ///   SWIPE sideways             = dash
     ///   SWIPE up-left / up-right   = diagonal jump      SWIPE up = vertical jump
+    ///   SWIPE + TAP (other finger) = directional special. Also: holding a finger (charging the heavy) and swiping with
+    ///                                another = the special; a special tap held too long still becomes the special.
     ///
     /// Touches that start in the HUD band at the top are ignored, like TouchInputHandler.
     /// Place in: Assets/_Project/Scripts/Input/TapAnywhereInputHandler.cs
@@ -55,9 +57,9 @@ namespace KungFuCrashout.Controls
         [SerializeField] Fighter fighter;
 
         [Header("Scheme options")]
-        [Tooltip("Swipe: down swipe / double press (Block Gesture). Two Finger Hold: two fingers together and held, anywhere " +
+        [Tooltip("GDD block = Two Finger Hold. Swipe: down swipe / one-finger double press (Block Gesture). Two Finger Hold: two fingers together and held, anywhere " +
                  "(press just before a hit = parry, like the original left-side press). Both: either.")]
-        [SerializeField] BlockInput blockInput = BlockInput.Swipe;
+        [SerializeField] BlockInput blockInput = BlockInput.TwoFingerHold; // the GDD's block: two fingers pressed together
         [Tooltip("Which gesture starts a block (and a parry, if it lands within the parry window).")]
         [SerializeField] BlockGesture blockGesture = BlockGesture.Both;
         [Tooltip("Holding a finger still anywhere does the heavy attack.")]
@@ -86,6 +88,9 @@ namespace KungFuCrashout.Controls
         [Tooltip("After a swipe, the same finger can swipe again once it stops or turns back (multiple dashes in a row " +
                  "without lifting). Off = one swipe per touch.")]
         [SerializeField] bool chainSwipes = true;
+        [Tooltip("A finger that's holding a block must move this many times the Swipe Threshold before it counts as a " +
+                 "swipe (dash / jump) and drops the block, so a thumb drifting slightly doesn't break the hold. 1 = same as any swipe.")]
+        [SerializeField, Range(1f, 6f)] float blockingSwipeMultiplier = 3f;
 
         [Header("Double press")]
         [Tooltip("Max seconds between the first tap's release and the second press.")]
@@ -110,6 +115,16 @@ namespace KungFuCrashout.Controls
         [Tooltip("The tap that made a special may also be the first press of a Double Press block (special, then a quick " +
                  "guard). Off = it never starts a double press.")]
         [SerializeField] bool specialTapCanStartDoublePress = false;
+        [Tooltip("A special tap that's held down instead of lifted (phone taps are often slower than a mouse click) still " +
+                 "becomes the special once it reaches Hold Time, instead of turning into a heavy attack.")]
+        [SerializeField] bool heldTapCommitsSpecial = true;
+        [Tooltip("The special starts the moment the tapping finger touches down (inside the Chord Window / during the " +
+                 "motion), instead of when it lifts, so it takes over from the dash / jump straight away. " +
+                 "Note: a second finger that lands then swipes during a dash also becomes the special.")]
+        [SerializeField] bool specialOnTouchDown = true;
+        [Tooltip("Holding one finger down (charging the heavy, or just pressed) while another finger swipes = that " +
+                 "direction's special right away, whichever finger landed first.")]
+        [SerializeField] bool swipeWhileHoldingSpecial = true;
 
         [Header("Editor / debug")]
         [Tooltip("Lets the mouse act as a finger in the Game view. Turn off if you get double inputs in the Simulator view.")]
@@ -344,6 +359,14 @@ namespace KungFuCrashout.Controls
                 Report("Double press → Block (parry window)");
             }
 
+            // Special On Touch Down: a special tap fires as the finger lands (after the block checks above had their say).
+            if (tt.state == GestureState.Pending && tt.hasSpecial && directionalSpecials && specialOnTouchDown &&
+                TrySpecial(tt.special, tt.specialDir, "Swipe + tap (touch down)"))
+            {
+                tt.state = GestureState.Ignored; // done: lifting it later does nothing
+                if (specialTapCanStartDoublePress) { lastTapTime = Now; lastTapPos = start; }
+            }
+
             return tt;
         }
 
@@ -354,6 +377,7 @@ namespace KungFuCrashout.Controls
 
             Vector2 delta = touch.screenPosition - tt.start;
             float threshold = ShortSide * swipeThreshold;
+            if (tt.state == GestureState.Blocking || tt.state == GestureState.PairBlock) threshold *= blockingSwipeMultiplier;
 
             if (delta.magnitude >= threshold)
             {
@@ -369,6 +393,7 @@ namespace KungFuCrashout.Controls
                     EndPairBlock();
                     tt.state = GestureState.Swiped;
                     HandleSwipe(delta, angle, false, tt);
+                    SpecialFromHeldFinger(tt);
                     return;
                 }
 
@@ -383,7 +408,20 @@ namespace KungFuCrashout.Controls
                 tt.state = GestureState.Swiped;
                 tt.swipeDir = delta.normalized;
                 HandleSwipe(delta, angle, downward, tt);
+                SpecialFromHeldFinger(tt);
                 return;
+            }
+
+            // A special tap held past Hold Time: commit to the special rather than the heavy.
+            if (tt.state == GestureState.Pending && !tt.chained && tt.hasSpecial && directionalSpecials &&
+                heldTapCommitsSpecial && Now - tt.startTime >= holdTime)
+            {
+                if (TrySpecial(tt.special, tt.specialDir, "Swipe + hold"))
+                {
+                    tt.state = GestureState.Ignored; // done: lifting it later does nothing
+                    return;
+                }
+                tt.hasSpecial = false; // couldn't start right now: carry on as a normal hold
             }
 
             // Hold: stayed still long enough.
@@ -445,6 +483,47 @@ namespace KungFuCrashout.Controls
                 RecordSwipe(SpecialMove.Down, 0);
                 Report(directionalSpecials ? "Swipe down → (tap for Down special)" : "Swipe down → (nothing)");
             }
+        }
+
+        /// <summary>
+        /// Swipe While Holding: another finger is already down (holding / charging the heavy, or just pressed) when this
+        /// finger swipes = the special for this swipe's direction, now. Skipped for a down swipe that's holding a block.
+        /// </summary>
+        void SpecialFromHeldFinger(TrackedTouch swiper)
+        {
+            if (!directionalSpecials || !swipeWhileHoldingSpecial || swiper.state == GestureState.Blocking) return;
+            if (lastSwipeTime != Now) return; // this swipe didn't lead into a special
+
+            foreach (var kv in tracked)
+            {
+                var other = kv.Value;
+                if (other == swiper || other.chained) continue;
+                if (other.state != GestureState.Holding && other.state != GestureState.Pending) continue;
+
+                SpecialMove move = lastSwipeMove;
+                int dir = lastSwipeDir;
+                if (TrySpecial(move, dir, other.state == GestureState.Holding ? "Hold + swipe" : "Press + swipe"))
+                    other.state = GestureState.Ignored; // that finger was part of the special: no tap / heavy on release
+                else if (other.state == GestureState.Pending)
+                {
+                    // Not allowed this instant (e.g. the jump hasn't left the ground yet): lifting or holding it makes the special.
+                    other.hasSpecial = true;
+                    other.special = move;
+                    other.specialDir = dir;
+                }
+                return;
+            }
+        }
+
+        /// <summary>Start a special (dropping a latched block first). True if it started.</summary>
+        bool TrySpecial(SpecialMove move, int dir, string how)
+        {
+            ReleaseLatch();
+            if (!commands.Special(move, dir)) return false;
+            tapPending = false;
+            lastSwipeTime = -1; // one special per swipe
+            Report($"{how} → {move} special");
+            return true;
         }
 
         /// <summary>A finger lifted. Anything still Pending was a tap.</summary>

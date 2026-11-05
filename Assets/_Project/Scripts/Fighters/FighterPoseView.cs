@@ -119,6 +119,7 @@ namespace KungFuCrashout.Fighters
             if (!holder) holder = GetComponentInParent<ItemHolder>();
             box = fighter ? fighter.GetComponent<SpriteRenderer>() : null;
             baseScale = transform.localScale;
+            animator = GetComponent<FighterAnimator>();
 
             // Draw in front of the box (the box comes back in front as the block shield).
             if (box)
@@ -176,15 +177,22 @@ namespace KungFuCrashout.Fighters
             squashStart = Time.unscaledTime;
         }
 
+        FighterAnimator animator;
+
+        /// <summary>The art is drawn mirrored this frame (facing the dash, not the opponent). The carry point follows it.</summary>
+        public bool ArtMirrored { get; private set; }
+
         void LateUpdate()
         {
             if (!fighter) return;
 
             var pose = PickPose();
-            if (pose) art.sprite = pose;
+            // While a FighterAnimator clip plays (e.g. Monk_Attack), the Animator owns the sprite.
+            if (pose && !(animator && animator.IsPlaying)) art.sprite = pose;
             // The fighter is already turned toward the opponent (root scale = Facing). If the dash goes the other way, mirror the art.
             bool againstDash = dashFacesMovement && fighter.DashDirection != 0 && fighter.DashDirection != fighter.Facing;
             art.flipX = artFacesLeft ^ againstDash;
+            ArtMirrored = againstDash;
 
             // Colour: hit flash, invincibility flicker.
             Color c = Time.unscaledTime < flashUntil ? hitFlashColour : Color.white;
@@ -245,6 +253,9 @@ namespace KungFuCrashout.Fighters
                     return First(hitstun, idle);
 
                 case FighterState.Attacking:
+                    // Item throw without a clip: hold the item while winding up, throw pose from the release on.
+                    if (fighter.IsThrowing)
+                        return fighter.Phase == AttackPhase.Startup ? First(carry, windUp, idle) : First(throwPose, attack, idle);
                     var cur = fighter.CurrentAttack;
                     bool heavy = cur && cur == fighter.HeavyAttackData;
                     Sprite hit = heavy ? First(heavyAttack, attack) : attack;
