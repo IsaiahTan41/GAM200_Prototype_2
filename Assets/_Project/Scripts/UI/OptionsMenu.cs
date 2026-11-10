@@ -199,6 +199,7 @@ namespace KungFuCrashout.UI
         {
             foreach (var b in FindObjectsByType<TouchInputHandler>(FindObjectsSortMode.None)) yield return b;
             foreach (var b in FindObjectsByType<TapAnywhereInputHandler>(FindObjectsSortMode.None)) yield return b;
+            foreach (var b in FindObjectsByType<GestureArbiterInput>(FindObjectsSortMode.None)) yield return b;
             foreach (var b in FindObjectsByType<ItemTapHandler>(FindObjectsSortMode.None)) yield return b;
         }
 

@@ -3340,6 +3340,7 @@ GameObject:
   - component: {fileID: 812902266}
   - component: {fileID: 812902267}
   - component: {fileID: 812902268}
+  - component: {fileID: 812902269}
   m_Layer: 0
   m_Name: PlayerInput
   m_TagString: Untagged
@@ -3354,7 +3355,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 812902263}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41e3d430b0bc68847a0a923bb3e545ec, type: 3}
   m_Name: 
@@ -3390,7 +3391,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 812902263}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d99b745598776024290e477726e19d92, type: 3}
   m_Name: 
@@ -3469,6 +3470,41 @@ MonoBehaviour:
   fighter: {fileID: 1960580398}
   workInDevelopmentBuilds: 1
   itemKeys: {fileID: 0}
+--- !u!114 &812902269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 812902263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 829827ce0df04a84085493e6f3e75874, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Controls.GestureArbiterInput
+  fighter: {fileID: 1960580398}
+  settings:
+    arbitrationWait: 0.07
+    twoFingerBlock: 1
+    pairWindow: 0.16
+    blockDriftMultiplier: 3
+    swipeMinMm: 4
+    swipeMinSpeed: 50
+    swipeSureMm: 10
+    diagonalMinAngle: 25
+    verticalMinAngle: 65
+    chainSwipes: 1
+    holdForHeavy: 1
+    holdTime: 0.3
+    directionalSpecials: 1
+    chordWindow: 0.2
+    tapDuringMotion: 0
+    inputZoneTop: 0.85
+    fallbackDpi: 160
+  simulateTouchInEditor: 1
+  showOverlay: 1
+  logGestures: 0
+  recordTouches: 0
 --- !u!1001 &881966602
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9270,7 +9306,7 @@ SpriteRenderer:
   m_SortingLayer: -1
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 07fc23d84c96d8449a83f440ad9b8af7, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 96152328e978fb9449ea49b42cb07acd, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
