@@ -27,8 +27,11 @@ namespace KungFuCrashout.Props
     /// TouchInputHandler / TapAnywhereInputHandler ignore it: no attack, block, dash or jump fires.
     /// A tap on an item that's out of range is NOT claimed and works as a normal tap.
     ///
-    /// Editor: F = pick up the nearest item in range / drop it.
-    ///         G = throw forward (hold W or ↑ while pressing G to throw up-forward at 45°).
+    /// Keyboard (editor, and development builds if Keys In Development Builds is on):
+    ///   F = pick up the nearest item in range / drop it.
+    ///   G = throw: HOLD G, press the direction keys to aim, RELEASE G to throw. W/↑ up, S/↓ down, A/← left,
+    ///       D/→ right, two keys together = diagonal (8 directions). No direction held = forward.
+    ///       While G is held, KeyboardDebugInput doesn't dash / jump, so aiming doesn't move the fighter.
     ///
     /// Setup: put on the PlayerInput object. Holder = the Player's ItemHolder.
     /// Item Layers = the "Environment" layer.
@@ -79,11 +82,18 @@ namespace KungFuCrashout.Props
         [Tooltip("Lifting a finger from the carried item without swiping drops it. Turn off if that happens by accident.")]
         [SerializeField] bool tapCarriedItemToDrop = true;
 
-        [Header("Editor")]
+        [Header("Keyboard (testing)")]
         [Tooltip("Picks up the nearest item in range, or drops the carried one. None = off.")]
         [SerializeField] Key pickUpKey = Key.F;
-        [Tooltip("Throws the carried item forward (hold W / ↑ to throw up-forward). None = off.")]
+        [Tooltip("Hold to aim with the direction keys (W/A/S/D or arrows, two = diagonal), release to throw. " +
+                 "No direction held = forward. None = off.")]
         [SerializeField] Key throwKey = Key.G;
+        [Tooltip("Also use these keys in Development Builds (e.g. a Windows test build). Off = editor only. " +
+                 "Release builds never read them.")]
+        [SerializeField] bool keysInDevelopmentBuilds = true;
+
+        /// <summary>The throw key, so KeyboardDebugInput can stop moving while it's held (aiming).</summary>
+        public Key ThrowKey => throwKey;
 
         readonly List<Collider2D> hits = new List<Collider2D>();
 
@@ -322,17 +332,19 @@ namespace KungFuCrashout.Props
 
         void KeyboardControls()
         {
-            if (!Application.isEditor) return;
+            if (!Application.isEditor && !(keysInDevelopmentBuilds && Debug.isDebugBuild)) return;
             var kb = Keyboard.current;
             if (kb == null) return;
 
             if (pickUpKey != Key.None && kb[pickUpKey].wasPressedThisFrame) KeyboardPickUpOrDrop();
 
-            if (throwKey != Key.None && kb[throwKey].wasPressedThisFrame && holder.IsCarrying)
+            // Hold G, aim with the direction keys, release G to throw (8 directions; none = forward).
+            if (throwKey != Key.None && kb[throwKey].wasReleasedThisFrame && holder.IsCarrying)
             {
-                int facing = holder.Fighter.Facing;
-                bool up = kb.wKey.isPressed || kb.upArrowKey.isPressed;
-                holder.Throw(up ? new Vector2(facing, 1f) : new Vector2(facing, 0f));
+                int x = (kb.dKey.isPressed || kb.rightArrowKey.isPressed ? 1 : 0) - (kb.aKey.isPressed || kb.leftArrowKey.isPressed ? 1 : 0);
+                int y = (kb.wKey.isPressed || kb.upArrowKey.isPressed ? 1 : 0) - (kb.sKey.isPressed || kb.downArrowKey.isPressed ? 1 : 0);
+                Vector2 dir = x == 0 && y == 0 ? new Vector2(holder.Fighter.Facing, 0f) : new Vector2(x, y);
+                holder.Throw(dir);
             }
         }
 

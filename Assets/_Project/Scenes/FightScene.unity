@@ -3400,7 +3400,7 @@ MonoBehaviour:
   blockGesture: 1
   holdForHeavy: 1
   latchDownSwipeBlock: 1
-  twoFingerWindow: 0.12
+  twoFingerWindow: 0.16
   swipeThreshold: 0.05
   holdTime: 0.3
   inputZoneTop: 0.85
@@ -3414,12 +3414,12 @@ MonoBehaviour:
   waitForDoublePress: 0
   directionalSpecials: 1
   chordWindow: 0.25
-  tapDuringMotion: 1
+  tapDuringMotion: 0
   jumpSpecialUntilApex: 1
   specialTapCanStartDoublePress: 0
   heldTapCommitsSpecial: 1
   specialOnTouchDown: 1
-  swipeWhileHoldingSpecial: 1
+  swipeWhileHoldingSpecial: 0
   simulateTouchInEditor: 1
   showDebugOverlay: 0
 --- !u!114 &812902267
@@ -3453,6 +3453,7 @@ MonoBehaviour:
   tapCarriedItemToDrop: 1
   pickUpKey: 20
   throwKey: 21
+  keysInDevelopmentBuilds: 1
 --- !u!114 &812902268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3466,6 +3467,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Controls.KeyboardDebugInput
   fighter: {fileID: 1960580398}
+  workInDevelopmentBuilds: 1
+  itemKeys: {fileID: 0}
 --- !u!1001 &881966602
 PrefabInstance:
   m_ObjectHideFlags: 0
