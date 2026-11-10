@@ -429,6 +429,12 @@ namespace KungFuCrashout.Fighters
         /// <summary>While locked, every command is ignored (round intro, KO, match over).</summary>
         public bool ControlsLocked { get; private set; }
 
+        /// <summary>
+        /// Rooted: no walk, dash or jump (attacks, blocks and throws still work). Set by ItemHolder while holding an item
+        /// with Can Move While Held off.
+        /// </summary>
+        public bool MovementRooted { get; set; }
+
         /// <summary>True from take-off until landing, whatever else the fighter is doing (attacking, hitstun…).</summary>
         public bool IsAirborne { get; private set; }
         /// <summary>Current air velocity (world units per second). Zero on the ground.</summary>
@@ -573,7 +579,7 @@ namespace KungFuCrashout.Fighters
 
         public void Dash(int direction)
         {
-            if (direction == 0) return;
+            if (direction == 0 || MovementRooted) return;
             hasPendingSpecial = false; // a newer input replaces a buffered special
             if (!TryDash(direction)) BufferMove(MoveKind.Dash, new Vector2(direction, 0f));
         }
@@ -851,6 +857,7 @@ namespace KungFuCrashout.Fighters
         /// <summary>Swipe up: jump along the set vertical vector (its x is flipped to the facing side).</summary>
         public void JumpUp()
         {
+            if (MovementRooted) return;
             var v = verticalJumpVector.sqrMagnitude > 0.0001f ? verticalJumpVector.normalized : Vector2.up;
             StartJump(new Vector2(v.x * Facing, Mathf.Abs(v.y)));
         }
@@ -858,7 +865,7 @@ namespace KungFuCrashout.Fighters
         /// <summary>Diagonal swipe: jump along the swipe's own direction (world space), angle kept in range.</summary>
         public void JumpToward(Vector2 direction)
         {
-            if (direction.sqrMagnitude < 0.0001f) return;
+            if (direction.sqrMagnitude < 0.0001f || MovementRooted) return;
 
             float side = direction.x >= 0f ? 1f : -1f;
             float angle = Mathf.Atan2(Mathf.Max(direction.y, 0f), Mathf.Abs(direction.x)) * Mathf.Rad2Deg;

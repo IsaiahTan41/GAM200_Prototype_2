@@ -10,7 +10,8 @@ namespace KungFuCrashout.Props
     ///
     ///   • Pick up: only when the item is on the stage and within Pick Up Range (horizontal distance),
     ///     and the fighter is free (idle, blocking, dashing or airborne — not attacking, in hitstun or KO'd).
-    ///   • While carrying: you keep dashing, jumping and attacking; the item hovers in front.
+    ///   • While carrying: you keep dashing, jumping and attacking; the item hovers in front. An item with Can Move While
+    ///     Held OFF roots you instead (no walk, dash or jump) until it's thrown or dropped.
     ///   • Throw: launches the item along a direction (from the swipe), unless the fighter is stunned,
     ///     KO'd or the round isn't live.
     ///   • Getting hit drops the item (optional); being KO'd always drops it.
@@ -114,6 +115,7 @@ namespace KungFuCrashout.Props
             fighter.ThrowReleased -= OnThrowReleased;
             windingUp = false;
             Drop();
+            UpdateRoot();
         }
 
         /// <summary>True if this fighter could pick the item up right now.</summary>
@@ -132,6 +134,7 @@ namespace KungFuCrashout.Props
             if (!CanPickUp(item) || !item.PickUp(fighter)) return false;
 
             Held = item;
+            UpdateRoot();
             PickedUp?.Invoke(item);
             Debug.Log($"[{name}] picked up {item.name}");
             return true;
@@ -143,6 +146,7 @@ namespace KungFuCrashout.Props
             if (!item || IsCarrying || fighter.State == FighterState.KO || !item.Catch(fighter)) return false;
 
             Held = item;
+            UpdateRoot();
             PickedUp?.Invoke(item);
             Caught?.Invoke(item);
             return true;
@@ -154,6 +158,7 @@ namespace KungFuCrashout.Props
 
             var item = Held;
             Held = null;
+            UpdateRoot();
             item.Drop();
             Dropped?.Invoke(item);
             Debug.Log($"[{name}] dropped {item.name}");
@@ -197,9 +202,22 @@ namespace KungFuCrashout.Props
             if (!item || !item.Throw(direction, fighter)) return false;
 
             Held = null;
+            UpdateRoot();
             Threw?.Invoke(item, direction.normalized);
             Debug.Log($"[{name}] threw {item.name} toward {direction.normalized}");
             return true;
+        }
+
+        /// <summary>Holding an item with Can Move While Held OFF roots the fighter.</summary>
+        void UpdateRoot()
+        {
+            if (fighter) fighter.MovementRooted = Held && !Held.CanMoveWhileHeld;
+        }
+
+        void LateUpdate()
+        {
+            // The item can vanish while held (lifetime, broken): never leave the fighter rooted.
+            if (!Held && fighter && fighter.MovementRooted) UpdateRoot();
         }
 
         void OnGotHit(Fighter attacker, AttackData attack)

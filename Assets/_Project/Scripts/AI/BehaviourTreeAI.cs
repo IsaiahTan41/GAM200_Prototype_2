@@ -394,7 +394,8 @@ namespace KungFuCrashout.AI
             if (!holder || !holder.CanThrow) return false;
             var o = Opp;
             float d = Dist;
-            if (d < minThrowDistance || d > p.throwRange) return false;
+            // Rooted by a heavy item: it can't walk into range, so it throws from wherever it stands.
+            if (d < minThrowDistance || (d > p.throwRange && !self.MovementRooted)) return false;
             if (o.IsInvulnerable) return false;
             // A blocked item breaks: Hard waits for the player to drop their guard.
             if (tier == Difficulty.Hard && o.State == FighterState.Blocking) return false;
@@ -795,7 +796,7 @@ namespace KungFuCrashout.AI
                 return NodeStatus.Running;
 
             if (self.State == FighterState.Blocking && !self.InBlockstun) ReleaseBlock();
-            if (self.State == FighterState.Idle)
+            if (self.State == FighterState.Idle && !self.MovementRooted) // rooted by a heavy item: can't walk
                 self.MoveX(dir * Mathf.Min(p.walkSpeed * Time.deltaTime, gap));
             return NodeStatus.Running;
         }

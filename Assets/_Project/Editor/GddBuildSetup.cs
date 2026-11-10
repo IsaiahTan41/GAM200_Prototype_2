@@ -476,9 +476,9 @@ namespace KungFuCrashout.EditorTools
             var dirSo = new SerializedObject(director);
             GddUi.Set(dirSo, "stage", stage);
             GddUi.SetArray(dirSo, "fighters", new Object[] { player, opponent });
-            if (plate && chair && pot)
+            var placements = dirSo.FindProperty("stageItems");
+            if (plate && chair && pot && placements != null && placements.arraySize == 0) // keep a list you've set up
             {
-                var placements = dirSo.FindProperty("roundStartItems");
                 var set = new (Carryable prefab, float x)[] { (plate, 0.14f), (chair, 0.42f), (pot, 0.58f), (plate, 0.86f) };
                 placements.arraySize = set.Length;
                 for (int i = 0; i < set.Length; i++)
@@ -487,10 +487,10 @@ namespace KungFuCrashout.EditorTools
                     e.FindPropertyRelative("prefab").objectReferenceValue = set[i].prefab;
                     e.FindPropertyRelative("stageX").floatValue = set[i].x;
                 }
-                GddUi.SetArray(dirSo, "dropPool", new Object[] { plate, plate, chair, pot });
             }
             dirSo.ApplyModifiedPropertiesWithoutUndo();
-            log.Add("StageItemDirector: 2 plates, a chair and a pot every round; heavy-hit shockwave drops; always ≥ 1 item");
+            log.Add("StageItemDirector: Stage Items laid out asleep each round, woken by hit shockwaves (element index = " +
+                    "wake order); a random one drops in whenever the stage is empty");
 
             // ── Match ──
             var matchGo = FindOrCreate("Match");

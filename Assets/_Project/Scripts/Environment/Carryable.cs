@@ -23,6 +23,11 @@ namespace KungFuCrashout.Props
     ///               and pushback if blocked from the front, or nothing if parried. The check is swept
     ///               along the whole frame's movement, so a fast item can't skip through a fighter.
     ///               The item then pops up a little and falls. (Parry-catch comes next.)
+    ///   Sleeping  — (Dormant) placed by the StageItemDirector at its stage spot: visible (dimmed) but can't be grabbed,
+    ///               and its Lifetime hasn't started. A hit shockwave nearby wakes it: it's knocked loose, falls to the
+    ///               floor and becomes a normal item.
+    /// Two sprites: Ground Sprite on the stage (and while sleeping / falling), Held Sprite while carried and in flight.
+    /// Can Move While Held OFF roots the carrier (no walk, dash or jump) until it's thrown or dropped.
     /// Moves by transform like the fighters (no Rigidbody2D).
     ///
     /// Setup: a Square sprite on the "Environment" layer with a BoxCollider2D (used for tapping it).
@@ -32,9 +37,27 @@ namespace KungFuCrashout.Props
     [RequireComponent(typeof(SpriteRenderer), typeof(Collider2D))]
     public class Carryable : MonoBehaviour
     {
-        public enum ItemState { OnStage, Carried, Thrown, Falling }
+        public enum ItemState { OnStage, Carried, Thrown, Falling, Dormant }
 
         [SerializeField] StageBounds stage;
+
+        [Header("Sprites")]
+        [Tooltip("Shown on the ground (and while sleeping or falling). Empty = the SpriteRenderer's sprite.")]
+        [SerializeField] Sprite groundSprite;
+        [Tooltip("Shown while a fighter holds it and while it flies after a throw. Empty = the Ground Sprite.")]
+        [SerializeField] Sprite heldSprite;
+
+        [Header("Holding")]
+        [Tooltip("ON: the carrier can walk, dash and jump while holding this. OFF: the carrier is rooted (no walk, dash or " +
+                 "jump) until it's thrown or dropped. Attacks, blocks and the throw still work.")]
+        [SerializeField] bool canMoveWhileHeld = true;
+
+        [Header("Sleeping (stage items before a shockwave wakes them)")]
+        [Tooltip("Darken the item while it's asleep, so it reads as \"not grabbable yet\".")]
+        [SerializeField] bool dimWhileDormant = true;
+        [SerializeField, Range(0.2f, 1f)] float dormantBrightness = 0.65f;
+        [Tooltip("Upward speed it's knocked loose with when a shockwave wakes it (world units per second).")]
+        [SerializeField, Min(0f)] float wakePopSpeed = 3f;
 
         [Header("Carry pose")]
         [Tooltip("How far from the carrier's centre the item hovers (world units).")]
@@ -93,7 +116,21 @@ namespace KungFuCrashout.Props
                  "couldn't catch it (hands full / catching off). Off = it bounces off and stays in play.")]
         [SerializeField] bool breakOnShield = true;
 
-        public ItemState State { get; private set; } = ItemState.OnStage;
+        public ItemState State
+        {
+            get => state;
+            private set { state = value; ApplyLook(); }
+        }
+        ItemState state = ItemState.OnStage;
+
+        /// <summary>Carrier can walk / dash / jump while holding it (off = rooted).</summary>
+        public bool CanMoveWhileHeld => canMoveWhileHeld;
+        /// <summary>Asleep at its stage spot: visible, not grabbable, waiting for a shockwave.</summary>
+        public bool IsDormant => State == ItemState.Dormant;
+        /// <summary>The sprite it shows on the ground (prefabs too: used for the drop-in stand-in).</summary>
+        public Sprite GroundSprite => groundSprite ? groundSprite : GetComponent<SpriteRenderer>().sprite;
+        /// <summary>A shockwave woke it (it's now falling to the floor).</summary>
+        public event Action Woken;
         /// <summary>How many times it has been picked up or caught.</summary>
         public int TimesHeld { get; private set; }
         /// <summary>Seconds until the lifetime runs out (infinity when Lifetime = 0).</summary>
@@ -133,9 +170,15 @@ namespace KungFuCrashout.Props
         bool hitShield;         // set for the frame it hits a block or parry
         readonly HashSet<Fighter> ignoredThisFlight = new HashSet<Fighter>(); // e.g. already KO'd
 
+        Color baseColour;
+
         void Awake()
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
+            if (!groundSprite) groundSprite = spriteRenderer.sprite;
+            if (!heldSprite) heldSprite = groundSprite;
+            baseColour = spriteRenderer.color;
+            ApplyLook(); // ground sprite before measuring, so it rests on the floor by its ground art
             restSortingOrder = spriteRenderer.sortingOrder;
             halfWidth = spriteRenderer.bounds.extents.x;
 
@@ -154,6 +197,42 @@ namespace KungFuCrashout.Props
         }
 
         void Start() => bornTime = Time.time;
+
+        /// <summary>Ground sprite on the stage / asleep / falling, held sprite while carried or flying; dimmed asleep.</summary>
+        void ApplyLook()
+        {
+            if (!spriteRenderer) return;
+            bool inHand = state == ItemState.Carried || state == ItemState.Thrown;
+            var sprite = inHand ? heldSprite : groundSprite;
+            if (sprite && spriteRenderer.sprite != sprite) spriteRenderer.sprite = sprite;
+
+            var c = baseColour;
+            if (state == ItemState.Dormant && dimWhileDormant)
+                c = new Color(c.r * dormantBrightness, c.g * dormantBrightness, c.b * dormantBrightness, c.a);
+            spriteRenderer.color = c;
+        }
+
+        // ───────────── Called by StageItemDirector ─────────────
+
+        /// <summary>Put it to sleep where it stands (visible, not grabbable, lifetime paused).</summary>
+        public void MakeDormant()
+        {
+            if (State == ItemState.Carried || State == ItemState.Thrown) return;
+            fallSpeed = 0f;
+            transform.rotation = Quaternion.identity;
+            State = ItemState.Dormant;
+        }
+
+        /// <summary>A shockwave reached it: knocked loose, it falls to the floor and becomes a normal item.</summary>
+        public bool Wake()
+        {
+            if (State != ItemState.Dormant) return false;
+            bornTime = Time.time; // Lifetime starts now
+            fallSpeed = -wakePopSpeed; // negative = up; Fall() adds gravity
+            State = ItemState.Falling;
+            Woken?.Invoke();
+            return true;
+        }
 
         void LateUpdate()
         {
@@ -332,6 +411,7 @@ namespace KungFuCrashout.Props
         /// <summary>Lifetime over or last throw finished: remove the item. True if it's being destroyed.</summary>
         bool CheckExpired()
         {
+            if (State == ItemState.Dormant) return false; // asleep: lifetime hasn't started
             bool timeUp = lifetime > 0f && Time.time - bornTime >= lifetime;
             bool finished = destroyWhenLanded && State != ItemState.Carried;
             if (!timeUp && !finished) return false;
