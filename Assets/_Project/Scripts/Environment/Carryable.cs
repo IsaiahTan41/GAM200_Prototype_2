@@ -497,6 +497,33 @@ namespace KungFuCrashout.Props
             transform.position = p;
         }
 
+#if UNITY_EDITOR
+        // Editor preview: the SpriteRenderer shows the Ground Sprite (and the tap collider fits it) as soon as one is
+        // assigned, instead of only once the game runs. Done a moment later: changing a sprite inside OnValidate warns.
+        void OnValidate()
+        {
+            if (Application.isPlaying || !groundSprite) return;
+            UnityEditor.EditorApplication.delayCall += SyncEditorPreview;
+        }
+
+        void SyncEditorPreview()
+        {
+            if (!this || !groundSprite) return;
+            var sr = GetComponent<SpriteRenderer>();
+            if (!sr || sr.sprite == groundSprite) return;
+            UnityEditor.Undo.RecordObject(sr, "Item Ground Sprite");
+            sr.sprite = groundSprite;
+            UnityEditor.EditorUtility.SetDirty(sr);
+            if (TryGetComponent(out BoxCollider2D box))
+            {
+                UnityEditor.Undo.RecordObject(box, "Item Ground Sprite");
+                box.size = groundSprite.bounds.size;
+                box.offset = groundSprite.bounds.center;
+                UnityEditor.EditorUtility.SetDirty(box);
+            }
+        }
+#endif
+
         void OnDrawGizmosSelected()
         {
             // Preview the carry spot for a right-facing carrier standing at the item's position.

@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -1.59, y: 0, z: 0}
-  m_LocalScale: {x: 0.375, y: 0.375, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -133,13 +133,13 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.62, y: 0.4}
+    oldSize: {x: 0.59309113, y: 0.38263944}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.62, y: 0.4}
+  m_Size: {x: 0.59309113, y: 0.38263944}
   m_EdgeRadius: 0
 --- !u!114 &7954971514586149280
 MonoBehaviour:
@@ -198,6 +198,9 @@ MonoBehaviour:
   pulseSpeed: 2.5
   pulseMin: 0.35
   silhouetteMaterial: {fileID: 2100000, guid: 638f19287ac4c794eabc059c06ecf4eb, type: 2}
+  throwableOutline: 1
+  throwableColour: {r: 0.2, g: 0.9, b: 0.3, a: 0.9}
+  whileHeld: 1
 --- !u!114 &7842097167064324824
 MonoBehaviour:
   m_ObjectHideFlags: 0

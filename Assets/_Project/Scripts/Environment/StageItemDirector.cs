@@ -24,8 +24,18 @@ namespace KungFuCrashout.Props
     ///     Items) for Empty Delay seconds, a random item from Stage Items drops in anywhere within the stage bounds,
     ///     with a shadow marking where it lands.
     /// Prototype 3's fixed round-start layout and heavy-hit sky drops are replaced by these rules.
-    /// Item spots: drag an empty Transform into Spot, or use Stage X (0 = left wall, 1 = right wall) + Height above
-    /// the floor. Select this object to see every spot, its index and its wake radius in the Scene view.
+    /// Use Placed Items (ON): the items you place as children of this object ARE the stage items — what you see in the
+    /// Scene view is what happens in game. Drop any item prefab (anything with a Carryable) under it, put it where it
+    /// should sleep (floor, table, shelf) and it's in; delete it and it's out. The element index is the order in the
+    /// Hierarchy (top = #0), so drag them up and down to change the wake order. When the scene starts they're hidden and
+    /// used as templates: every round a fresh copy sleeps at each one's exact spot. The empty-stage drop picks from them.
+    /// Optional per item: a StageItemSettings component next to it overrides the wake radius.
+    /// Use Placed Items (OFF): the Stage Items list below instead — drag an empty Transform into Spot, or use Stage X
+    /// (0 = left wall, 1 = right wall) + Height above the floor.
+    /// Select this object to see every spot, its index and its wake radius in the Scene view.
+    /// Original Item Behaviour (testing): the director stands aside and items work as they did before — any item you
+    /// place anywhere in the scene is awake and can be picked up and thrown straight away, nothing sleeps, nothing is
+    /// cleared or respawned between rounds, nothing drops in.
     ///
     /// Setup: Window → KungFu Crashout → GDD Build → Upgrade Fight Scene. Place in: Assets/_Project/Scripts/Environment/StageItemDirector.cs
     /// </summary>
@@ -51,7 +61,16 @@ namespace KungFuCrashout.Props
         [Tooltip("Fighters whose hits make shockwaves. Empty = every Fighter in the scene.")]
         [SerializeField] Fighter[] fighters = new Fighter[0];
 
+        [Header("Testing")]
+        [Tooltip("ON: items work as they did originally, for testing. Place any item in the scene and it's live from the " +
+                 "start (pick up, throw). No sleeping, no shockwave waking, no clearing / re-laying between rounds, no " +
+                 "drop-ins. OFF: the stage-item rules below.")]
+        [SerializeField] bool originalItemBehaviour = false;
+
         [Header("Stage items (element index = wake order / priority)")]
+        [Tooltip("ON: the items placed as children of this object are the stage items (Hierarchy order = index). " +
+                 "OFF: the Stage Items list below.")]
+        [SerializeField] bool usePlacedItems = true;
         [FormerlySerializedAs("roundStartItems")]
         [SerializeField] List<StageItem> stageItems = new List<StageItem>();
         [Tooltip("Remove every item (including ones placed in the scene by hand) when a round starts.")]
@@ -104,7 +123,22 @@ namespace KungFuCrashout.Props
         public event Action<int, Carryable> ItemWoken;
 
         public WakeOrder Order { get => wakeOrder; set => wakeOrder = value; }
+        /// <summary>Testing: items work as originally placed (no sleeping, clearing or drop-ins).</summary>
+        public bool OriginalItemBehaviour => originalItemBehaviour;
 
+        /// <summary>One stage item for this scene: where it sleeps, what it's copied from, how close a hit must be.</summary>
+        struct Entry
+        {
+            public Carryable source;   // a prefab, or a hidden placed item (template)
+            public bool placed;        // source is a scene object: copies start inactive and keep its parent / scale
+            public Vector3 position;
+            public Quaternion rotation;
+            public float radius;
+            public string label;
+        }
+
+        readonly List<Entry> entries = new List<Entry>();
+        bool entriesBuilt;
         Carryable[] sleepers = new Carryable[0];
         int nextIndex;
         int pendingDrops;
@@ -117,6 +151,66 @@ namespace KungFuCrashout.Props
         {
             if (!stage) stage = FindFirstObjectByType<StageBounds>();
             if (fighters == null || fighters.Length == 0) fighters = FindObjectsByType<Fighter>(FindObjectsSortMode.None);
+            BuildEntries();
+        }
+
+        /// <summary>
+        /// Read the stage items once, when the scene starts. Placed items are hidden and kept as templates (so they
+        /// never count as items in play themselves).
+        /// </summary>
+        void BuildEntries()
+        {
+            if (originalItemBehaviour) return; // testing: placed items stay live where they are
+            if (entriesBuilt) return;
+            entriesBuilt = true;
+            entries.Clear();
+
+            if (usePlacedItems)
+            {
+                foreach (var item in PlacedItems())
+                {
+                    var t = item.transform;
+                    entries.Add(new Entry
+                    {
+                        source = item, placed = true, position = t.position, rotation = t.rotation,
+                        radius = RadiusFor(item), label = item.name,
+                    });
+                    item.gameObject.SetActive(false); // template: hidden, copied every round
+                }
+                if (entries.Count == 0)
+                    Debug.LogWarning("[Stage Items] Use Placed Items is on but nothing is placed under " +
+                                     $"'{name}'. Drop item prefabs under it (or untick it to use the list).", this);
+                return;
+            }
+
+            foreach (var e in stageItems)
+            {
+                if (e == null || !e.prefab || !stage) { entries.Add(default); continue; } // keep indices lined up
+                entries.Add(new Entry
+                {
+                    source = e.prefab, placed = false, position = SpotOf(e, e.prefab), rotation = Quaternion.identity,
+                    radius = e.wakeRadius > 0f ? e.wakeRadius : shockwaveRadius, label = e.prefab.name,
+                });
+            }
+        }
+
+        /// <summary>Items placed under this object, in Hierarchy order (top first), including inactive ones.</summary>
+        List<Carryable> PlacedItems()
+        {
+            var list = new List<Carryable>();
+            foreach (var c in GetComponentsInChildren<Carryable>(true))
+            {
+                // Only the outermost item: an item nested inside another item's hierarchy isn't its own entry.
+                var parentItem = c.transform.parent ? c.transform.parent.GetComponentInParent<Carryable>(true) : null;
+                if (!parentItem) list.Add(c);
+            }
+            return list;
+        }
+
+        float RadiusFor(Carryable item)
+        {
+            var settings = item.GetComponent<StageItemSettings>();
+            return settings && settings.WakeRadius > 0f ? settings.WakeRadius : shockwaveRadius;
         }
 
         void OnEnable()
@@ -137,7 +231,7 @@ namespace KungFuCrashout.Props
 
         void Update()
         {
-            if (!spawnWhenEmpty || Time.time < nextCheck) return;
+            if (originalItemBehaviour || !spawnWhenEmpty || Time.time < nextCheck) return;
             nextCheck = Time.time + 0.25f;
 
             int inPlay = CountItemsInPlay() + pendingDrops;
@@ -155,6 +249,7 @@ namespace KungFuCrashout.Props
         public void ResetForRound()
         {
             StopAllCoroutines();
+            if (originalItemBehaviour) return; // testing: leave the scene's items exactly as they are
             foreach (var p in dropProxies) if (p) Destroy(p);
             dropProxies.Clear();
             pendingDrops = 0;
@@ -168,13 +263,14 @@ namespace KungFuCrashout.Props
                 foreach (var item in FindObjectsByType<Carryable>(FindObjectsSortMode.None)) Destroy(item.gameObject);
             }
 
-            sleepers = new Carryable[stageItems.Count];
-            for (int i = 0; i < stageItems.Count; i++)
+            BuildEntries();
+            sleepers = new Carryable[entries.Count];
+            for (int i = 0; i < entries.Count; i++)
             {
-                var entry = stageItems[i];
-                if (entry == null || !entry.prefab || !stage) continue;
-                var item = Spawn(entry.prefab, SpotOf(entry, entry.prefab));
-                item.name = $"{entry.prefab.name} #{i}";
+                var e = entries[i];
+                if (!e.source) continue;
+                var item = SpawnEntry(e, e.position);
+                item.name = $"{e.label} #{i}";
                 item.MakeDormant();
                 sleepers[i] = item;
             }
@@ -184,7 +280,7 @@ namespace KungFuCrashout.Props
 
         void OnHitConnected(Fighter target, AttackData attack, HitResult result)
         {
-            if (!hitShockwaves || !target) return;
+            if (originalItemBehaviour || !hitShockwaves || !target) return;
             if (attack is ThrowableData && !itemHitsCount) return;
             bool counts = result == HitResult.Hit || (result == HitResult.Blocked && blockedHitsCount);
             if (!counts || Time.time < nextShockwave) return;
@@ -232,24 +328,18 @@ namespace KungFuCrashout.Props
                    (b && Vector2.Distance(p, b.transform.position) <= r);
         }
 
-        float RadiusOf(int i) =>
-            i < stageItems.Count && stageItems[i] != null && stageItems[i].wakeRadius > 0f ? stageItems[i].wakeRadius : shockwaveRadius;
+        float RadiusOf(int i) => i < entries.Count && entries[i].radius > 0f ? entries[i].radius : shockwaveRadius;
 
         // ───────────── Empty stage ─────────────
 
         /// <summary>Drop a random Stage Items prefab in anywhere within the stage bounds.</summary>
         public void DropRandom()
         {
-            var prefab = PickRandomPrefab();
-            if (!prefab || !stage) return;
-            StartCoroutine(DropIn(prefab, PickLandingX()));
-        }
-
-        Carryable PickRandomPrefab()
-        {
-            var pool = new List<Carryable>();
-            foreach (var e in stageItems) if (e != null && e.prefab) pool.Add(e.prefab);
-            return pool.Count > 0 ? pool[Random.Range(0, pool.Count)] : null;
+            BuildEntries();
+            var pool = new List<Entry>();
+            foreach (var e in entries) if (e.source) pool.Add(e);
+            if (pool.Count == 0 || !stage) return;
+            StartCoroutine(DropIn(pool[Random.Range(0, pool.Count)], PickLandingX()));
         }
 
         float PickLandingX()
@@ -287,28 +377,42 @@ namespace KungFuCrashout.Props
             return new Vector3(x, stage.GroundY + HalfHeight(prefab) + e.height, 0f);
         }
 
-        static float HalfHeight(Carryable prefab)
+        static float HalfHeight(Carryable source)
         {
-            var sprite = prefab.GroundSprite;
-            return sprite ? sprite.bounds.extents.y * Mathf.Abs(prefab.transform.localScale.y) : 0.25f;
+            var sprite = source.GroundSprite;
+            return sprite ? sprite.bounds.extents.y * Mathf.Abs(source.transform.lossyScale.y) : 0.25f;
         }
 
-        Carryable Spawn(Carryable prefab, Vector3 position)
+        /// <summary>A live copy of an entry at a position. Placed items are copied under their own parent (same scale).</summary>
+        Carryable SpawnEntry(Entry e, Vector3 position)
         {
-            var item = Instantiate(prefab, position, Quaternion.identity);
-            item.name = prefab.name;
+            Carryable item;
+            if (e.placed)
+            {
+                var src = e.source.transform;
+                item = Instantiate(e.source, src.parent); // inactive like its template
+                item.transform.SetPositionAndRotation(position, e.rotation);
+                item.transform.localScale = src.localScale;
+                // The template's own outline object (made by ItemHighlight at scene start) would be copied twice.
+                var oldGlow = item.transform.Find("Highlight");
+                if (oldGlow) DestroyImmediate(oldGlow.gameObject);
+                item.gameObject.SetActive(true);
+            }
+            else item = Instantiate(e.source, position, e.rotation);
+            item.name = e.label;
             return item;
         }
 
         /// <summary>A stand-in sprite falls with a shadow below it; the real (awake) item appears where it lands.</summary>
-        IEnumerator DropIn(Carryable prefab, float x)
+        IEnumerator DropIn(Entry entry, float x)
         {
             pendingDrops++;
+            var prefab = entry.source;
             var prefabSr = prefab.GetComponent<SpriteRenderer>();
-            Vector3 scale = prefab.transform.localScale;
+            Vector3 scale = prefab.transform.lossyScale;
             float restY = stage.GroundY + HalfHeight(prefab);
 
-            var proxy = new GameObject($"{prefab.name} (dropping)");
+            var proxy = new GameObject($"{entry.label} (dropping)");
             proxy.transform.position = new Vector3(x, restY + dropHeight, 0f);
             proxy.transform.localScale = scale;
             var psr = proxy.AddComponent<SpriteRenderer>();
@@ -358,7 +462,8 @@ namespace KungFuCrashout.Props
             Destroy(shadow);
             pendingDrops--;
 
-            Spawn(prefab, new Vector3(x, restY, 0f));
+            var landed = SpawnEntry(entry, new Vector3(x, restY, 0f));
+            landed.transform.rotation = Quaternion.identity;
             AudioManager.Play(landCue);
         }
 
@@ -366,6 +471,23 @@ namespace KungFuCrashout.Props
         {
             if (!stage) stage = FindFirstObjectByType<StageBounds>();
             if (!stage) return;
+
+            if (usePlacedItems)
+            {
+                // Edit mode: the children as placed. Play mode: the spots read at scene start (the templates are hidden).
+                if (Application.isPlaying && entriesBuilt)
+                {
+                    for (int i = 0; i < entries.Count; i++) DrawSpot(entries[i].position, RadiusOf(i), $"#{i} {entries[i].label}");
+                }
+                else
+                {
+                    var placed = PlacedItems();
+                    for (int i = 0; i < placed.Count; i++)
+                        DrawSpot(placed[i].transform.position, RadiusFor(placed[i]), $"#{i} {placed[i].name}");
+                }
+                return;
+            }
+
             for (int i = 0; i < stageItems.Count; i++)
             {
                 var e = stageItems[i];
@@ -381,6 +503,17 @@ namespace KungFuCrashout.Props
                 UnityEditor.Handles.Label(p + Vector3.up * 0.45f, $"#{i} {(e.prefab ? e.prefab.name : "(empty)")}");
 #endif
             }
+        }
+
+        static void DrawSpot(Vector3 p, float radius, string label)
+        {
+            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.9f);
+            Gizmos.DrawWireCube(p, new Vector3(0.5f, 0.5f, 0f));
+            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.25f);
+            DrawCircle(p, radius);
+#if UNITY_EDITOR
+            UnityEditor.Handles.Label(p + Vector3.up * 0.45f, label);
+#endif
         }
 
         static void DrawCircle(Vector3 c, float r)

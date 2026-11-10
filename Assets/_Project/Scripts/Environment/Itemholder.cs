@@ -34,6 +34,14 @@ namespace KungFuCrashout.Props
         [Tooltip("ON: held items sit on the Carry Point. OFF (or no Carry Point): each item's own Carry Distance / Angle.")]
         [SerializeField] bool useCarryPoint = true;
 
+        [Header("Throw point")]
+        [Tooltip("Where thrown items leave from (its height). Empty = a child named \"ThrowPoint\" anywhere under the " +
+                 "fighter (e.g. Visual/ThrowPoint).")]
+        [SerializeField] Transform throwPoint;
+        [Tooltip("ON: a thrown item leaves at the Throw Point's height (relative to the character). OFF: from wherever " +
+                 "it's held.")]
+        [SerializeField] bool releaseAtThrowPoint = true;
+
         [Header("Throw wind-up")]
         [Tooltip("Throwing plays a wind-up first and the item only leaves on the release frame (the Throw Attack's " +
                  "Startup, or its clip's HitboxOn event if the FighterAnimator has one). Getting hit during it drops " +
@@ -61,11 +69,14 @@ namespace KungFuCrashout.Props
 
         /// <summary>A throw has started its wind-up and the item hasn't left yet.</summary>
         public bool IsWindingUpThrow => windingUp;
+        /// <summary>Seconds from the start of a throw wind-up to the release (Throw Attack's Startup; 0 = no wind-up).</summary>
+        public float ThrowWindupTime => throwWindup && throwAttack ? throwAttack.startup : 0f;
 
         void Awake()
         {
             fighter = GetComponent<Fighter>();
             if (!carryPoint) carryPoint = FindChild(transform, "CarryPoint");
+            if (!throwPoint) throwPoint = FindChild(transform, "ThrowPoint");
         }
 
         FighterPoseView poseView;
@@ -85,6 +96,21 @@ namespace KungFuCrashout.Props
             if (poseView && poseView.ArtMirrored)
             {
                 float pivotX = poseView.transform.position.x; // flipX mirrors the sprite around its pivot
+                position.x = 2f * pivotX - position.x;
+            }
+            return true;
+        }
+
+        /// <summary>World position of the Throw Point (mirrored with the art like the Carry Point). False = none / off.</summary>
+        public bool TryGetThrowSpot(out Vector3 position)
+        {
+            position = default;
+            if (!releaseAtThrowPoint || !throwPoint) return false;
+            position = throwPoint.position;
+            if (!poseView) poseView = GetComponentInChildren<FighterPoseView>();
+            if (poseView && poseView.ArtMirrored)
+            {
+                float pivotX = poseView.transform.position.x;
                 position.x = 2f * pivotX - position.x;
             }
             return true;
@@ -199,7 +225,14 @@ namespace KungFuCrashout.Props
         bool Release(Vector2 direction)
         {
             var item = Held;
-            if (!item || !item.Throw(direction, fighter)) return false;
+            if (!item) return false;
+            // Leave at the Throw Point's height (the item keeps its horizontal place in front of the character).
+            if (TryGetThrowSpot(out Vector3 spot))
+            {
+                var p = item.transform.position;
+                item.transform.position = new Vector3(p.x, spot.y, p.z);
+            }
+            if (!item.Throw(direction, fighter)) return false;
 
             Held = null;
             UpdateRoot();

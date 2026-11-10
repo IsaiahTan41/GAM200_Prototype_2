@@ -21,7 +21,7 @@ namespace KungFuCrashout.UI
     /// While open: the game is paused (optional) and the fight touch controls are switched off, so taps on the menu never
     /// punch / block / pick things up. They come back once every finger has left the screen after closing.
     /// Settings are remembered on the device (PlayerPrefs), so they survive the round reset and app restarts.
-    /// Android Back / Esc also opens and closes it.
+    /// Android Back / Esc and the Open Key (P by default) also open and close it.
     ///
     /// Setup: KungFu Crashout → Build Options Menu (builds the popup and hooks the OptionsButton).
     /// Place in: Assets/_Project/Scripts/UI/OptionsMenu.cs
@@ -59,6 +59,10 @@ namespace KungFuCrashout.UI
         [SerializeField] TMP_Text masterValue;
         [SerializeField] TMP_Text musicValue;
         [SerializeField] TMP_Text sfxValue;
+
+        [Header("Keyboard")]
+        [Tooltip("Key that opens / closes the menu on desktop (Esc / Android Back always works too). None = Esc only.")]
+        [SerializeField] Key openKey = Key.P;
 
         [Header("Behaviour")]
         [Tooltip("Freeze the fight while the menu is open (music keeps playing).")]
@@ -127,7 +131,8 @@ namespace KungFuCrashout.UI
 
             // Android Back button arrives as Escape.
             var kb = Keyboard.current;
-            if (kb != null && kb.escapeKey.wasPressedThisFrame) Toggle();
+            if (kb != null && (kb.escapeKey.wasPressedThisFrame ||
+                               (openKey != Key.None && kb[openKey].wasPressedThisFrame))) Toggle();
         }
 
         void OnDestroy()
