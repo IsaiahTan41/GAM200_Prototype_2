@@ -12,7 +12,8 @@ using KungFuCrashout.Sound;
 namespace KungFuCrashout.UI
 {
     /// <summary>
-    /// Options popup, opened by the HUD's Options button. Two tabs:
+    /// Options popup (the pause menu), opened by the HUD's Options button — and by any button in Also Opened By (the GDD
+    /// match timer). Two tabs:
     ///   GAME  — Enemy AI toggle: ON = State Machine (moves, fetches and throws items, attacks), OFF = Practice Dummy
     ///           (TrainingDummy → Behaviour Mode)
     ///   AUDIO — Master (AudioListener), Music (MusicPlayer) and Sound Effects (AudioManager) volume sliders
@@ -30,6 +31,8 @@ namespace KungFuCrashout.UI
     {
         [Header("Popup")]
         [SerializeField] Button optionsButton;
+        [Tooltip("Other buttons that also open / close this menu, e.g. the match timer (Timer (Pause)).")]
+        [SerializeField] Button[] alsoOpenedBy = new Button[0];
         [Tooltip("The popup itself (kept hidden until opened).")]
         [SerializeField] GameObject panel;
         [SerializeField] Button closeButton;
@@ -79,6 +82,7 @@ namespace KungFuCrashout.UI
         {
             if (panel) panel.SetActive(false);
             if (optionsButton) optionsButton.onClick.AddListener(Toggle);
+            foreach (var b in alsoOpenedBy) if (b && b != optionsButton) b.onClick.AddListener(Toggle);
             if (closeButton) closeButton.onClick.AddListener(Close);
             if (gameTab) gameTab.onClick.AddListener(() => ShowTab(true));
             if (audioTab) audioTab.onClick.AddListener(() => ShowTab(false));
@@ -111,6 +115,10 @@ namespace KungFuCrashout.UI
             OnEnemyMode(stateMachine);
 
             ShowTab(true);
+
+            // The GDD AI page lives inside the (hidden) panel, so it wouldn't run until the menu is first opened:
+            // apply its saved choices (AI on / off, show thinking) now.
+            foreach (var page in GetComponentsInChildren<AISettingsPanel>(true)) page.ApplySaved();
         }
 
         void Update()
@@ -220,14 +228,12 @@ namespace KungFuCrashout.UI
         void ClaimButtonTouches()
         {
             var ts = Touchscreen.current;
-            if (ts == null || !optionsButton) return;
-            var rt = (RectTransform)optionsButton.transform;
+            if (ts == null || (!optionsButton && alsoOpenedBy.Length == 0)) return;
 
             foreach (var t in ts.touches)
             {
                 int id = t.touchId.ReadValue();
-                if (t.press.wasPressedThisFrame &&
-                    RectTransformUtility.RectangleContainsScreenPoint(rt, t.position.ReadValue(), null))
+                if (t.press.wasPressedThisFrame && OnAnOpenButton(t.position.ReadValue()))
                 {
                     TouchClaims.Claim(id);
                     if (!buttonTouches.Contains(id)) buttonTouches.Add(id);
@@ -238,6 +244,17 @@ namespace KungFuCrashout.UI
                 }
             }
         }
+
+        bool OnAnOpenButton(Vector2 screenPos)
+        {
+            if (Hit(optionsButton, screenPos)) return true;
+            foreach (var b in alsoOpenedBy) if (Hit(b, screenPos)) return true;
+            return false;
+        }
+
+        static bool Hit(Button b, Vector2 screenPos) =>
+            b && b.isActiveAndEnabled &&
+            RectTransformUtility.RectangleContainsScreenPoint((RectTransform)b.transform, screenPos, null);
 
         // ───────────── Settings ─────────────
 

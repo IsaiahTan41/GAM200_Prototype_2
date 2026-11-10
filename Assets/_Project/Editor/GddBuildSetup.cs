@@ -463,12 +463,7 @@ namespace KungFuCrashout.EditorTools
             if (!brain) brain = opponent.gameObject.AddComponent<BehaviourTreeAI>();
             log.Add($"BehaviourTreeAI on '{opponent.name}' (difficulty from the Roster / pause menu)");
 
-            foreach (var bar in Object.FindObjectsByType<FighterStaminaBar>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                var so = new SerializedObject(bar);
-                so.FindProperty("normalColour").colorValue = Color.white; // UI Standards fix: cyan read as "blocking"
-                so.ApplyModifiedPropertiesWithoutUndo();
-            }
+            // Stamina bars keep Prototype 2's colours (no recolour here).
 
             // ── Stage items ──
             var stage = Object.FindFirstObjectByType<StageBounds>();
@@ -674,13 +669,13 @@ namespace KungFuCrashout.EditorTools
             GddUi.Place(pauseCap.gameObject, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(200f, 30f));
             pauseCap.color = new Color(1f, 1f, 1f, 0.6f);
 
-            // Names (outer end) and round pips (inner end), just under the bars.
-            var leftName = GddUi.Text("P1 Name", hud.transform, "NAM-PI", 34f, TextAlignmentOptions.Left, bold: true, outlined: true);
-            GddUi.Place(leftName.gameObject, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(56f, -100f), new Vector2(700f, 46f));
-            var rightName = GddUi.Text("CPU Name", hud.transform, "RUSHDOWN", 34f, TextAlignmentOptions.Right, bold: true, outlined: true);
-            GddUi.Place(rightName.gameObject, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-56f, -100f), new Vector2(700f, 46f));
-            var leftPips = Pips("P1 Pips", hud.transform, new Vector2(0.42f, 1f), new Vector2(1f, 1f), new Vector2(-8f, -104f));
-            var rightPips = Pips("CPU Pips", hud.transform, new Vector2(0.58f, 1f), new Vector2(0f, 1f), new Vector2(8f, -104f));
+            // Names inside the outer end of each health bar, round pips just under the inner end, so Prototype 2's HUD
+            // (bars, Options button) keeps its place. LayoutHud sets the positions.
+            var leftName = GddUi.Text("P1 Name", hud.transform, "NAM-PI", 32f, TextAlignmentOptions.Left, bold: true, outlined: true);
+            var rightName = GddUi.Text("CPU Name", hud.transform, "RUSHDOWN", 32f, TextAlignmentOptions.Right, bold: true, outlined: true);
+            var leftPips = Pips("P1 Pips", hud.transform, new Vector2(0.42f, 1f), new Vector2(1f, 1f), new Vector2(-8f, -132f));
+            var rightPips = Pips("CPU Pips", hud.transform, new Vector2(0.58f, 1f), new Vector2(0f, 1f), new Vector2(8f, -132f));
+            LayoutHud(hud.transform);
 
             // Red damage bars behind the health fills.
             var leftDamage = DamageBar(leftBar);
@@ -794,14 +789,10 @@ namespace KungFuCrashout.EditorTools
             over.SetActive(false);
             log.Add("Match HUD built under SafeArea/GDD HUD (timer = pause, names, pips, damage bars, callouts, popups, letterbox, hints, Match over)");
 
-            // ── Pause menu: the timer opens it; old corner buttons retired; GDD page ──
+            // ── Pause menu: the original Options button AND the timer open it; GDD AI page on the GAME tab, AUDIO tab kept ──
             if (options)
             {
-                var oso = new SerializedObject(options);
-                var oldBtn = oso.FindProperty("optionsButton").objectReferenceValue as Button;
-                if (oldBtn && oldBtn != timerBtn) { oldBtn.gameObject.SetActive(false); log.Add($"'{oldBtn.name}' hidden (the timer opens the pause menu)"); }
-                oso.FindProperty("optionsButton").objectReferenceValue = timerBtn;
-                oso.ApplyModifiedPropertiesWithoutUndo();
+                RestorePauseButtons(options, timerBtn, log);
                 BuildAiPage(options, brain, opponent.GetComponent<TrainingDummy>(), log);
                 options.transform.SetAsLastSibling(); // over the HUD
             }
@@ -810,6 +801,121 @@ namespace KungFuCrashout.EditorTools
             foreach (var b in Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 if (b.name.Replace(" ", "").ToLowerInvariant() == "backbutton")
                 { b.gameObject.SetActive(false); log.Add($"'{b.name}' hidden (Quit to Start is in the pause menu)"); }
+        }
+
+        /// <summary>
+        /// The original Options button stays the pause menu's button (shown, in its Prototype 2 place),
+        /// and the match timer opens the same menu too (OptionsMenu → Also Opened By). Safe to re-run.
+        /// </summary>
+        static void RestorePauseButtons(OptionsMenu options, Button timerBtn, List<string> log)
+        {
+            var oso = new SerializedObject(options);
+            var current = oso.FindProperty("optionsButton").objectReferenceValue as Button;
+            Button original = current && current != timerBtn && current.name != "Timer (Pause)" ? current : null;
+            if (!original)
+                original = Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                                 .FirstOrDefault(b => b.name.Replace(" ", "").ToLowerInvariant() == "optionsbutton");
+
+            if (original)
+            {
+                if (!original.gameObject.activeSelf) original.gameObject.SetActive(true);
+                oso.FindProperty("optionsButton").objectReferenceValue = original;
+                log.Add($"Pause menu: '{original.name}' shown again and opens it (Game + Audio tabs); the timer opens it too");
+            }
+            else
+            {
+                oso.FindProperty("optionsButton").objectReferenceValue = timerBtn;
+                log.Add("Pause menu: no OptionsButton found, so only the timer opens it");
+            }
+
+            var also = oso.FindProperty("alsoOpenedBy");
+            if (also != null)
+            {
+                also.arraySize = original && timerBtn ? 1 : 0;
+                if (also.arraySize == 1) also.GetArrayElementAtIndex(0).objectReferenceValue = timerBtn;
+            }
+            oso.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// GDD HUD widgets placed around Prototype 2's landscape HUD (1920 × 1080 reference, health bars 96 tall at the
+        /// top from 0–42 % and 58–100 %): names inside the outer end of each bar, pips under the inner end.
+        /// </summary>
+        static void LayoutHud(Transform hud)
+        {
+            void Put(string name, Vector2 anchor, Vector2 pivot, Vector2 pos, Vector2 size)
+            {
+                var t = hud.Find(name);
+                if (t) GddUi.Place(t.gameObject, anchor, pivot, pos, size);
+            }
+            Put("P1 Name", new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(72f, -76f), new Vector2(560f, 46f));
+            Put("CPU Name", new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-72f, -76f), new Vector2(560f, 46f));
+            Put("P1 Pips", new Vector2(0.42f, 1f), new Vector2(1f, 1f), new Vector2(-8f, -132f), new Vector2(80f, 34f));
+            Put("CPU Pips", new Vector2(0.58f, 1f), new Vector2(0f, 1f), new Vector2(8f, -132f), new Vector2(80f, 34f));
+        }
+
+        /// <summary>
+        /// Puts FightScene back to Prototype 2's landscape layout with the GDD pieces fitted around it:
+        ///   • SafeArea panels back to full screen (the editor had saved them at 225 % × 625 %, so the whole HUD was blown up)
+        ///   • the Options button shown and opening the pause menu (the timer opens it too)
+        ///   • names / pips moved off the health bars, stamina bars back to their cyan
+        /// Safe to re-run. Save the scene afterwards.
+        /// </summary>
+        [MenuItem(Menu + "Restore Prototype 2 Layout (open scene)", priority = 10052)]
+        public static void RestoreLayoutMenu()
+        {
+            var log = new List<string>();
+            foreach (var fitter in Object.FindObjectsByType<SafeAreaFitter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                var rt = (RectTransform)fitter.transform;
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+                EditorUtility.SetDirty(rt);
+                log.Add($"'{fitter.name}' back to full screen (fitted to the phone's safe area in Play / on device)");
+            }
+
+            var options = Object.FindFirstObjectByType<OptionsMenu>(FindObjectsInactive.Include);
+            var timer = Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                              .FirstOrDefault(b => b.name == "Timer (Pause)");
+            if (options)
+            {
+                // Undo the earlier nudge, if it ran: Prototype 2's place is (862, 367).
+                RestorePauseButtons(options, timer, log);
+                var btn = new SerializedObject(options).FindProperty("optionsButton").objectReferenceValue as Button;
+                if (btn && btn != timer)
+                {
+                    var brt = (RectTransform)btn.transform;
+                    if (Mathf.Approximately(brt.anchoredPosition.y, 340f)) brt.anchoredPosition = new Vector2(brt.anchoredPosition.x, 367f);
+                }
+            }
+
+            var hud = Object.FindObjectsByType<MatchHUD>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
+            if (hud) { LayoutHud(hud.transform); log.Add("Names inside the health bars, round pips under them"); }
+
+            foreach (var bar in Object.FindObjectsByType<FighterStaminaBar>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                var so = new SerializedObject(bar);
+                so.FindProperty("normalColour").colorValue = new Color(0.3f, 0.85f, 1f);
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            log.Add("Stamina bars back to cyan");
+
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            EditorSceneManager.MarkSceneDirty(scene);
+            Debug.Log($"[GDD Build] {scene.name} back to the Prototype 2 layout:\n  • " + string.Join("\n  • ", log) + "\nSave the scene (Ctrl+S).");
+        }
+
+        [MenuItem(Menu + "Restore Options Button (pause menu)", priority = 10051)]
+        public static void RestorePauseButtonsMenu()
+        {
+            var options = Object.FindFirstObjectByType<OptionsMenu>(FindObjectsInactive.Include);
+            if (!options) { EditorUtility.DisplayDialog("GDD Build", "No Options Menu in the open scene (open FightScene).", "OK"); return; }
+            var timer = Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                              .FirstOrDefault(b => b.name == "Timer (Pause)");
+            var log = new List<string>();
+            RestorePauseButtons(options, timer, log);
+            EditorSceneManager.MarkSceneDirty(options.gameObject.scene);
+            Debug.Log("[GDD Build] " + string.Join("\n  • ", log) + "\nSave the scene (Ctrl+S).");
         }
 
         static Image[] Pips(string name, Transform parent, Vector2 anchor, Vector2 pivot, Vector2 pos)

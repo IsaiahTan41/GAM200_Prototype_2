@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 739ae8cec40e2524f974867dc8f4ce51, type: 3}
+  m_Name: RD_Light3_Knee
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.AttackData
+  damage: 8
+  weight: 1
+  startup: 0.10000001
+  active: 0.10000001
+  recovery: 0.26666668
+  hitboxOffset: {x: 0.7, y: 0}
+  hitboxSize: {x: 1, y: 0.9}
+  knockback: 1.4
+  hitstun: 0.45
+  chipDamage: 0.15
+  blockstun: 0.3
+  blockPushback: 0.6
+  blockStaminaCost: -1
+  lunge: 0.45
+  activeTravel: 0
+  launchOnHit: {fileID: 0}
+  launchDirection: {x: 0.1, y: 1}

@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/StartScreen.unity
     guid: 490f3a9e570a6ad45b043182345fcf69
   - enabled: 1
+    path: Assets/_Project/Scenes/Roster.unity
+    guid: f7eb5411e52c51642902877e7bb549cb
+  - enabled: 1
     path: Assets/_Project/Scenes/FightScene.unity
     guid: 12d2810ce3021a24ea3e10976d042785
   - enabled: 0

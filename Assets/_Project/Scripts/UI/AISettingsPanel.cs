@@ -49,7 +49,13 @@ namespace KungFuCrashout.UI
             if (quitButton) quitButton.onClick.AddListener(() => SceneLoader.Load(startScene));
         }
 
-        void Start()
+        void Start() => ApplySaved();
+
+        /// <summary>
+        /// Apply the saved choices (AI on / off, show thinking, difficulty) to the opponent and this page. OptionsMenu calls
+        /// it when the fight starts, because this page sits in the hidden popup and wouldn't run until it's first opened.
+        /// </summary>
+        public void ApplySaved()
         {
             bool aiOn = PlayerPrefs.GetInt(KeyAiOn, 1) == 1;
             bool thinking = PlayerPrefs.GetInt(KeyThinking, 0) == 1;
