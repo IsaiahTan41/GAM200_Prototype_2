@@ -29,6 +29,9 @@ namespace KungFuCrashout.Props
     /// Sprites: Ground Sprite on the stage and while falling, Held Sprite while carried and in flight, Sleeping Sprite
     /// while asleep (e.g. a lantern hanging from the eaves; empty = the Ground Sprite).
     /// Can Move While Held OFF roots the carrier (no walk, dash or jump) until it's thrown or dropped.
+    /// Size: place and scale the item however you like on the stage (background size). The moment a fighter takes it
+    /// (pick-up or catch) it grows to its Fight Scale — its proper foreground size next to the fighters — and keeps that
+    /// size for the rest of its life (thrown, dropped, lying on the floor), unless Back To Stage Size When Dropped is on.
     /// Moves by transform like the fighters (no Rigidbody2D).
     ///
     /// Setup: a Square sprite on the "Environment" layer with a BoxCollider2D (used for tapping it).
@@ -51,6 +54,16 @@ namespace KungFuCrashout.Props
                  "switches to the Ground Sprite. Empty = the Ground Sprite.")]
         [SerializeField] Sprite sleepingSprite;
 
+        [Header("Size")]
+        [Tooltip("Scale once a fighter has taken it (its foreground size next to the fighters). The scale you give it on " +
+                 "the stage is kept until then, so stage items can be placed as small as the background needs.")]
+        [SerializeField, Min(0.01f)] float fightScale = 1f;
+        [Tooltip("Seconds to grow to Fight Scale (or shrink back). 0 = instant.")]
+        [SerializeField, Min(0f)] float resizeTime = 0.12f;
+        [Tooltip("ON: when it's let go (dropped, or a throw lands) it shrinks back to the size it had on the stage. " +
+                 "OFF: it stays at Fight Scale once taken.")]
+        [SerializeField] bool backToStageSizeWhenDropped = false;
+
         [Header("Holding")]
         [Tooltip("ON: the carrier can walk, dash and jump while holding this. OFF: the carrier is rooted (no walk, dash or " +
                  "jump) until it's thrown or dropped. Attacks, blocks and the throw still work.")]
@@ -64,6 +77,10 @@ namespace KungFuCrashout.Props
         [SerializeField, Min(0f)] float wakePopSpeed = 3f;
 
         [Header("Carry pose")]
+        [Tooltip("This item's offset from where it's held (the carrier's CarryPoint, or the distance / angle below if the " +
+                 "carrier has none), in world units. X = forward (toward the way the carrier faces, flips with them), " +
+                 "Y = up. Use it to fit each item's art in the hands.")]
+        [SerializeField] Vector2 carryOffset = Vector2.zero;
         [Tooltip("How far from the carrier's centre the item hovers (world units).")]
         [SerializeField, Min(0f)] float carryDistance = 1.0f;
         [Tooltip("Angle of that offset above horizontal, toward the facing side (degrees). 0 = straight ahead, 90 = overhead.")]
@@ -137,6 +154,8 @@ namespace KungFuCrashout.Props
         public Sprite SleepingSprite => sleepingSprite ? sleepingSprite : GroundSprite;
         /// <summary>A shockwave woke it (it's now falling to the floor).</summary>
         public event Action Woken;
+        /// <summary>The scale it has once a fighter has taken it.</summary>
+        public float FightScale => fightScale;
         /// <summary>How many times it has been picked up or caught.</summary>
         public int TimesHeld { get; private set; }
         /// <summary>Seconds until the lifetime runs out (infinity when Lifetime = 0).</summary>
@@ -186,13 +205,14 @@ namespace KungFuCrashout.Props
             baseColour = spriteRenderer.color;
             ApplyLook(); // ground sprite before measuring, so it rests on the floor by its ground art
             restSortingOrder = spriteRenderer.sortingOrder;
-            halfWidth = spriteRenderer.bounds.extents.x;
 
             // Spawned from a prefab (which can't reference scene objects): find the stage ourselves.
             if (!stage) stage = FindFirstObjectByType<StageBounds>();
 
-            // Rest on the stage ground if we know it, otherwise wherever it was placed.
-            groundY = stage ? stage.GroundY + spriteRenderer.bounds.extents.y : transform.position.y;
+            stageScale = transform.localScale; // as placed / spawned: the stage (background) size
+            targetScale = stageScale;
+            noStageY = transform.position.y;
+            Measure(stageScale);
 
             if (!hitData)
             {
@@ -203,6 +223,39 @@ namespace KungFuCrashout.Props
         }
 
         void Start() => bornTime = Time.time;
+
+        // ───────────── Size (stage → fight) ─────────────
+
+        Vector3 stageScale, targetScale;
+        float noStageY;
+
+        /// <summary>Floor height and wall distance for a given scale (from the Ground Sprite, which it rests on).</summary>
+        void Measure(Vector3 scale)
+        {
+            var sprite = groundSprite ? groundSprite : spriteRenderer.sprite;
+            Vector3 parent = transform.parent ? transform.parent.lossyScale : Vector3.one;
+            Vector2 ext = sprite ? (Vector2)sprite.bounds.extents : new Vector2(0.25f, 0.25f);
+            halfWidth = ext.x * Mathf.Abs(scale.x * parent.x);
+            // Rest on the stage ground if we know it, otherwise wherever it was placed.
+            groundY = stage ? stage.GroundY + ext.y * Mathf.Abs(scale.y * parent.y) : noStageY;
+        }
+
+        void ResizeTo(Vector3 scale, bool instant = false)
+        {
+            targetScale = scale;
+            Measure(scale);
+            if (instant || resizeTime <= 0f) transform.localScale = scale;
+        }
+
+        /// <summary>Straight to Fight Scale (e.g. an item that drops into the fight rather than sitting on the stage).</summary>
+        public void UseFightSize() => ResizeTo(Vector3.one * fightScale, instant: true);
+
+        void UpdateSize(float dt)
+        {
+            if (transform.localScale == targetScale) return;
+            float speed = Vector3.Distance(stageScale, Vector3.one * fightScale) / Mathf.Max(0.01f, resizeTime);
+            transform.localScale = Vector3.MoveTowards(transform.localScale, targetScale, Mathf.Max(speed, 0.01f) * dt);
+        }
 
         /// <summary>Ground sprite on the stage / asleep / falling, held sprite while carried or flying; dimmed asleep.</summary>
         void ApplyLook()
@@ -244,6 +297,7 @@ namespace KungFuCrashout.Props
 
         void LateUpdate()
         {
+            UpdateSize(Time.deltaTime);
             if (CheckExpired()) return;
 
             switch (State)
@@ -263,6 +317,7 @@ namespace KungFuCrashout.Props
             Carrier = carrier;
             State = ItemState.Carried;
             TimesHeld++;
+            ResizeTo(Vector3.one * fightScale); // taken from the stage into the fight: foreground size
             spriteRenderer.sortingOrder = carriedSortingOrder;
             PickedUp?.Invoke(carrier);
             return true;
@@ -278,6 +333,7 @@ namespace KungFuCrashout.Props
             Carrier = catcher;
             State = ItemState.Carried;
             TimesHeld++;
+            ResizeTo(Vector3.one * fightScale);
             destroyWhenLanded = false; // caught mid-air: it lives on for one more throw
             spriteRenderer.sortingOrder = carriedSortingOrder;
             PickedUp?.Invoke(catcher);
@@ -290,6 +346,7 @@ namespace KungFuCrashout.Props
 
             var previous = Carrier;
             int facing = previous ? previous.Facing : 1;
+            if (backToStageSizeWhenDropped) ResizeTo(stageScale);
 
             // Land a little in front of the carrier, inside the stage.
             var p = transform.position;
@@ -444,6 +501,7 @@ namespace KungFuCrashout.Props
             Thrower = null;
             fallSpeed = popUp ? -hitPopSpeed : 0f; // negative = moving up; Fall() adds gravity
             spriteRenderer.sortingOrder = restSortingOrder;
+            if (backToStageSizeWhenDropped) ResizeTo(stageScale);
             State = !popUp && transform.position.y <= groundY ? ItemState.OnStage : ItemState.Falling;
             FlightEnded?.Invoke();
         }
@@ -470,14 +528,17 @@ namespace KungFuCrashout.Props
             float rad = carryAngle * Mathf.Deg2Rad;
             float bob = bobAmount > 0f ? Mathf.Sin(Time.time * bobSpeed * Mathf.PI * 2f) * bobAmount : 0f;
 
+            // This item's own nudge from that spot: X forward (flips with facing), Y up.
+            float offX = carryOffset.x * facing, offY = carryOffset.y;
+
             // The character decides: sit on its Carry Point (flips with facing, follows any animation of the point).
             if (TryGetCarrierPoint(out Vector3 p))
-                return new Vector3(p.x, p.y + bob, transform.position.z);
+                return new Vector3(p.x + offX, p.y + offY + bob, transform.position.z);
 
             Vector3 c = Carrier.transform.position;
             return new Vector3(
-                c.x + Mathf.Cos(rad) * carryDistance * facing,
-                c.y + Mathf.Sin(rad) * carryDistance + bob,
+                c.x + Mathf.Cos(rad) * carryDistance * facing + offX,
+                c.y + Mathf.Sin(rad) * carryDistance + offY + bob,
                 transform.position.z);
         }
 

@@ -157,10 +157,15 @@ MonoBehaviour:
   stage: {fileID: 0}
   groundSprite: {fileID: 21300000, guid: 58b905366597ef641bbf1c3685f2af87, type: 3}
   heldSprite: {fileID: 21300000, guid: 9cb023f159b05d54fb86e8ca4974294a, type: 3}
+  sleepingSprite: {fileID: 0}
+  fightScale: 1
+  resizeTime: 0.12
+  backToStageSizeWhenDropped: 0
   canMoveWhileHeld: 0
   dimWhileDormant: 1
   dormantBrightness: 0.65
   wakePopSpeed: 3
+  carryOffset: {x: 0, y: 1}
   carryDistance: 1
   carryAngle: 135
   carryTilt: 20

@@ -26,6 +26,10 @@ namespace KungFuCrashout.Fighters
         [SerializeField] Side side = Side.Player;
         [Tooltip("Used when nothing was picked on the Roster.")]
         [SerializeField] FighterArchetype fallback;
+        [Tooltip("TESTING: always use the Fallback, even when the Roster picked something (e.g. the CPU Monk copy).")]
+        [SerializeField] bool ignoreRosterPick = false;
+        [Tooltip("Added after the archetype's name on the HUD, e.g. \" · CPU\" for a mirror match.")]
+        [SerializeField] string nameSuffix = "";
 
         /// <summary>The archetype applied this fight (null = the Fighter's own Inspector set-up).</summary>
         public FighterArchetype Applied { get; private set; }
@@ -36,7 +40,7 @@ namespace KungFuCrashout.Fighters
         void Awake()
         {
             var pick = side == Side.Player ? MatchSetup.PlayerPick : MatchSetup.CpuPick;
-            Apply(pick ? pick : fallback);
+            Apply(pick && !ignoreRosterPick ? pick : fallback);
         }
 
         public void Apply(FighterArchetype a)
@@ -45,7 +49,7 @@ namespace KungFuCrashout.Fighters
             var fighter = GetComponent<Fighter>();
             Applied = a;
 
-            Set(fighter, "displayName", a.displayName, !string.IsNullOrEmpty(a.displayName));
+            Set(fighter, "displayName", a.displayName + nameSuffix, !string.IsNullOrEmpty(a.displayName));
             if (a.lightCombo != null && a.lightCombo.Length > 0 && a.lightCombo[0])
                 Set(fighter, "lightCombo", (AttackData[])a.lightCombo.Clone(), true);
             Set(fighter, "heavyAttack", a.heavyAttack, a.heavyAttack);

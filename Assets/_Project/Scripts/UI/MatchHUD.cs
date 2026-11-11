@@ -188,18 +188,23 @@ namespace KungFuCrashout.UI
             };
             Action<float> damaged = amount => s.damageHold = damageHoldTime;
 
+            // Health straight from the component: Fighter.Health is only filled in by Fighter.Awake, which may run after this.
+            var health = f.GetComponent<Health>();
             f.Parried += parried;
             f.GuardBroken += guardBroken;
             f.ComboBroken += broke;
             f.HitByItem += byItem;
-            f.Health.Damaged += damaged;
+            if (health) health.Damaged += damaged;
             unsubscribe.Add(() =>
             {
-                f.Parried -= parried;
-                f.GuardBroken -= guardBroken;
-                f.ComboBroken -= broke;
-                f.HitByItem -= byItem;
-                f.Health.Damaged -= damaged;
+                if (f)
+                {
+                    f.Parried -= parried;
+                    f.GuardBroken -= guardBroken;
+                    f.ComboBroken -= broke;
+                    f.HitByItem -= byItem;
+                }
+                if (health) health.Damaged -= damaged;
             });
         }
 

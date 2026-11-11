@@ -122,6 +122,7 @@ namespace KungFuCrashout.Core
         public Fighter Winner { get; private set; }
 
         Vector3 playerStart, opponentStart;
+        float slowMoEndsAt = -1f; // real time the KO slow motion ends
         bool roundEnding;
         bool ownPause;
 
@@ -136,16 +137,24 @@ namespace KungFuCrashout.Core
             if (!items) items = FindFirstObjectByType<StageItemDirector>();
         }
 
+        // Health is read straight from the fighters' Health components: this script runs early (execution order -100),
+        // before Fighter.Awake has filled in Fighter.Health, so Fighter.Health is still null in this OnEnable.
+        Health playerHealth, opponentHealth;
+
         void OnEnable()
         {
-            player.Health.Died += OnSomeoneDied;
-            opponent.Health.Died += OnSomeoneDied;
+            if (!playerHealth && player) playerHealth = player.GetComponent<Health>();
+            if (!opponentHealth && opponent) opponentHealth = opponent.GetComponent<Health>();
+            if (playerHealth) playerHealth.Died += OnSomeoneDied;
+            else Debug.LogError("[Match] The Player fighter has no Health component: knockouts won't end the round.", this);
+            if (opponentHealth) opponentHealth.Died += OnSomeoneDied;
+            else Debug.LogError("[Match] The Opponent fighter has no Health component: knockouts won't end the round.", this);
         }
 
         void OnDisable()
         {
-            player.Health.Died -= OnSomeoneDied;
-            opponent.Health.Died -= OnSomeoneDied;
+            if (playerHealth) playerHealth.Died -= OnSomeoneDied;
+            if (opponentHealth) opponentHealth.Died -= OnSomeoneDied;
         }
 
         void OnDestroy()
@@ -168,6 +177,14 @@ namespace KungFuCrashout.Core
             {
                 Paused = paused;
                 PauseChanged?.Invoke(paused);
+            }
+
+            // Pausing during the KO slow motion: the pause menu restores the slowed time scale when it closes, so put
+            // normal speed back once the slow motion is over.
+            if (!Paused && slowMoEndsAt > 0f && Time.realtimeSinceStartup >= slowMoEndsAt)
+            {
+                slowMoEndsAt = -1f;
+                if (Time.timeScale < 1f) Time.timeScale = 1f;
             }
 
             if (Phase != MatchPhase.Fighting || Paused) return;
@@ -249,6 +266,7 @@ namespace KungFuCrashout.Core
             if (!timeOut && koSlowTime > 0f && koSlowScale < 1f && !Paused)
             {
                 Time.timeScale = koSlowScale;
+                slowMoEndsAt = Time.realtimeSinceStartup + koSlowTime;
                 yield return new WaitForSecondsRealtime(koSlowTime);
                 if (!Paused) Time.timeScale = 1f;
                 yield return new WaitForSecondsRealtime(Mathf.Max(0f, roundOverTime - koSlowTime));

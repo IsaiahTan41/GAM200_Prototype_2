@@ -103,6 +103,9 @@ namespace KungFuCrashout.Props
         [SerializeField, Min(0f)] float wallMargin = 0.6f;
         [Tooltip("Try not to land on a fighter: at least this far from both (world units). 0 = anywhere.")]
         [SerializeField, Min(0f)] float minDistanceFromFighters = 1.2f;
+        [Tooltip("Dropped-in items arrive at their Fight Scale (they land in the fight, in the foreground). " +
+                 "OFF: at the size they were placed on the stage.")]
+        [SerializeField] bool dropInsAtFightSize = true;
 
         [Header("Dropping in")]
         [Tooltip("How high above the floor dropped items start (world units).")]
@@ -411,6 +414,13 @@ namespace KungFuCrashout.Props
             var prefabSr = prefab.GetComponent<SpriteRenderer>();
             Vector3 scale = prefab.transform.lossyScale;
             float restY = stage.GroundY + HalfHeight(prefab);
+            if (dropInsAtFightSize)
+            {
+                Vector3 parent = entry.placed && prefab.transform.parent ? prefab.transform.parent.lossyScale : Vector3.one;
+                scale = Vector3.Scale(Vector3.one * prefab.FightScale, parent);
+                var gs = prefab.GroundSprite;
+                restY = stage.GroundY + (gs ? gs.bounds.extents.y * Mathf.Abs(scale.y) : 0.25f);
+            }
 
             var proxy = new GameObject($"{entry.label} (dropping)");
             proxy.transform.position = new Vector3(x, restY + dropHeight, 0f);
@@ -464,6 +474,7 @@ namespace KungFuCrashout.Props
 
             var landed = SpawnEntry(entry, new Vector3(x, restY, 0f));
             landed.transform.rotation = Quaternion.identity;
+            if (dropInsAtFightSize) landed.UseFightSize();
             AudioManager.Play(landCue);
         }
 
