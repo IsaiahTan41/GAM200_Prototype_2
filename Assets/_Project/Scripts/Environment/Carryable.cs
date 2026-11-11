@@ -26,7 +26,8 @@ namespace KungFuCrashout.Props
     ///   Sleeping  — (Dormant) placed by the StageItemDirector at its stage spot: visible (dimmed) but can't be grabbed,
     ///               and its Lifetime hasn't started. A hit shockwave nearby wakes it: it's knocked loose, falls to the
     ///               floor and becomes a normal item.
-    /// Two sprites: Ground Sprite on the stage (and while sleeping / falling), Held Sprite while carried and in flight.
+    /// Sprites: Ground Sprite on the stage and while falling, Held Sprite while carried and in flight, Sleeping Sprite
+    /// while asleep (e.g. a lantern hanging from the eaves; empty = the Ground Sprite).
     /// Can Move While Held OFF roots the carrier (no walk, dash or jump) until it's thrown or dropped.
     /// Moves by transform like the fighters (no Rigidbody2D).
     ///
@@ -46,6 +47,9 @@ namespace KungFuCrashout.Props
         [SerializeField] Sprite groundSprite;
         [Tooltip("Shown while a fighter holds it and while it flies after a throw. Empty = the Ground Sprite.")]
         [SerializeField] Sprite heldSprite;
+        [Tooltip("Shown while it's asleep at its stage spot, e.g. a lantern HANGING. When a shockwave wakes it, it falls and " +
+                 "switches to the Ground Sprite. Empty = the Ground Sprite.")]
+        [SerializeField] Sprite sleepingSprite;
 
         [Header("Holding")]
         [Tooltip("ON: the carrier can walk, dash and jump while holding this. OFF: the carrier is rooted (no walk, dash or " +
@@ -129,6 +133,8 @@ namespace KungFuCrashout.Props
         public bool IsDormant => State == ItemState.Dormant;
         /// <summary>The sprite it shows on the ground (prefabs too: used for the drop-in stand-in).</summary>
         public Sprite GroundSprite => groundSprite ? groundSprite : GetComponent<SpriteRenderer>().sprite;
+        /// <summary>The sprite while asleep (Sleeping Sprite, else the Ground Sprite).</summary>
+        public Sprite SleepingSprite => sleepingSprite ? sleepingSprite : GroundSprite;
         /// <summary>A shockwave woke it (it's now falling to the floor).</summary>
         public event Action Woken;
         /// <summary>How many times it has been picked up or caught.</summary>
@@ -203,7 +209,9 @@ namespace KungFuCrashout.Props
         {
             if (!spriteRenderer) return;
             bool inHand = state == ItemState.Carried || state == ItemState.Thrown;
-            var sprite = inHand ? heldSprite : groundSprite;
+            var sprite = inHand ? heldSprite
+                       : state == ItemState.Dormant && sleepingSprite ? sleepingSprite
+                       : groundSprite;
             if (sprite && spriteRenderer.sprite != sprite) spriteRenderer.sprite = sprite;
 
             var c = baseColour;
@@ -498,8 +506,9 @@ namespace KungFuCrashout.Props
         }
 
 #if UNITY_EDITOR
-        // Editor preview: the SpriteRenderer shows the Ground Sprite (and the tap collider fits it) as soon as one is
-        // assigned, instead of only once the game runs. Done a moment later: changing a sprite inside OnValidate warns.
+        // Editor preview: the SpriteRenderer shows the Sleeping Sprite if there is one (that's how it sits where you place
+        // it), else the Ground Sprite; the tap collider fits the Ground Sprite. Done a moment later: changing a sprite
+        // inside OnValidate warns.
         void OnValidate()
         {
             if (Application.isPlaying || !groundSprite) return;
@@ -510,9 +519,10 @@ namespace KungFuCrashout.Props
         {
             if (!this || !groundSprite) return;
             var sr = GetComponent<SpriteRenderer>();
-            if (!sr || sr.sprite == groundSprite) return;
+            var preview = sleepingSprite ? sleepingSprite : groundSprite;
+            if (!sr || sr.sprite == preview) return;
             UnityEditor.Undo.RecordObject(sr, "Item Ground Sprite");
-            sr.sprite = groundSprite;
+            sr.sprite = preview;
             UnityEditor.EditorUtility.SetDirty(sr);
             if (TryGetComponent(out BoxCollider2D box))
             {
