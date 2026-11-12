@@ -466,31 +466,33 @@ namespace KungFuCrashout.EditorTools
             // Stamina bars keep Prototype 2's colours (no recolour here).
 
             // ── Stage items ──
+            // Every active item placed in the scene is a stage item (laid out asleep each round). Only when there are none
+            // yet, a starter Restaurant set is placed under Stage Items; move / add / delete them freely afterwards.
             var stage = Object.FindFirstObjectByType<StageBounds>();
-            foreach (var c in Object.FindObjectsByType<Carryable>(FindObjectsSortMode.None))
-            { c.gameObject.SetActive(false); log.Add($"Hand-placed item '{c.name}' hidden (the director lays out the Restaurant set)"); }
-
             var directorGo = FindOrCreate("Stage Items");
             var director = directorGo.GetComponent<StageItemDirector>();
             if (!director) director = directorGo.AddComponent<StageItemDirector>();
             var dirSo = new SerializedObject(director);
             GddUi.Set(dirSo, "stage", stage);
             GddUi.SetArray(dirSo, "fighters", new Object[] { player, opponent });
-            var placements = dirSo.FindProperty("stageItems");
-            if (plate && chair && pot && placements != null && placements.arraySize == 0) // keep a list you've set up
+            dirSo.ApplyModifiedPropertiesWithoutUndo();
+
+            bool anyPlaced = Object.FindObjectsByType<Carryable>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length > 0;
+            if (!anyPlaced && stage && plate && chair && pot)
             {
                 var set = new (Carryable prefab, float x)[] { (plate, 0.14f), (chair, 0.42f), (pot, 0.58f), (plate, 0.86f) };
-                placements.arraySize = set.Length;
-                for (int i = 0; i < set.Length; i++)
+                foreach (var (prefab, x) in set)
                 {
-                    var e = placements.GetArrayElementAtIndex(i);
-                    e.FindPropertyRelative("prefab").objectReferenceValue = set[i].prefab;
-                    e.FindPropertyRelative("stageX").floatValue = set[i].x;
+                    var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab.gameObject, directorGo.transform);
+                    var gs = prefab.GroundSprite;
+                    float half = gs ? gs.bounds.extents.y * Mathf.Abs(go.transform.lossyScale.y) : 0.25f;
+                    go.transform.position = new Vector3(Mathf.Lerp(stage.MinX, stage.MaxX, x), stage.GroundY + half, 0f);
+                    Undo.RegisterCreatedObjectUndo(go, "Place stage item");
                 }
+                log.Add("Starter Restaurant items placed under Stage Items (plate, chair, pot, plate)");
             }
-            dirSo.ApplyModifiedPropertiesWithoutUndo();
-            log.Add("StageItemDirector: Stage Items laid out asleep each round, woken by hit shockwaves (element index = " +
-                    "wake order); a random one drops in whenever the stage is empty");
+            log.Add("StageItemDirector: every placed item sleeps at its spot each round; any connecting attack has a chance " +
+                    "to wake one; one is always supplied when the stage is empty");
 
             // ── Match ──
             var matchGo = FindOrCreate("Match");
@@ -1009,6 +1011,7 @@ namespace KungFuCrashout.EditorTools
             so.FindProperty("startScene").stringValue = Path.GetFileNameWithoutExtension(StartPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             log.Add("Pause menu GAME page: AI on/off (Practice Dummy), Easy/Normal/Hard, show AI thinking, Resume, Quit to Start");
+            ItemModeToggleSetup.AddTo(panel.transform, log); // playtest switch: GDD item rules vs original behaviour
         }
 
         // ═════════════ 3. Roster + Start ═════════════

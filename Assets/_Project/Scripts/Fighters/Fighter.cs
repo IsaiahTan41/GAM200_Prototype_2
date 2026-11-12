@@ -1516,6 +1516,15 @@ namespace KungFuCrashout.Fighters
             size = attack.hitboxSize;
         }
 
+        /// <summary>The current attack's hitbox right now (the clip's keyed box or the AttackData box). False when not attacking. Used by FighterVfx.</summary>
+        public bool TryGetCurrentHitbox(out Vector2 centre, out Vector2 size)
+        {
+            centre = size = Vector2.zero;
+            if (State != FighterState.Attacking || !CurrentAttack) return false;
+            GetHitbox(CurrentAttack, out centre, out size);
+            return true;
+        }
+
         void CheckHits()
         {
             var attack = CurrentAttack;

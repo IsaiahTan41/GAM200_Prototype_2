@@ -55,6 +55,7 @@ namespace KungFuCrashout.Props
         {
             Debug.Log($"[{name}] {why}");
             AudioManager.Play(breakCue);
+            if (TryGetComponent(out Carryable carryable)) carryable.RaiseBroken(); // break VFX (ItemVfx)
             Destroy(gameObject); // end of frame: the hit, sparks and sound still play this frame
         }
     }

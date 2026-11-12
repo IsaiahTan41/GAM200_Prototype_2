@@ -23,9 +23,10 @@ namespace KungFuCrashout.Props
     ///               and pushback if blocked from the front, or nothing if parried. The check is swept
     ///               along the whole frame's movement, so a fast item can't skip through a fighter.
     ///               The item then pops up a little and falls. (Parry-catch comes next.)
-    ///   Sleeping  — (Dormant) placed by the StageItemDirector at its stage spot: visible (dimmed) but can't be grabbed,
-    ///               and its Lifetime hasn't started. A hit shockwave nearby wakes it: it's knocked loose, falls to the
-    ///               floor and becomes a normal item.
+    ///   Sleeping  — (Dormant) every stage item starts each round asleep where it was placed (StageItemDirector):
+    ///               visible (dimmed) but can't be grabbed, and its Lifetime hasn't started. Any attack that connects
+    ///               has a chance to send out a shockwave that wakes it: it's knocked loose, falls to the floor and
+    ///               becomes a normal item.
     /// Sprites: Ground Sprite on the stage and while falling, Held Sprite while carried and in flight, Sleeping Sprite
     /// while asleep (e.g. a lantern hanging from the eaves; empty = the Ground Sprite).
     /// Can Move While Held OFF roots the carrier (no walk, dash or jump) until it's thrown or dropped.
@@ -69,7 +70,7 @@ namespace KungFuCrashout.Props
                  "jump) until it's thrown or dropped. Attacks, blocks and the throw still work.")]
         [SerializeField] bool canMoveWhileHeld = true;
 
-        [Header("Sleeping (stage items before a shockwave wakes them)")]
+        [Header("Sleeping (every stage item, until a shockwave wakes it)")]
         [Tooltip("Darken the item while it's asleep, so it reads as \"not grabbable yet\".")]
         [SerializeField] bool dimWhileDormant = true;
         [SerializeField, Range(0.2f, 1f)] float dormantBrightness = 0.65f;
@@ -178,6 +179,16 @@ namespace KungFuCrashout.Props
         public event Action<Fighter, Fighter, HitResult> HitFighter;
         /// <summary>The flight ended (ground, wall, max distance or a fighter).</summary>
         public event Action FlightEnded;
+        /// <summary>The item is about to be removed for good (shattered, last throw done, lifetime over). ItemVfx plays the break burst.</summary>
+        public event Action Broken;
+        bool brokenRaised;
+        /// <summary>Raises Broken once. Called by Break() and by ItemDurability before it destroys the item.</summary>
+        public void RaiseBroken()
+        {
+            if (brokenRaised) return;
+            brokenRaised = true;
+            Broken?.Invoke();
+        }
 
         /// <summary>Who threw it while it's flying; null otherwise.</summary>
         public Fighter Thrower { get; private set; }
@@ -469,6 +480,7 @@ namespace KungFuCrashout.Props
         /// <summary>Remove the item for good, with the break sound when asked (never used for pick-ups or catches).</summary>
         void Break(bool withSound)
         {
+            RaiseBroken();
             if (withSound) AudioManager.Play(breakCue);
             Destroy(gameObject);
         }

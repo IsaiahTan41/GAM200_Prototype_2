@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 using KungFuCrashout.Core;
 using KungFuCrashout.Fighters;
 using KungFuCrashout.Sound;
@@ -11,94 +10,62 @@ using Random = UnityEngine.Random;
 namespace KungFuCrashout.Props
 {
     /// <summary>
-    /// GDD → Environmental System, the stage side of it (10 Nov 2026 rules):
-    ///   • Stage Items — every entry is one item at its own spot on the stage. When a round starts they're all laid out
-    ///     ASLEEP: visible (dimmed) but not grabbable. They only come into play as the round goes on.
-    ///   • Hit shockwaves — when one fighter's attack connects with the other (hit, and blocked if Blocked Hits Count),
-    ///     a shockwave goes out around BOTH fighters and wakes ONE sleeping item within its radius (each entry's
-    ///     Wake Radius, or Shockwave Radius). The woken item is knocked loose, falls to the floor and can be grabbed.
-    ///     Which one, set by the item's element index in Stage Items (Wake Order):
-    ///       In List Order         — entry 0 first, then 1, 2…: a hit wakes the NEXT entry only if it's within range
-    ///       Lowest Index In Range — a hit wakes the lowest-numbered sleeping entry that's within range
-    ///   • Empty stage — when no item is in play (lying, carried, flying; sleeping ones don't count unless Count Sleeping
-    ///     Items) for Empty Delay seconds, a random item from Stage Items drops in anywhere within the stage bounds,
-    ///     with a shadow marking where it lands.
-    /// Prototype 3's fixed round-start layout and heavy-hit sky drops are replaced by these rules.
-    /// Use Placed Items (ON): the items you place as children of this object ARE the stage items — what you see in the
-    /// Scene view is what happens in game. Drop any item prefab (anything with a Carryable) under it, put it where it
-    /// should sleep (floor, table, shelf) and it's in; delete it and it's out. The element index is the order in the
-    /// Hierarchy (top = #0), so drag them up and down to change the wake order. When the scene starts they're hidden and
-    /// used as templates: every round a fresh copy sleeps at each one's exact spot. The empty-stage drop picks from them.
-    /// Optional per item: a StageItemSettings component next to it overrides the wake radius.
-    /// Use Placed Items (OFF): the Stage Items list below instead — drag an empty Transform into Spot, or use Stage X
-    /// (0 = left wall, 1 = right wall) + Height above the floor.
-    /// Select this object to see every spot, its index and its wake radius in the Scene view.
-    /// Original Item Behaviour (testing): the director stands aside and items work as they did before — any item you
-    /// place anywhere in the scene is awake and can be picked up and thrown straight away, nothing sleeps, nothing is
-    /// cleared or respawned between rounds, nothing drops in.
+    /// GDD → Environmental System, the stage side:
+    ///   "At the beginning of the match, there is a set amount of items" — every item placed in the scene (put them under
+    ///     this Stage Items object to keep it tidy) is a stage item. Each round they're laid out again at the exact spot
+    ///     you placed them, ALL ASLEEP: visible (dimmed / Sleeping Sprite) but not grabbable.
+    ///   "Shockwaves make new items drop onto the stage" — ANY attack that connects (light, combo, heavy, special; blocked
+    ///     hits too if Blocked Hits Count) sends out a shockwave with a percentage chance to wake ONE sleeping item:
+    ///     Wake Chance for light attacks, Heavy Wake Chance for heavies and specials. The sleeping item nearest the hit
+    ///     (within Wake Radius; 0 = anywhere on the stage) is knocked loose, falls to the floor and can be grabbed.
+    ///   "Ensuring there will always be at least one item available" — if no item is in play (on the floor, held or
+    ///     flying) for Empty Delay seconds, the sleeping item nearest the fighters wakes; if none are left asleep, a
+    ///     random stage item drops in from above with a shadow marking where it lands.
+    /// Holding, throwing, highlighting and breaking are the items' own rules (Carryable, ItemHighlight, ItemDurability).
     ///
-    /// Setup: Window → KungFu Crashout → GDD Build → Upgrade Fight Scene. Place in: Assets/_Project/Scripts/Environment/StageItemDirector.cs
+    /// Original Item Behaviour (testing): the director stands aside — items placed in the scene are awake and live
+    /// from the start, nothing sleeps, nothing is re-laid between rounds, nothing drops in. Can be switched while playing
+    /// (pause menu → GAME → "Original item behaviour", ItemModeToggle): the stage is laid out again in the new mode.
+    /// The switch lasts until the app closes (scene reloads keep it); the Inspector value is the default at app start.
+    ///
+    /// Setup: one per fight scene (GDD Build → Upgrade Fight Scene adds it). Add an item: drag its prefab into the
+    /// scene where it should sleep (floor, table, shelf). Remove one: delete it (or untick it: inactive items are ignored).
+    /// Place in: Assets/_Project/Scripts/Environment/StageItemDirector.cs
     /// </summary>
     public class StageItemDirector : MonoBehaviour
     {
-        public enum WakeOrder { InListOrder, LowestIndexInRange }
-
-        [Serializable]
-        public class StageItem
-        {
-            public Carryable prefab;
-            [Tooltip("Where it sleeps. Empty = Stage X + Height below.")]
-            public Transform spot;
-            [Tooltip("0 = left wall, 0.5 = centre, 1 = right wall (used when Spot is empty).")]
-            [Range(0f, 1f)] public float stageX = 0.5f;
-            [Tooltip("How high above the floor it sleeps (world units), e.g. on a table or shelf. 0 = on the floor.")]
-            [Min(0f)] public float height = 0f;
-            [Tooltip("How close a hit has to be to wake it (world units). 0 = the director's Shockwave Radius.")]
-            [Min(0f)] public float wakeRadius = 0f;
-        }
-
         [SerializeField] StageBounds stage;
-        [Tooltip("Fighters whose hits make shockwaves. Empty = every Fighter in the scene.")]
+        [Tooltip("Fighters whose attacks send out shockwaves. Empty = every Fighter in the scene.")]
         [SerializeField] Fighter[] fighters = new Fighter[0];
 
         [Header("Testing")]
-        [Tooltip("ON: items work as they did originally, for testing. Place any item in the scene and it's live from the " +
-                 "start (pick up, throw). No sleeping, no shockwave waking, no clearing / re-laying between rounds, no " +
-                 "drop-ins. OFF: the stage-item rules below.")]
+        [Tooltip("ON: items work as they originally did. Whatever is placed in the scene is live from the start (pick up, " +
+                 "throw); no sleeping, no shockwaves, no re-laying between rounds, no drop-ins. OFF: the GDD rules. " +
+                 "Default at app start; the pause menu toggle can switch it while playing.")]
         [SerializeField] bool originalItemBehaviour = false;
 
-        [Header("Stage items (element index = wake order / priority)")]
-        [Tooltip("ON: the items placed as children of this object are the stage items (Hierarchy order = index). " +
-                 "OFF: the Stage Items list below.")]
-        [SerializeField] bool usePlacedItems = true;
-        [FormerlySerializedAs("roundStartItems")]
-        [SerializeField] List<StageItem> stageItems = new List<StageItem>();
-        [Tooltip("Remove every item (including ones placed in the scene by hand) when a round starts.")]
-        [SerializeField] bool clearItemsEachRound = true;
-
-        [Header("Hit shockwaves")]
-        [SerializeField] bool hitShockwaves = true;
-        [Tooltip("TESTING TOGGLE. In List Order: a hit wakes the next entry (0, 1, 2…) only if it's in range. " +
-                 "Lowest Index In Range: a hit wakes the lowest-numbered sleeping entry that's in range.")]
-        [SerializeField] WakeOrder wakeOrder = WakeOrder.InListOrder;
-        [Tooltip("Default wake distance from either fighter (world units). Each entry can override it.")]
-        [SerializeField, Min(0.1f)] float shockwaveRadius = 2.5f;
+        [Header("Shockwaves (any attack that connects)")]
+        [Tooltip("Chance (%) that a light attack / combo hit wakes a sleeping item.")]
+        [SerializeField, Range(0f, 100f)] float wakeChance = 25f;
+        [Tooltip("Chance (%) that a heavy attack or a special wakes a sleeping item.")]
+        [SerializeField, Range(0f, 100f)] float heavyWakeChance = 60f;
         [Tooltip("Blocked hits also send out a shockwave (parried hits never do).")]
         [SerializeField] bool blockedHitsCount = true;
-        [Tooltip("Thrown items hitting a fighter also send out a shockwave. Off = only fighters hitting each other.")]
+        [Tooltip("Thrown items hitting a fighter also send out a shockwave.")]
         [SerializeField] bool itemHitsCount = false;
-        [Tooltip("Seconds before another shockwave can wake an item (stops one combo waking everything).")]
+        [Tooltip("Only items this close to the hit can wake (world units). 0 = anywhere on the stage (the nearest one wakes).")]
+        [SerializeField, Min(0f)] float wakeRadius = 0f;
+        [Tooltip("Seconds after a shockwave before the next one can roll (stops one combo waking everything).")]
         [SerializeField, Min(0f)] float shockwaveCooldown = 0.3f;
         [Tooltip("Played when a shockwave wakes an item (optional).")]
         [SerializeField] SfxCue wakeCue;
 
-        [Header("Empty stage")]
-        [SerializeField] bool spawnWhenEmpty = true;
-        [Tooltip("Seconds with no item in play before a random one drops in.")]
-        [FormerlySerializedAs("guaranteeDelay")]
+        [Header("Always one item available")]
+        [SerializeField] bool keepOneItemAvailable = true;
+        [Tooltip("Seconds with no item in play (sleeping ones don't count) before one is supplied.")]
         [SerializeField, Min(0f)] float emptyDelay = 1.5f;
-        [Tooltip("Count sleeping items as \"in play\" (then nothing drops in while any are asleep).")]
-        [SerializeField] bool countSleepingItems = false;
+
+        [Header("Dropping in (when nothing is left asleep)")]
         [Tooltip("Keep this far from the stage walls (world units).")]
         [SerializeField, Min(0f)] float wallMargin = 0.6f;
         [Tooltip("Try not to land on a fighter: at least this far from both (world units). 0 = anywhere.")]
@@ -106,8 +73,6 @@ namespace KungFuCrashout.Props
         [Tooltip("Dropped-in items arrive at their Fight Scale (they land in the fight, in the foreground). " +
                  "OFF: at the size they were placed on the stage.")]
         [SerializeField] bool dropInsAtFightSize = true;
-
-        [Header("Dropping in")]
         [Tooltip("How high above the floor dropped items start (world units).")]
         [SerializeField, Min(0.5f)] float dropHeight = 6f;
         [SerializeField, Min(1f)] float dropGravity = 25f;
@@ -120,100 +85,84 @@ namespace KungFuCrashout.Props
 
         /// <summary>An item has started dropping in at this landing point.</summary>
         public event Action<Vector3> DropStarted;
-        /// <summary>A hit sent out a shockwave (centre between the fighters) that woke an item.</summary>
+        /// <summary>A shockwave (centre between the fighters) woke an item.</summary>
         public event Action<Vector3> Shockwave;
-        /// <summary>(Stage Items index, item) a shockwave woke this entry.</summary>
-        public event Action<int, Carryable> ItemWoken;
+        /// <summary>A shockwave or the empty-stage rule woke this item.</summary>
+        public event Action<Carryable> ItemWoken;
 
-        public WakeOrder Order { get => wakeOrder; set => wakeOrder = value; }
-        /// <summary>Testing: items work as originally placed (no sleeping, clearing or drop-ins).</summary>
-        public bool OriginalItemBehaviour => originalItemBehaviour;
-
-        /// <summary>One stage item for this scene: where it sleeps, what it's copied from, how close a hit must be.</summary>
-        struct Entry
+        /// <summary>Testing: items work as originally placed (no sleeping, re-laying or drop-ins). Setting it re-lays the stage.</summary>
+        public bool OriginalItemBehaviour
         {
-            public Carryable source;   // a prefab, or a hidden placed item (template)
-            public bool placed;        // source is a scene object: copies start inactive and keep its parent / scale
-            public Vector3 position;
-            public Quaternion rotation;
-            public float radius;
-            public string label;
+            get => originalItemBehaviour;
+            set => SetOriginalItemBehaviour(value);
         }
 
-        readonly List<Entry> entries = new List<Entry>();
-        bool entriesBuilt;
-        Carryable[] sleepers = new Carryable[0];
-        int nextIndex;
+        /// <summary>Raised when the mode is switched (pause menu toggle).</summary>
+        public event Action<bool> ModeChanged;
+
+        /// <summary>The pause menu's choice for this app session (null = use the Inspector value). Survives scene reloads.</summary>
+        static bool? sessionOriginal;
+
+        /// <summary>
+        /// Switch between the GDD rules and the original behaviour while playing. The stage is cleared and every placed item
+        /// laid out again at its spot: asleep (GDD rules) or awake and grabbable (original).
+        /// </summary>
+        public void SetOriginalItemBehaviour(bool on)
+        {
+            sessionOriginal = on;
+            if (on == originalItemBehaviour) return;
+            originalItemBehaviour = on;
+            LayOut();
+            ModeChanged?.Invoke(on);
+            if (logWakes) Debug.Log($"[Stage Items] Mode: {(on ? "original item behaviour (testing)" : "GDD rules")}", this);
+        }
+
+        /// <summary>A placed item, hidden at scene start and copied (asleep) at its spot every round.</summary>
+        struct Template
+        {
+            public Carryable source;
+            public Transform parent;
+            public Vector3 position, localScale;
+            public Quaternion rotation;
+            public string name;
+        }
+
+        readonly List<Template> templates = new List<Template>();
+        readonly List<Carryable> sleepers = new List<Carryable>();
+        readonly List<GameObject> dropProxies = new List<GameObject>();
+        bool templatesRead;
         int pendingDrops;
         float nextShockwave;
         float emptySince = -1f;
         float nextCheck;
-        readonly List<GameObject> dropProxies = new List<GameObject>();
 
         void Awake()
         {
+            if (sessionOriginal.HasValue) originalItemBehaviour = sessionOriginal.Value;
             if (!stage) stage = FindFirstObjectByType<StageBounds>();
             if (fighters == null || fighters.Length == 0) fighters = FindObjectsByType<Fighter>(FindObjectsSortMode.None);
-            BuildEntries();
+            ReadTemplates();
         }
 
-        /// <summary>
-        /// Read the stage items once, when the scene starts. Placed items are hidden and kept as templates (so they
-        /// never count as items in play themselves).
-        /// </summary>
-        void BuildEntries()
+        /// <summary>Every active item in the scene becomes a stage item: remembered, then hidden (copies are used in play).</summary>
+        void ReadTemplates()
         {
-            if (originalItemBehaviour) return; // testing: placed items stay live where they are
-            if (entriesBuilt) return;
-            entriesBuilt = true;
-            entries.Clear();
+            if (templatesRead) return;
+            templatesRead = true;
+            templates.Clear();
 
-            if (usePlacedItems)
+            foreach (var item in FindObjectsByType<Carryable>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID))
             {
-                foreach (var item in PlacedItems())
+                var t = item.transform;
+                templates.Add(new Template
                 {
-                    var t = item.transform;
-                    entries.Add(new Entry
-                    {
-                        source = item, placed = true, position = t.position, rotation = t.rotation,
-                        radius = RadiusFor(item), label = item.name,
-                    });
-                    item.gameObject.SetActive(false); // template: hidden, copied every round
-                }
-                if (entries.Count == 0)
-                    Debug.LogWarning("[Stage Items] Use Placed Items is on but nothing is placed under " +
-                                     $"'{name}'. Drop item prefabs under it (or untick it to use the list).", this);
-                return;
-            }
-
-            foreach (var e in stageItems)
-            {
-                if (e == null || !e.prefab || !stage) { entries.Add(default); continue; } // keep indices lined up
-                entries.Add(new Entry
-                {
-                    source = e.prefab, placed = false, position = SpotOf(e, e.prefab), rotation = Quaternion.identity,
-                    radius = e.wakeRadius > 0f ? e.wakeRadius : shockwaveRadius, label = e.prefab.name,
+                    source = item, parent = t.parent, position = t.position, rotation = t.rotation,
+                    localScale = t.localScale, name = item.name,
                 });
+                item.gameObject.SetActive(false);
             }
-        }
-
-        /// <summary>Items placed under this object, in Hierarchy order (top first), including inactive ones.</summary>
-        List<Carryable> PlacedItems()
-        {
-            var list = new List<Carryable>();
-            foreach (var c in GetComponentsInChildren<Carryable>(true))
-            {
-                // Only the outermost item: an item nested inside another item's hierarchy isn't its own entry.
-                var parentItem = c.transform.parent ? c.transform.parent.GetComponentInParent<Carryable>(true) : null;
-                if (!parentItem) list.Add(c);
-            }
-            return list;
-        }
-
-        float RadiusFor(Carryable item)
-        {
-            var settings = item.GetComponent<StageItemSettings>();
-            return settings && settings.WakeRadius > 0f ? settings.WakeRadius : shockwaveRadius;
+            if (templates.Count == 0)
+                Debug.LogWarning("[Stage Items] No items placed in the scene. Drag item prefabs under 'Stage Items' where they should sleep.", this);
         }
 
         void OnEnable()
@@ -232,50 +181,44 @@ namespace KungFuCrashout.Props
             if (!FindFirstObjectByType<MatchManager>()) ResetForRound();
         }
 
-        void Update()
-        {
-            if (originalItemBehaviour || !spawnWhenEmpty || Time.time < nextCheck) return;
-            nextCheck = Time.time + 0.25f;
+        // ───────────── Round start (MatchManager) ─────────────
 
-            int inPlay = CountItemsInPlay() + pendingDrops;
-            if (inPlay > 0) { emptySince = -1f; return; }
-            if (emptySince < 0f) { emptySince = Time.time; return; }
-            if (Time.time - emptySince < emptyDelay) return;
-
-            emptySince = -1f;
-            DropRandom();
-        }
-
-        // ───────────── Round reset (MatchManager) ─────────────
-
-        /// <summary>Clear the stage and lay every Stage Items entry out asleep at its spot.</summary>
+        /// <summary>
+        /// New round: clear the stage and lay every stage item out again, asleep, where it was placed.
+        /// Original behaviour: the items are laid out awake once, then left alone between rounds.
+        /// </summary>
         public void ResetForRound()
         {
+            if (originalItemBehaviour && laidOut) return; // testing: leave the items exactly as they are
+            LayOut();
+        }
+
+        bool laidOut;
+
+        /// <summary>Clear the stage and lay every placed item out at its spot: asleep (GDD rules) or awake (original).</summary>
+        void LayOut()
+        {
             StopAllCoroutines();
-            if (originalItemBehaviour) return; // testing: leave the scene's items exactly as they are
+            laidOut = true;
+
             foreach (var p in dropProxies) if (p) Destroy(p);
             dropProxies.Clear();
             pendingDrops = 0;
             emptySince = -1f;
             nextShockwave = 0f;
-            nextIndex = 0;
 
-            if (clearItemsEachRound)
-            {
-                foreach (var holder in FindObjectsByType<ItemHolder>(FindObjectsSortMode.None)) holder.Drop();
-                foreach (var item in FindObjectsByType<Carryable>(FindObjectsSortMode.None)) Destroy(item.gameObject);
-            }
+            foreach (var holder in FindObjectsByType<ItemHolder>(FindObjectsSortMode.None)) holder.Drop();
+            foreach (var item in FindObjectsByType<Carryable>(FindObjectsSortMode.None)) Destroy(item.gameObject);
 
-            BuildEntries();
-            sleepers = new Carryable[entries.Count];
-            for (int i = 0; i < entries.Count; i++)
+            ReadTemplates();
+            sleepers.Clear();
+            foreach (var t in templates)
             {
-                var e = entries[i];
-                if (!e.source) continue;
-                var item = SpawnEntry(e, e.position);
-                item.name = $"{e.label} #{i}";
+                if (!t.source) continue;
+                var item = Spawn(t, t.position, t.rotation);
+                if (originalItemBehaviour) continue; // awake and grabbable where it was placed
                 item.MakeDormant();
-                sleepers[i] = item;
+                sleepers.Add(item);
             }
         }
 
@@ -283,66 +226,102 @@ namespace KungFuCrashout.Props
 
         void OnHitConnected(Fighter target, AttackData attack, HitResult result)
         {
-            if (originalItemBehaviour || !hitShockwaves || !target) return;
+            if (originalItemBehaviour || !target) return;
             if (attack is ThrowableData && !itemHitsCount) return;
             bool counts = result == HitResult.Hit || (result == HitResult.Blocked && blockedHitsCount);
             if (!counts || Time.time < nextShockwave) return;
-
-            var attacker = target.Opponent;
-            int index = PickToWake(target, attacker);
-            if (index < 0) return;
-
-            var item = sleepers[index];
-            if (!item.Wake()) return;
-            sleepers[index] = null;
-            if (wakeOrder == WakeOrder.InListOrder) nextIndex = index + 1;
             nextShockwave = Time.time + shockwaveCooldown;
 
-            Vector3 centre = attacker ? (attacker.transform.position + target.transform.position) * 0.5f : target.transform.position;
-            AudioManager.Play(wakeCue);
-            Shockwave?.Invoke(centre);
-            ItemWoken?.Invoke(index, item);
-            if (logWakes) Debug.Log($"[Stage Items] Shockwave ({wakeOrder}) woke #{index} {item.name}", this);
-        }
-
-        /// <summary>The Stage Items index this hit wakes, or -1.</summary>
-        int PickToWake(Fighter a, Fighter b)
-        {
-            if (wakeOrder == WakeOrder.InListOrder)
+            var attacker = target.Opponent;
+            bool heavy = attack && (attack.weight == HitWeight.Heavy || (attacker && attacker.IsDoingSpecial));
+            float chance = heavy ? heavyWakeChance : wakeChance;
+            float roll = Random.value * 100f;
+            if (roll >= chance)
             {
-                // Skip entries that are gone or already awake (destroyed items, empty slots).
-                while (nextIndex < sleepers.Length && !IsAsleep(nextIndex)) nextIndex++;
-                if (nextIndex >= sleepers.Length) return -1;
-                return InRange(nextIndex, a, b) ? nextIndex : -1;
+                if (logWakes) Debug.Log($"[Stage Items] Shockwave rolled {roll:0} vs {chance:0}% ({(heavy ? "heavy" : "light")}): nothing woke.", this);
+                return;
             }
 
-            for (int i = 0; i < sleepers.Length; i++)
-                if (IsAsleep(i) && InRange(i, a, b)) return i;
-            return -1;
+            Vector3 centre = attacker ? (attacker.transform.position + target.transform.position) * 0.5f : target.transform.position;
+            var item = NearestSleeper(centre, wakeRadius);
+            if (!item) return;
+            if (WakeItem(item))
+            {
+                AudioManager.Play(wakeCue);
+                Shockwave?.Invoke(centre);
+                if (logWakes) Debug.Log($"[Stage Items] Shockwave ({(heavy ? "heavy" : "light")}, {chance:0}%) woke {item.name}", this);
+            }
         }
 
-        bool IsAsleep(int i) => sleepers[i] && sleepers[i].IsDormant;
-
-        bool InRange(int i, Fighter a, Fighter b)
+        /// <summary>The sleeping item nearest a point (within radius; 0 = any distance), or null.</summary>
+        Carryable NearestSleeper(Vector3 from, float radius)
         {
-            float r = RadiusOf(i);
-            Vector2 p = sleepers[i].transform.position;
-            return (a && Vector2.Distance(p, a.transform.position) <= r) ||
-                   (b && Vector2.Distance(p, b.transform.position) <= r);
+            sleepers.RemoveAll(s => !s || !s.IsDormant);
+            Carryable best = null;
+            float bestDist = float.MaxValue;
+            foreach (var s in sleepers)
+            {
+                float d = Vector2.Distance(s.transform.position, from);
+                if (radius > 0f && d > radius) continue;
+                if (d < bestDist) { bestDist = d; best = s; }
+            }
+            return best;
         }
 
-        float RadiusOf(int i) => i < entries.Count && entries[i].radius > 0f ? entries[i].radius : shockwaveRadius;
+        bool WakeItem(Carryable item)
+        {
+            if (!item.Wake()) return false;
+            sleepers.Remove(item);
+            ItemWoken?.Invoke(item);
+            return true;
+        }
 
-        // ───────────── Empty stage ─────────────
+        // ───────────── Always one item available ─────────────
 
-        /// <summary>Drop a random Stage Items prefab in anywhere within the stage bounds.</summary>
+        void Update()
+        {
+            if (originalItemBehaviour || !keepOneItemAvailable || Time.time < nextCheck) return;
+            nextCheck = Time.time + 0.25f;
+
+            if (CountItemsInPlay() + pendingDrops > 0) { emptySince = -1f; return; }
+            if (emptySince < 0f) { emptySince = Time.time; return; }
+            if (Time.time - emptySince < emptyDelay) return;
+            emptySince = -1f;
+
+            // Prefer knocking a sleeping item loose (it falls onto the stage); otherwise drop a new one in.
+            var item = NearestSleeper(FightersCentre(), 0f);
+            if (item && WakeItem(item))
+            {
+                if (logWakes) Debug.Log($"[Stage Items] Stage empty: woke {item.name}", this);
+                return;
+            }
+            DropRandom();
+        }
+
+        int CountItemsInPlay()
+        {
+            int n = 0;
+            foreach (var c in FindObjectsByType<Carryable>(FindObjectsSortMode.None))
+                if (!c.IsDormant) n++;
+            return n;
+        }
+
+        Vector3 FightersCentre()
+        {
+            Vector3 sum = Vector3.zero; int n = 0;
+            foreach (var f in fighters) if (f) { sum += f.transform.position; n++; }
+            return n > 0 ? sum / n : transform.position;
+        }
+
+        /// <summary>Drop a random stage item in anywhere within the stage bounds.</summary>
         public void DropRandom()
         {
-            BuildEntries();
-            var pool = new List<Entry>();
-            foreach (var e in entries) if (e.source) pool.Add(e);
+            ReadTemplates();
+            var pool = templates.FindAll(t => t.source);
             if (pool.Count == 0 || !stage) return;
-            StartCoroutine(DropIn(pool[Random.Range(0, pool.Count)], PickLandingX()));
+            var pick = pool[Random.Range(0, pool.Count)];
+            StartCoroutine(DropIn(pick, PickLandingX()));
+            if (logWakes) Debug.Log($"[Stage Items] Stage empty, nothing asleep: dropping in {pick.name}", this);
         }
 
         float PickLandingX()
@@ -363,66 +342,38 @@ namespace KungFuCrashout.Props
             return best;
         }
 
-        int CountItemsInPlay()
-        {
-            int n = 0;
-            foreach (var c in FindObjectsByType<Carryable>(FindObjectsSortMode.None))
-                if (countSleepingItems || !c.IsDormant) n++;
-            return n;
-        }
-
         // ───────────── Spawning ─────────────
 
-        Vector3 SpotOf(StageItem e, Carryable prefab)
+        /// <summary>A live copy of a stage item, under the same parent at the same scale.</summary>
+        Carryable Spawn(Template t, Vector3 position, Quaternion rotation)
         {
-            if (e.spot) return e.spot.position;
-            float x = Mathf.Lerp(stage.MinX, stage.MaxX, e.stageX);
-            return new Vector3(x, stage.GroundY + HalfHeight(prefab) + e.height, 0f);
-        }
-
-        static float HalfHeight(Carryable source)
-        {
-            var sprite = source.GroundSprite;
-            return sprite ? sprite.bounds.extents.y * Mathf.Abs(source.transform.lossyScale.y) : 0.25f;
-        }
-
-        /// <summary>A live copy of an entry at a position. Placed items are copied under their own parent (same scale).</summary>
-        Carryable SpawnEntry(Entry e, Vector3 position)
-        {
-            Carryable item;
-            if (e.placed)
-            {
-                var src = e.source.transform;
-                item = Instantiate(e.source, src.parent); // inactive like its template
-                item.transform.SetPositionAndRotation(position, e.rotation);
-                item.transform.localScale = src.localScale;
-                // The template's own outline object (made by ItemHighlight at scene start) would be copied twice.
-                var oldGlow = item.transform.Find("Highlight");
-                if (oldGlow) DestroyImmediate(oldGlow.gameObject);
-                item.gameObject.SetActive(true);
-            }
-            else item = Instantiate(e.source, position, e.rotation);
-            item.name = e.label;
+            var item = Instantiate(t.source, t.parent); // inactive, like its template
+            item.transform.SetPositionAndRotation(position, rotation);
+            item.transform.localScale = t.localScale;
+            // The template's outline object (made by ItemHighlight at scene start) would otherwise be copied twice.
+            var oldGlow = item.transform.Find("Highlight");
+            if (oldGlow) DestroyImmediate(oldGlow.gameObject);
+            item.name = t.name;
+            item.gameObject.SetActive(true);
             return item;
         }
 
+        static float HalfHeight(Sprite sprite, Vector3 scale) =>
+            sprite ? sprite.bounds.extents.y * Mathf.Abs(scale.y) : 0.25f;
+
         /// <summary>A stand-in sprite falls with a shadow below it; the real (awake) item appears where it lands.</summary>
-        IEnumerator DropIn(Entry entry, float x)
+        IEnumerator DropIn(Template t, float x)
         {
             pendingDrops++;
-            var prefab = entry.source;
+            var prefab = t.source;
             var prefabSr = prefab.GetComponent<SpriteRenderer>();
-            Vector3 scale = prefab.transform.lossyScale;
-            float restY = stage.GroundY + HalfHeight(prefab);
-            if (dropInsAtFightSize)
-            {
-                Vector3 parent = entry.placed && prefab.transform.parent ? prefab.transform.parent.lossyScale : Vector3.one;
-                scale = Vector3.Scale(Vector3.one * prefab.FightScale, parent);
-                var gs = prefab.GroundSprite;
-                restY = stage.GroundY + (gs ? gs.bounds.extents.y * Mathf.Abs(scale.y) : 0.25f);
-            }
+            Vector3 parentScale = t.parent ? t.parent.lossyScale : Vector3.one;
+            Vector3 scale = dropInsAtFightSize
+                ? Vector3.Scale(Vector3.one * prefab.FightScale, parentScale)
+                : Vector3.Scale(t.localScale, parentScale);
+            float restY = stage.GroundY + HalfHeight(prefab.GroundSprite, scale);
 
-            var proxy = new GameObject($"{entry.label} (dropping)");
+            var proxy = new GameObject($"{t.name} (dropping)");
             proxy.transform.position = new Vector3(x, restY + dropHeight, 0f);
             proxy.transform.localScale = scale;
             var psr = proxy.AddComponent<SpriteRenderer>();
@@ -458,10 +409,10 @@ namespace KungFuCrashout.Props
                 proxy.transform.position = new Vector3(x, y, 0f);
                 proxy.transform.rotation = Quaternion.Euler(0f, 0f, angle);
 
-                // Shadow grows and darkens as the item comes down.
-                float t = 1f - Mathf.Clamp01((y - restY) / dropHeight);
-                shadow.transform.localScale = new Vector3(scale.x * Mathf.Lerp(0.4f, 1.1f, t), scale.y * 0.18f, 1f);
-                var c = shadowColour; c.a *= t;
+                // The shadow grows and darkens as the item comes down.
+                float k = 1f - Mathf.Clamp01((y - restY) / dropHeight);
+                shadow.transform.localScale = new Vector3(scale.x * Mathf.Lerp(0.4f, 1.1f, k), scale.y * 0.18f, 1f);
+                var c = shadowColour; c.a *= k;
                 ssr.color = c;
                 yield return null;
             }
@@ -472,68 +423,28 @@ namespace KungFuCrashout.Props
             Destroy(shadow);
             pendingDrops--;
 
-            var landed = SpawnEntry(entry, new Vector3(x, restY, 0f));
-            landed.transform.rotation = Quaternion.identity;
+            var landed = Spawn(t, new Vector3(x, restY, 0f), Quaternion.identity);
             if (dropInsAtFightSize) landed.UseFightSize();
             AudioManager.Play(landCue);
         }
 
+        // ───────────── Scene view ─────────────
+
         void OnDrawGizmosSelected()
         {
-            if (!stage) stage = FindFirstObjectByType<StageBounds>();
-            if (!stage) return;
-
-            if (usePlacedItems)
-            {
-                // Edit mode: the children as placed. Play mode: the spots read at scene start (the templates are hidden).
-                if (Application.isPlaying && entriesBuilt)
-                {
-                    for (int i = 0; i < entries.Count; i++) DrawSpot(entries[i].position, RadiusOf(i), $"#{i} {entries[i].label}");
-                }
-                else
-                {
-                    var placed = PlacedItems();
-                    for (int i = 0; i < placed.Count; i++)
-                        DrawSpot(placed[i].transform.position, RadiusFor(placed[i]), $"#{i} {placed[i].name}");
-                }
-                return;
-            }
-
-            for (int i = 0; i < stageItems.Count; i++)
-            {
-                var e = stageItems[i];
-                if (e == null) continue;
-                Vector3 p = e.spot ? e.spot.position
-                                   : new Vector3(Mathf.Lerp(stage.MinX, stage.MaxX, e.stageX),
-                                                 stage.GroundY + (e.prefab ? HalfHeight(e.prefab) : 0.3f) + e.height, 0f);
-                Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-                Gizmos.DrawWireCube(p, new Vector3(0.5f, 0.5f, 0f));
-                Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.25f);
-                DrawCircle(p, e.wakeRadius > 0f ? e.wakeRadius : shockwaveRadius);
-#if UNITY_EDITOR
-                UnityEditor.Handles.Label(p + Vector3.up * 0.45f, $"#{i} {(e.prefab ? e.prefab.name : "(empty)")}");
-#endif
-            }
-        }
-
-        static void DrawSpot(Vector3 p, float radius, string label)
-        {
-            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-            Gizmos.DrawWireCube(p, new Vector3(0.5f, 0.5f, 0f));
-            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.25f);
-            DrawCircle(p, radius);
-#if UNITY_EDITOR
-            UnityEditor.Handles.Label(p + Vector3.up * 0.45f, label);
-#endif
+            if (wakeRadius <= 0f) return;
+            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.6f);
+            foreach (var f in fighters)
+                if (f) DrawCircle(f.transform.position, wakeRadius);
         }
 
         static void DrawCircle(Vector3 c, float r)
         {
-            const int n = 40;
+            const int steps = 40;
             Vector3 prev = c + new Vector3(r, 0f, 0f);
-            for (int k = 1; k <= n; k++)
+            for (int i = 1; i <= steps; i++)
             {
-                float a = k * Mathf.PI * 2f / n;
+                float a = i * Mathf.PI * 2f / steps;
                 Vector3 next = c + new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f);
                 Gizmos.DrawLine(prev, next);
                 prev = next;

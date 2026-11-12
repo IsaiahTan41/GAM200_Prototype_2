@@ -109,6 +109,16 @@ namespace KungFuCrashout.Fighters
         float perfectStart = -1f;
         Vector2 squashAmount = Vector2.one;
 
+        /// <summary>
+        /// Capsule block shield + perfect-block flash on / off at play time. FighterVfx turns it off when its
+        /// guard lotus (the Block / Parry VFX) replaces it; the Inspector settings are left as they are.
+        /// </summary>
+        public bool UseBlockShield
+        {
+            get => showBlockShield;
+            set { showBlockShield = value; showPerfectBlockFlash = value; }
+        }
+
         /// <summary>The pose sprite currently shown (for debug UI).</summary>
         public Sprite CurrentPose => art ? art.sprite : null;
 

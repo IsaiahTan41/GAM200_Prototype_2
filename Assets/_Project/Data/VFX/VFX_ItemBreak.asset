@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15f6afe0f751df2439656cab081bb059, type: 3}
+  m_Name: VFX_ItemBreak
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.VfxCue
+  sprite: {fileID: 21300000, guid: d636a5759b6167c44b97db719c2d0f6f, type: 3}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  alpha: 1
+  offset: {x: 0, y: 0}
+  flipWithFacing: 0
+  paintedFacingLeft: 0
+  rotation: 0
+  randomRotation: 0
+  sortingOffset: 2
+  scale: 1.6
+  startScale: 0.6
+  peakScale: 1.05
+  endScale: 1.15
+  popTime: 0.05
+  lifetime: 0.45
+  fadeStart: 0.35
+  drift: {x: 0, y: 0}
+  light: 0
+  lightColour: {r: 1, g: 0.9, b: 0.6, a: 1}
+  lightIntensity: 1.5
+  lightRadius: 2
+  lightAngle: 360
+  lightDirection: 0
+  lightTime: 0.12
+  lightOffset: {x: 0, y: 0}
+  pulseSpeed: 2.5
+  pulseAmount: 0.08

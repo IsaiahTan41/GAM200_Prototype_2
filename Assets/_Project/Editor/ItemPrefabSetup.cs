@@ -248,6 +248,8 @@ namespace KungFuCrashout.EditorTools
                 dso.FindProperty("breakCue").objectReferenceValue = breakCue;
                 dso.ApplyModifiedPropertiesWithoutUndo();
 
+                VfxSetup.AddItemVfx(go); // held glow, break burst, landing dust (needs VFX → 1. Import VFX Folder for the cues)
+
                 PrefabUtility.SaveAsPrefabAsset(go, path);
             }
             finally { Object.DestroyImmediate(go); }

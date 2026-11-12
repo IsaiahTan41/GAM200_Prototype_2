@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfbba5b04bdea8c41b73b39aadeb44c2, type: 3}
+  m_Name: VfxSet_Monk
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.VfxSet
+  lightCombo:
+  - strike: {fileID: 11400000, guid: b289d0534623aaa4e8a7a3d2aa56ffd3, type: 2}
+    dust: {fileID: 11400000, guid: 56bb3629b30c37449a1bc703b5f4f9e3, type: 2}
+    scale: 1
+  - strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
+    dust: {fileID: 11400000, guid: c6b59b9766f78914cba4eec1bf9c918e, type: 2}
+    scale: 1
+  - strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
+    dust: {fileID: 11400000, guid: c6b59b9766f78914cba4eec1bf9c918e, type: 2}
+    scale: 1.3
+  heavy:
+    strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
+    dust: {fileID: 11400000, guid: c6b59b9766f78914cba4eec1bf9c918e, type: 2}
+    scale: 1.3
+  special:
+    strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
+    dust: {fileID: 11400000, guid: c6b59b9766f78914cba4eec1bf9c918e, type: 2}
+    scale: 1.3
+  perAttack: []
+  hit: {fileID: 11400000, guid: 1c82e07693bc87e46af7c65967d85a43, type: 2}
+  heavyHit: {fileID: 11400000, guid: 9aba4617f59c79c4e9c603d12e7e5ddd, type: 2}
+  ko: {fileID: 11400000, guid: ac83c9bc73854954f80f5215c4bbeabc, type: 2}
+  block: {fileID: 11400000, guid: 205b143a708982148b583dac6d8e4150, type: 2}
+  parry: {fileID: 11400000, guid: ca79bc9e5d42f114ea91ee96412535a7, type: 2}
+  parryImpact: {fileID: 11400000, guid: 46f6ab4d867b635459b914cd5f8005e0, type: 2}
+  guardBreak: {fileID: 0}
+  dash: {fileID: 11400000, guid: b45493002f286f34da71c1b09a3e4d4c, type: 2}
+  jump: {fileID: 11400000, guid: b02e91056b7b3564787891a36d0fc495, type: 2}
+  land: {fileID: 11400000, guid: b4dfa501d9ada20438c6ad4f15746929, type: 2}
+  knockdown: {fileID: 11400000, guid: 3eb5f818b54377f479f28998540fd6e7, type: 2}

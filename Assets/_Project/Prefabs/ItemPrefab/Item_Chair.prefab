@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7249842750614246595}
   - component: {fileID: 181303241994580314}
   - component: {fileID: 1367046049179407281}
+  - component: {fileID: 8968709606834884305}
   m_Layer: 6
   m_Name: Item_Chair
   m_TagString: Untagged
@@ -241,3 +242,19 @@ MonoBehaviour:
   spinDegrees: 0
   headHeight: 2.2
   durationOverride: 0
+--- !u!114 &8968709606834884305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1477833769217367969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fb59e17e56b36146926a1a878cba7d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.ItemVfx
+  heldGlow: {fileID: 11400000, guid: 0e1577bd89dfe1f42af2815a7273d071, type: 2}
+  heldLight: 1
+  breakBurst: {fileID: 11400000, guid: c29bb7287e8210c42b882a067a548d8e, type: 2}
+  landDust: {fileID: 11400000, guid: 0934e9cf501b5e54692c99e408bf3fe9, type: 2}

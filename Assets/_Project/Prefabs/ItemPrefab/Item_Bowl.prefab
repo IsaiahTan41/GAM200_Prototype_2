@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7954971514586149280}
   - component: {fileID: 3348235934281834100}
   - component: {fileID: 7842097167064324824}
+  - component: {fileID: 3623987992642960528}
   m_Layer: 6
   m_Name: Item_Bowl
   m_TagString: Untagged
@@ -156,10 +157,15 @@ MonoBehaviour:
   stage: {fileID: 0}
   groundSprite: {fileID: 21300000, guid: 306e2d2cc13c4fc4097f94c20d2bf18f, type: 3}
   heldSprite: {fileID: 21300000, guid: f5259d6d7fd947b40851ed725fdc834b, type: 3}
+  sleepingSprite: {fileID: 0}
+  fightScale: 1
+  resizeTime: 0.12
+  backToStageSizeWhenDropped: 0
   canMoveWhileHeld: 1
   dimWhileDormant: 1
   dormantBrightness: 0.65
   wakePopSpeed: 3
+  carryOffset: {x: 0, y: 0}
   carryDistance: 1
   carryAngle: 135
   carryTilt: 20
@@ -217,3 +223,19 @@ MonoBehaviour:
   breakOnCleanHit: 1
   blocksBeforeBreaking: 0
   breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
+--- !u!114 &3623987992642960528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9089957683117855090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fb59e17e56b36146926a1a878cba7d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.ItemVfx
+  heldGlow: {fileID: 11400000, guid: 0e1577bd89dfe1f42af2815a7273d071, type: 2}
+  heldLight: 1
+  breakBurst: {fileID: 11400000, guid: c29bb7287e8210c42b882a067a548d8e, type: 2}
+  landDust: {fileID: 11400000, guid: 0934e9cf501b5e54692c99e408bf3fe9, type: 2}

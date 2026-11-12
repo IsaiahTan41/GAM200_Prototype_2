@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using KungFuCrashout.AI;
 using KungFuCrashout.Core;
 using KungFuCrashout.Fighters;
+using KungFuCrashout.Props;
 
 namespace KungFuCrashout.UI
 {
@@ -17,6 +18,9 @@ namespace KungFuCrashout.UI
     ///   • Callouts: ROUND 1 / FIGHT! / K.O. / TIME, popping in at the centre
     ///   • Feedback words over the fighters: PARRY! · CAUGHT! · STAGGER! · GUARD BREAK! · BREAK OUT! · "n HITS"
     ///   • "!" over the CPU while an Easy-tier AI winds up (BehaviourTreeAI.IsTelegraphing)
+    ///   • Move readout under each combo counter (P1 Move / CPU Move): the move or state each fighter is in right now,
+    ///     by generic name (Light Combo 2, Heavy Attack, Side Special, Block, Parry Window, Dash, Jump, Hit Stun…),
+    ///     held briefly so quick moves stay readable. Found by name if the slots are empty.
     ///   • KO letterbox bars, and the first-match gesture hints (fade after a few seconds or the first touch)
     ///   • Match over: YOU WIN / YOU LOSE / DRAW, both sides' pips, this phone's record, REMATCH (primary, bottom-right),
     ///     CHANGE FIGHTER and START
@@ -43,7 +47,13 @@ namespace KungFuCrashout.UI
             [HideInInspector] public float damageHold;
             [HideInInspector] public float popupUntil;
             [HideInInspector] public float popupStart;
+            [Tooltip("The move / state this fighter is doing right now (\"P1 Move\" / \"CPU Move\"). Empty = found by name.")]
+            public TMP_Text moveText;
             [HideInInspector] public int lastCombo;
+            [HideInInspector] public string moveShown = "";
+            [HideInInspector] public float moveHoldUntil;
+            [HideInInspector] public float moveEventUntil;
+            [NonSerialized] public ItemHolder holder;
             [HideInInspector] public float comboUntil;
         }
 
@@ -83,6 +93,15 @@ namespace KungFuCrashout.UI
 
         [Header("Feel")]
         [Tooltip("Seconds the red damage bar waits after a hit before draining.")]
+        [Header("Move readout (P1 Move / CPU Move)")]
+        [SerializeField] bool showMoveReadout = true;
+        [Tooltip("Shown when the fighter isn't doing anything. Empty = blank.")]
+        [SerializeField] string idleMoveText = "Neutral";
+        [Tooltip("Real seconds a move's name stays up after it ends, so quick moves (a dash, a jab) are readable.")]
+        [SerializeField, Min(0f)] float moveHoldTime = 0.35f;
+        [Tooltip("Real seconds one-off moments stay up (Parry!, Item Catch!, Combo Breaker!, Pick Up).")]
+        [SerializeField, Min(0f)] float moveEventTime = 0.6f;
+
         [SerializeField] float damageHoldTime = 0.7f;
         [Tooltip("Damage bar drain speed (full bars per second).")]
         [SerializeField] float damageDrainSpeed = 0.7f;
@@ -111,6 +130,8 @@ namespace KungFuCrashout.UI
             leftFighter = match ? match.Player : null;
             rightFighter = match ? match.Opponent : null;
             cpuBrain = rightFighter ? rightFighter.GetComponent<BehaviourTreeAI>() : null;
+            if (!left.moveText) left.moveText = FindText("P1 Move");
+            if (!right.moveText) right.moveText = FindText("CPU Move");
 
             if (rematchButton) rematchButton.onClick.AddListener(() => match.Rematch());
             if (changeFighterButton) changeFighterButton.onClick.AddListener(() => match.ChangeFighter());
@@ -167,6 +188,8 @@ namespace KungFuCrashout.UI
             float dt = Time.unscaledDeltaTime;
             UpdateSide(left, leftFighter, dt);
             UpdateSide(right, rightFighter, dt);
+            UpdateMove(left, leftFighter);
+            UpdateMove(right, rightFighter);
             UpdateTimer();
             UpdateCallout();
             UpdateTelegraph();
@@ -187,6 +210,10 @@ namespace KungFuCrashout.UI
                 if (r == HitResult.Hit && f.IsLaunched) Popup(s, "STAGGER!", new Color(1f, 0.72f, 0f));
             };
             Action<float> damaged = amount => s.damageHold = damageHoldTime;
+            Action<Fighter, AttackData> parriedMove = (a, atk) => MoveEvent(s, atk is ThrowableData ? "Item Catch!" : "Parry!");
+            Action brokeMove = () => MoveEvent(s, "Combo Breaker!");
+            s.holder = f.GetComponent<ItemHolder>();
+            Action<Carryable> pickedUp = item => MoveEvent(s, "Pick Up");
 
             // Health straight from the component: Fighter.Health is only filled in by Fighter.Awake, which may run after this.
             var health = f.GetComponent<Health>();
@@ -194,6 +221,9 @@ namespace KungFuCrashout.UI
             f.GuardBroken += guardBroken;
             f.ComboBroken += broke;
             f.HitByItem += byItem;
+            f.Parried += parriedMove;
+            f.ComboBroken += brokeMove;
+            if (s.holder) s.holder.PickedUp += pickedUp;
             if (health) health.Damaged += damaged;
             unsubscribe.Add(() =>
             {
@@ -203,9 +233,76 @@ namespace KungFuCrashout.UI
                     f.GuardBroken -= guardBroken;
                     f.ComboBroken -= broke;
                     f.HitByItem -= byItem;
+                    f.Parried -= parriedMove;
+                    f.ComboBroken -= brokeMove;
                 }
+                if (s.holder) s.holder.PickedUp -= pickedUp;
                 if (health) health.Damaged -= damaged;
             });
+        }
+
+        // ───────────── Move readout ─────────────
+
+        TMP_Text FindText(string objectName)
+        {
+            foreach (var t in GetComponentsInChildren<TMP_Text>(true))
+                if (t.name == objectName) return t;
+            return null;
+        }
+
+        void UpdateMove(Side s, Fighter f)
+        {
+            if (!s.moveText) return;
+            if (!showMoveReadout || !f) { if (s.moveText.text.Length > 0) s.moveText.text = ""; return; }
+
+            float now = Time.unscaledTime;
+            if (now >= s.moveEventUntil)
+            {
+                string current = MoveName(s, f);
+                bool idle = current == idleMoveText;
+                if (!idle) { s.moveShown = current; s.moveHoldUntil = now + moveHoldTime; }
+                else if (now >= s.moveHoldUntil) s.moveShown = current;
+            }
+            if (s.moveText.text != s.moveShown) s.moveText.text = s.moveShown;
+        }
+
+        /// <summary>A one-off moment (parry, catch, combo breaker, pick-up): shown for Move Event Time over the state.</summary>
+        void MoveEvent(Side s, string text)
+        {
+            s.moveShown = text;
+            s.moveEventUntil = Time.unscaledTime + moveEventTime;
+            s.moveHoldUntil = s.moveEventUntil;
+        }
+
+        /// <summary>Generic name of what the fighter is doing right now.</summary>
+        string MoveName(Side s, Fighter f)
+        {
+            switch (f.State)
+            {
+                case FighterState.KO: return "KO";
+                case FighterState.Downed: return "Knocked Down";
+                case FighterState.Hitstun:
+                    return f.IsGuardBroken ? "Guard Broken" : f.IsParryStunned ? "Parried (Stunned)" : f.IsLaunched ? "Launched" : "Hit Stun";
+                case FighterState.Blocking:
+                    return f.IsParryActive ? "Parry Window" : f.InBlockstun ? "Block (Blockstun)" : "Block";
+                case FighterState.Dashing: return "Dash";
+                case FighterState.Airborne: return f.IsLaunched ? "Launched" : "Jump";
+                case FighterState.Attacking:
+                    if (f.IsThrowing) return "Item Throw";
+                    var attack = f.CurrentAttack;
+                    if (f.IsDoingSpecial)
+                    {
+                        if (attack && attack == f.SpecialFor(SpecialMove.Side)) return "Side Special";
+                        if (attack && attack == f.SpecialFor(SpecialMove.Up)) return "Up Special";
+                        if (attack && attack == f.SpecialFor(SpecialMove.Down)) return "Down Special";
+                        return "Special";
+                    }
+                    if (f.ComboStep >= 1) return $"Light Combo {f.ComboStep}";
+                    if (attack && attack == f.HeavyAttackData) return "Heavy Attack";
+                    return "Attack";
+            }
+            if (s.holder && s.holder.IsCarrying) return "Holding Item";
+            return idleMoveText;
         }
 
         void SetName(Side s, Fighter f)
