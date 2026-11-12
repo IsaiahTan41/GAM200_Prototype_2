@@ -214,6 +214,7 @@ namespace KungFuCrashout.UI
             foreach (var b in FindObjectsByType<TapAnywhereInputHandler>(FindObjectsSortMode.None)) yield return b;
             foreach (var b in FindObjectsByType<GestureArbiterInput>(FindObjectsSortMode.None)) yield return b;
             foreach (var b in FindObjectsByType<ItemTapHandler>(FindObjectsSortMode.None)) yield return b;
+            foreach (var b in FindObjectsByType<KeyboardDebugInput>(FindObjectsSortMode.None)) yield return b; // test keys too
         }
 
         static bool AnyPress()

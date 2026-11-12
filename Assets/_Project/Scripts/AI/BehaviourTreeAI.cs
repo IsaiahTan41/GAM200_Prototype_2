@@ -244,7 +244,7 @@ namespace KungFuCrashout.AI
 
         void Update()
         {
-            if (!self.Opponent) return;
+            if (!self.Opponent || MatchManager.Paused) return; // pause menu open: the CPU doesn't think or act
             ScanItems();
             RunPlanned();
             UpdateGuard();

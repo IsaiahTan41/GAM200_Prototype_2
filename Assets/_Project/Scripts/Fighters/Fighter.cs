@@ -802,7 +802,9 @@ namespace KungFuCrashout.Fighters
             if (State == FighterState.Attacking)
             {
                 bool inLightCombo = comboIndex >= 0;
-                bool hasNext = comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1];
+                // Only look up the next hit when we're IN the light combo: during a special (-2) or a throw (-3)
+                // comboIndex + 1 is negative and lightCombo[-1] / [-2] throws IndexOutOfRangeException.
+                bool hasNext = inLightCombo && comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1];
                 if (!inLightCombo || !hasNext) return;
 
                 if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);

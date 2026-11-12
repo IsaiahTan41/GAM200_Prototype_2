@@ -30,6 +30,7 @@ namespace KungFuCrashout.Controls
         [SerializeField] KungFuCrashout.Props.ItemTapHandler itemKeys;
 
         IFighterCommands commands;
+        bool blockHeld;
 
         void Awake()
         {
@@ -60,8 +61,15 @@ namespace KungFuCrashout.Controls
             if (kb.iKey.wasPressedThisFrame) commands.Special(SpecialMove.Up, 0);
             if (kb.oKey.wasPressedThisFrame) commands.Special(SpecialMove.Down, 0);
 
-            if (kb.spaceKey.wasPressedThisFrame) commands.BlockStart();
-            if (kb.spaceKey.wasReleasedThisFrame) commands.BlockEnd();
+            if (kb.spaceKey.wasPressedThisFrame) { commands.BlockStart(); blockHeld = true; }
+            if (kb.spaceKey.wasReleasedThisFrame && blockHeld) { commands.BlockEnd(); blockHeld = false; }
+        }
+
+        // Switched off while the pause menu is open: never leave the fighter stuck blocking if Space is let go meanwhile.
+        void OnDisable()
+        {
+            if (blockHeld && commands != null) commands.BlockEnd();
+            blockHeld = false;
         }
     }
 }
