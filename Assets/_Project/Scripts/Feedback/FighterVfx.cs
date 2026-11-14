@@ -28,6 +28,8 @@ namespace KungFuCrashout.Feedback
         [SerializeField] bool movement = true;
         [SerializeField] bool knockdowns = true;
         [SerializeField] bool knockout = true;
+        [Tooltip("Log every attack effect (which attack, which cue, where) to the Console, for checking.")]
+        [SerializeField] bool logEffects = false;
 
         [Header("Guard lotus (replaces the capsule shield)")]
         [Tooltip("ON: while blocking, the Block lotus (blue) stands at the feet for as long as block is held, turning into the " +
@@ -69,8 +71,6 @@ namespace KungFuCrashout.Feedback
         Fighter fighter;
         Transform visual;
         SpriteRenderer art;
-        AttackPhase lastPhase;
-        AttackData lastAttack;
 
         public VfxSet Set { get => set; set => set = value; }
 
@@ -97,6 +97,7 @@ namespace KungFuCrashout.Feedback
 
         void OnEnable()
         {
+            fighter.AttackWentActive += OnAttackWentActive;
             fighter.HitConnected += OnHitConnected;
             fighter.Blocked += OnBlocked;
             fighter.Parried += OnParried;
@@ -110,6 +111,7 @@ namespace KungFuCrashout.Feedback
 
         void OnDisable()
         {
+            fighter.AttackWentActive -= OnAttackWentActive;
             fighter.HitConnected -= OnHitConnected;
             fighter.Blocked -= OnBlocked;
             fighter.Parried -= OnParried;
@@ -126,13 +128,6 @@ namespace KungFuCrashout.Feedback
 
         void LateUpdate()
         {
-            var phase = fighter.Phase;
-            var attack = fighter.CurrentAttack;
-            bool becameActive = phase == AttackPhase.Active && (lastPhase != AttackPhase.Active || attack != lastAttack);
-            if (becameActive && attack && attacks && set && !fighter.IsThrowing) PlayAttack(attack);
-            lastPhase = phase;
-            lastAttack = attack;
-
             UpdateGuardLotus();
         }
 
@@ -250,9 +245,19 @@ namespace KungFuCrashout.Feedback
             if (lotus) Destroy(lotus.gameObject);
         }
 
+        /// <summary>Fighter event: the attack's hitbox just went live (light combo, heavy, specials, air combo; not throws).</summary>
+        void OnAttackWentActive(AttackData attack)
+        {
+            if (!attacks || !set || !attack) { if (logEffects) Debug.Log($"[{name}] VFX skipped for {(attack ? attack.name : "null")}: {(!attacks ? "Attacks toggle off" : !set ? "no VFX Set" : "no attack")}", this); return; }
+            PlayAttack(attack);
+        }
+
         void PlayAttack(AttackData attack)
         {
             var vfx = set.For(fighter, attack);
+            if (logEffects)
+                Debug.Log($"[{name}] VFX for {attack.name} (combo step {fighter.ComboStep}, air step {fighter.AirComboStep}): " +
+                          $"strike {(vfx.strike ? vfx.strike.name : "none")} at {StrikePoint}, dust {(vfx.dust ? vfx.dust.name : "none")}, scale {vfx.Scale}", this);
             if (vfx.IsEmpty) return;
             float s = vfx.Scale;
 

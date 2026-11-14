@@ -30,7 +30,22 @@ MonoBehaviour:
     strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
     dust: {fileID: 11400000, guid: c6b59b9766f78914cba4eec1bf9c918e, type: 2}
     scale: 1.3
-  perAttack: []
+  perAttack:
+  - attack: {fileID: 11400000, guid: c139f7969cfd7744a82ccba7793a0fcb, type: 2}
+    vfx:
+      strike: {fileID: 11400000, guid: b289d0534623aaa4e8a7a3d2aa56ffd3, type: 2}
+      dust: {fileID: 0}
+      scale: 1
+  - attack: {fileID: 11400000, guid: 94decb2bc2d3a85489cc4c810b56239c, type: 2}
+    vfx:
+      strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
+      dust: {fileID: 0}
+      scale: 1
+  - attack: {fileID: 11400000, guid: 7dacb94f2afce0c4d912066d69dc8864, type: 2}
+    vfx:
+      strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
+      dust: {fileID: 0}
+      scale: 1.3
   hit: {fileID: 11400000, guid: 1c82e07693bc87e46af7c65967d85a43, type: 2}
   heavyHit: {fileID: 11400000, guid: 9aba4617f59c79c4e9c603d12e7e5ddd, type: 2}
   ko: {fileID: 11400000, guid: ac83c9bc73854954f80f5215c4bbeabc, type: 2}

@@ -8072,6 +8072,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
   - {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
   heavyAttack: {fileID: 11400000, guid: 6b0dce3be94bb3d4a89c9f03ea51acc9, type: 2}
+  airAttack: {fileID: 0}
+  airCombo: []
+  oneAirAttackPerJump: 1
+  floatDuringAirCombo: 1
+  airComboSinkSpeed: 0.15
+  airComboFloatEase: 0.08
+  maxAirComboFloat: 1.6
+  landingEndsAirAttack: 1
   hurtboxLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -8566,6 +8574,7 @@ MonoBehaviour:
   movement: 1
   knockdowns: 1
   knockout: 1
+  logEffects: 0
   holdLotusWhileBlocking: 1
   hideCapsuleShield: 1
   lotusFadeOut: 0.12
@@ -14182,6 +14191,12 @@ MonoBehaviour:
     clip: {fileID: 7400000, guid: e0a562bcae5d9e74d822d888f0d7bac5, type: 2}
   - attack: {fileID: 11400000, guid: f5c2720c4f8120b4ab4053b68a891334, type: 2}
     clip: {fileID: 7400000, guid: 393ec6349e51e14419fa8b9034b9af91, type: 2}
+  - attack: {fileID: 11400000, guid: c139f7969cfd7744a82ccba7793a0fcb, type: 2}
+    clip: {fileID: 7400000, guid: 9737e310df501bc49b3a01d60bb12488, type: 2}
+  - attack: {fileID: 11400000, guid: 94decb2bc2d3a85489cc4c810b56239c, type: 2}
+    clip: {fileID: 7400000, guid: 81a09782c8017694e8894633d9f436a6, type: 2}
+  - attack: {fileID: 11400000, guid: 7dacb94f2afce0c4d912066d69dc8864, type: 2}
+    clip: {fileID: 7400000, guid: ef51672173e7fcb43bdf09d83673858a, type: 2}
   hitbox: {fileID: 1420525804}
   idleState: Idle
 --- !u!114 &1592441794
@@ -15294,7 +15309,11 @@ MonoBehaviour:
     damageHold: 0
     popupUntil: 0
     popupStart: 0
+    moveText: {fileID: 0}
     lastCombo: 0
+    moveShown: 
+    moveHoldUntil: 0
+    moveEventUntil: 0
     comboUntil: 0
   right:
     healthBar: {fileID: 86501952}
@@ -15309,7 +15328,11 @@ MonoBehaviour:
     damageHold: 0
     popupUntil: 0
     popupStart: 0
+    moveText: {fileID: 0}
     lastCombo: 0
+    moveShown: 
+    moveHoldUntil: 0
+    moveEventUntil: 0
     comboUntil: 0
   timerText: {fileID: 1539123450}
   calloutText: {fileID: 673425}
@@ -15333,6 +15356,10 @@ MonoBehaviour:
   rematchButton: {fileID: 1112943605}
   changeFighterButton: {fileID: 57520340}
   startButton: {fileID: 860927512}
+  showMoveReadout: 1
+  idleMoveText: Neutral
+  moveHoldTime: 0.35
+  moveEventTime: 0.6
   damageHoldTime: 0.7
   damageDrainSpeed: 0.7
   calloutPop: 1.35
@@ -16799,7 +16826,7 @@ Camera:
   far clip plane: 5000
   field of view: 40
   orthographic: 1
-  orthographic size: 2.564767
+  orthographic size: 11.794445
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -16824,7 +16851,7 @@ Transform:
   m_GameObject: {fileID: 1950963569}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.1450843, y: 1.0799954, z: 4.2844915}
+  m_LocalPosition: {x: 1.1450843, y: 9.405166, z: 4.2844915}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -17356,6 +17383,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
   - {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
   heavyAttack: {fileID: 11400000, guid: 6b0dce3be94bb3d4a89c9f03ea51acc9, type: 2}
+  airAttack: {fileID: 11400000, guid: c139f7969cfd7744a82ccba7793a0fcb, type: 2}
+  airCombo:
+  - {fileID: 11400000, guid: c139f7969cfd7744a82ccba7793a0fcb, type: 2}
+  - {fileID: 11400000, guid: 94decb2bc2d3a85489cc4c810b56239c, type: 2}
+  - {fileID: 11400000, guid: 7dacb94f2afce0c4d912066d69dc8864, type: 2}
+  oneAirAttackPerJump: 1
+  floatDuringAirCombo: 1
+  airComboSinkSpeed: 0.15
+  airComboFloatEase: 0.08
+  maxAirComboFloat: 1.6
+  landingEndsAirAttack: 1
   hurtboxLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -17756,6 +17794,7 @@ MonoBehaviour:
   movement: 1
   knockdowns: 1
   knockout: 1
+  logEffects: 0
   holdLotusWhileBlocking: 1
   hideCapsuleShield: 1
   lotusFadeOut: 0.12
@@ -18404,7 +18443,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 40
-    OrthographicSize: 2.564767
+    OrthographicSize: 11.794445
     NearClipPlane: 0.1
     FarClipPlane: 5000
     Dutch: 0
@@ -18431,7 +18470,7 @@ Transform:
   m_GameObject: {fileID: 2044561920}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.2699399, y: 0.03887987, z: -10}
+  m_LocalPosition: {x: -1.2699399, y: 8.36405, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

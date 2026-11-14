@@ -55,7 +55,8 @@ namespace KungFuCrashout.Props
         [SerializeField] bool itemHitsCount = false;
         [Tooltip("Only items this close to the hit can wake (world units). 0 = anywhere on the stage (the nearest one wakes).")]
         [SerializeField, Min(0f)] float wakeRadius = 0f;
-        [Tooltip("Seconds after a shockwave before the next one can roll (stops one combo waking everything).")]
+        [Tooltip("Seconds after an item WAKES before another hit can wake one (stops one combo waking everything). " +
+                 "Hits that roll and wake nothing don't start it: every connecting hit gets its own roll.")]
         [SerializeField, Min(0f)] float shockwaveCooldown = 0.3f;
         [Tooltip("Played when a shockwave wakes an item (optional).")]
         [SerializeField] SfxCue wakeCue;
@@ -229,8 +230,12 @@ namespace KungFuCrashout.Props
             if (originalItemBehaviour || !target) return;
             if (attack is ThrowableData && !itemHitsCount) return;
             bool counts = result == HitResult.Hit || (result == HitResult.Blocked && blockedHitsCount);
-            if (!counts || Time.time < nextShockwave) return;
-            nextShockwave = Time.time + shockwaveCooldown;
+            if (!counts) return;
+            if (Time.time < nextShockwave)
+            {
+                if (logWakes) Debug.Log($"[Stage Items] Hit during the wake cooldown ({nextShockwave - Time.time:0.0} s left): no roll.", this);
+                return;
+            }
 
             var attacker = target.Opponent;
             bool heavy = attack && (attack.weight == HitWeight.Heavy || (attacker && attacker.IsDoingSpecial));
@@ -244,9 +249,14 @@ namespace KungFuCrashout.Props
 
             Vector3 centre = attacker ? (attacker.transform.position + target.transform.position) * 0.5f : target.transform.position;
             var item = NearestSleeper(centre, wakeRadius);
-            if (!item) return;
+            if (!item)
+            {
+                if (logWakes) Debug.Log($"[Stage Items] Shockwave rolled a wake but no sleeping item is {(wakeRadius > 0f ? $"within {wakeRadius:0.#} units" : "left")}.", this);
+                return;
+            }
             if (WakeItem(item))
             {
+                nextShockwave = Time.time + shockwaveCooldown; // only a real wake starts the cooldown
                 AudioManager.Play(wakeCue);
                 Shockwave?.Invoke(centre);
                 if (logWakes) Debug.Log($"[Stage Items] Shockwave ({(heavy ? "heavy" : "light")}, {chance:0}%) woke {item.name}", this);

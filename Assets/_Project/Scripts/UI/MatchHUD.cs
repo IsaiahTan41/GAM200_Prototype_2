@@ -297,6 +297,7 @@ namespace KungFuCrashout.UI
                         if (attack && attack == f.SpecialFor(SpecialMove.Down)) return "Down Special";
                         return "Special";
                     }
+                    if (f.IsAirAttacking) return $"Air Combo {f.AirComboStep}";
                     if (f.ComboStep >= 1) return $"Light Combo {f.ComboStep}";
                     if (attack && attack == f.HeavyAttackData) return "Heavy Attack";
                     return "Attack";

@@ -46,6 +46,9 @@ namespace KungFuCrashout.Fighters
     ///     (unless Chip Damage On Block is on). If a hit costs more than is left, the guard breaks:
     ///     no damage from that hit, but the blocker is stunned. At 0 stamina you can't block until it
     ///     refills (Stamina.Recover At). A parry costs nothing and refunds a little.
+    ///   • Air attack — a tap while in the air (your own jump) does Attacks → Air Attack instead of the first
+    ///     light-combo hit: once per jump, no follow-ups, and landing ends it at once. Same damage rules as any
+    ///     basic attack (auto-blocked at neutral, blockable, parryable). Empty Air Attack = the old behaviour.
     ///
     /// Ideas carried over from the Udemy sample (My Scripts):
     ///   • Block state you can cancel straight into an attack   (Player1Actions "BlockOff" on attack)
@@ -72,6 +75,27 @@ namespace KungFuCrashout.Fighters
         [SerializeField] AttackData[] lightCombo = new AttackData[3];
         [Tooltip("Hold attack. Can also be used to finish a light combo.")]
         [SerializeField] AttackData heavyAttack;
+        [Tooltip("Tap while in the air (during your own jump): the first hit of the air combo. Used when Air Combo is empty " +
+                 "(or its first entry is). Empty too = the first light-combo hit comes out, as before.")]
+        [SerializeField] AttackData airAttack;
+        [Tooltip("The air combo string, in order, like the light combo: tap in the air for the first hit, tap again during it " +
+                 "to chain the next. Empty = Air Attack on its own (one hit).")]
+        [SerializeField] AttackData[] airCombo = new AttackData[0];
+        [Tooltip("One air combo string per jump: once it ends you fall and can't start another until you land. " +
+                 "Off = a new string can start whenever you're airborne and not attacking.")]
+        [SerializeField] bool oneAirAttackPerJump = true;
+        [Tooltip("Hang in the air while the air combo string is going: gravity stops until the last hit ends (or Max Air " +
+                 "Combo Float runs out), then the fall carries on. Off = the jump arc continues under the attacks.")]
+        [SerializeField] bool floatDuringAirCombo = true;
+        [Tooltip("Slow sink while floating (world units per second). 0 = perfectly still.")]
+        [SerializeField, Min(0f)] float airComboSinkSpeed = 0.15f;
+        [Tooltip("Seconds to ease from the jump's motion into the float (short = snappy stop).")]
+        [SerializeField, Min(0.01f)] float airComboFloatEase = 0.08f;
+        [Tooltip("Longest a fighter can float per jump (seconds); after that gravity takes over even mid-string. 0 = no limit.")]
+        [SerializeField, Min(0f)] float maxAirComboFloat = 1.6f;
+        [Tooltip("Landing while the air attack is still going ends it at once, so its airborne drawing never stands on " +
+                 "the ground. Off = it plays out after landing.")]
+        [SerializeField] bool landingEndsAirAttack = true;
         [Tooltip("Which layers can be hit. Leave on Everything unless you set up layers.")]
         [SerializeField] LayerMask hurtboxLayers = ~0;
 
@@ -304,6 +328,9 @@ namespace KungFuCrashout.Fighters
         public event Action<FighterState, FighterState> StateChanged;
         /// <summary>Fired every time an attack starts, including combo follow-ups.</summary>
         public event Action<AttackData> AttackStarted;
+        /// <summary>The current attack's hitbox just went live (its first active frame), before the hit check. Not for throws.
+        /// Fired once per attack, so effects can't miss a short active window (FighterVfx).</summary>
+        public event Action<AttackData> AttackWentActive;
         /// <summary>This fighter landed a clean hit: (target, attack). Not fired for blocks or parries.</summary>
         public event Action<Fighter, AttackData> HitLanded;
         /// <summary>This fighter's attack touched someone, whatever the outcome: (target, attack, result).</summary>
@@ -362,6 +389,14 @@ namespace KungFuCrashout.Fighters
         /// <summary>The light combo and heavy, read-only. The AI uses these to judge its reach.</summary>
         public IReadOnlyList<AttackData> LightCombo => lightCombo;
         public AttackData HeavyAttackData => heavyAttack;
+        /// <summary>The attack a tap does in the air: the air combo's first hit (null = none set: the light combo's first hit is used).</summary>
+        public AttackData AirAttackData => AirHit(0);
+        /// <summary>True while one of the air combo's hits is the current attack.</summary>
+        public bool IsAirAttacking => State == FighterState.Attacking && comboIndex == AirIndex;
+        /// <summary>1, 2, 3 during the air combo; 0 otherwise.</summary>
+        public int AirComboStep => IsAirAttacking ? airStep + 1 : 0;
+        /// <summary>True while hanging in the air for the air combo string.</summary>
+        public bool IsAirFloating { get; private set; }
         /// <summary>This fighter's special for a direction (null = none set).</summary>
         public AttackData SpecialFor(SpecialMove move) =>
             move == SpecialMove.Side ? sideSpecial : move == SpecialMove.Up ? upSpecial : downSpecial;
@@ -672,6 +707,42 @@ namespace KungFuCrashout.Fighters
 
         const int SpecialIndex = -2; // comboIndex while doing a special (not part of the light combo, not the heavy)
         const int ThrowIndex = -3;   // comboIndex while winding up / throwing an item (no hitbox of its own)
+        const int AirIndex = -4;     // comboIndex while doing an air combo hit (airStep says which; ends on landing)
+        bool airAttackUsed;          // this jump's air combo has been started (One Air Attack Per Jump)
+        int airStep;                 // which air combo hit is playing (0 = the first)
+        float airFloatTime;          // seconds floated this jump (Max Air Combo Float)
+
+        /// <summary>Air combo hit i: Air Combo[i], or Air Attack for the first hit when the list (or its first entry) is empty.</summary>
+        AttackData AirHit(int i)
+        {
+            bool hasList = airCombo != null && airCombo.Length > 0;
+            if (i == 0) return hasList && airCombo[0] ? airCombo[0] : airAttack;
+            return hasList && i < airCombo.Length ? airCombo[i] : null;
+        }
+
+        void StartAirHit(int i)
+        {
+            airStep = i;
+            StartAttack(AirHit(i), AirIndex);
+        }
+
+        /// <summary>Fire a queued tap: the next light-combo hit, or the next air-combo hit. False if there is none.</summary>
+        bool TryChainBufferedLight()
+        {
+            if (!bufferedLight || State != FighterState.Attacking) return false;
+            if (comboIndex == AirIndex)
+            {
+                if (!AirHit(airStep + 1)) return false;
+                StartAirHit(airStep + 1);
+                return true;
+            }
+            if (comboIndex >= 0 && comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1])
+            {
+                StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>Winding up or finishing an item throw (ItemHolder → Throw Wind-up).</summary>
         public bool IsThrowing => State == FighterState.Attacking && comboIndex == ThrowIndex;
@@ -750,6 +821,7 @@ namespace KungFuCrashout.Fighters
             if (!ok && move == SpecialMove.Up && upSpecialFromRisingJump && IsAirborne && !IsLaunched &&
                 State == FighterState.Airborne && airVelocity.y > 0f) ok = true;
             if (!ok && specialsCancelOnHit && State == FighterState.Attacking && comboIndex != SpecialIndex &&
+                comboIndex != AirIndex && // grounded specials don't come out of the air attack
                 attackConnected && Phase != AttackPhase.Startup) ok = true;
             if (!ok && specialsCancelHeavyStartup && State == FighterState.Attacking && comboIndex == -1 &&
                 Phase == AttackPhase.Startup) ok = true; // -1 = the heavy
@@ -796,13 +868,33 @@ namespace KungFuCrashout.Fighters
         public void Attack()
         {
             hasPendingSpecial = false; // a newer input replaces a buffered special
-            if (ControlsLocked || lightCombo == null || lightCombo.Length == 0) return;
+            if (ControlsLocked) return;
+
+            // Mid air combo: chain the next hit (like the light combo: straight away in recovery, else queued).
+            if (IsAirAttacking)
+            {
+                if (!AirHit(airStep + 1)) return; // last hit of the string
+                if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAirHit(airStep + 1);
+                else bufferedLight = true; // fires at recovery / the clip's CancelOpen / the clip's end
+                return;
+            }
+
+            // In the air (our own jump): start the air combo string, once per jump.
+            if (AirHit(0) && State == FighterState.Airborne)
+            {
+                if (oneAirAttackPerJump && airAttackUsed) return;
+                airAttackUsed = true;
+                StartAirHit(0);
+                return;
+            }
+
+            if (lightCombo == null || lightCombo.Length == 0) return;
 
             // Already attacking → try to chain the next combo hit.
             if (State == FighterState.Attacking)
             {
                 bool inLightCombo = comboIndex >= 0;
-                // Only look up the next hit when we're IN the light combo: during a special (-2) or a throw (-3)
+                // Only look up the next hit when we're IN the light combo: during a special (-2), a throw (-3) or the air attack (-4)
                 // comboIndex + 1 is negative and lightCombo[-1] / [-2] throws IndexOutOfRangeException.
                 bool hasNext = inLightCombo && comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1];
                 if (!inLightCombo || !hasNext) return;
@@ -1331,6 +1423,9 @@ namespace KungFuCrashout.Fighters
             launchData = null;
             isPopping = false;
             IsGuardBroken = false;
+            airAttackUsed = false;
+            airFloatTime = 0f;
+            IsAirFloating = false;
             downedData = null;
             downedTimer = 0f;
             splatTimer = 0f;
@@ -1405,6 +1500,7 @@ namespace KungFuCrashout.Fighters
                         Phase = AttackPhase.Active;
                         phaseTimer += attack.active;
                         if (comboIndex == ThrowIndex) ThrowReleased?.Invoke(); // the item leaves now
+                        else AttackWentActive?.Invoke(attack);
                         CheckHits();
                     }
                     break;
@@ -1421,7 +1517,7 @@ namespace KungFuCrashout.Fighters
 
                         // Fire anything the player queued up during this attack.
                         if (bufferedHeavy) { StartAttack(heavyAttack, -1); return; }
-                        if (bufferedLight) { StartAttack(lightCombo[comboIndex + 1], comboIndex + 1); return; }
+                        if (TryChainBufferedLight()) return;
                     }
                     break;
 
@@ -1480,6 +1576,8 @@ namespace KungFuCrashout.Fighters
             Phase = AttackPhase.Active;
             phaseTimer = CurrentAttack.active; // only paces activeTravel
             if (comboIndex == ThrowIndex) { ThrowReleased?.Invoke(); return; } // throw clip: this is the release frame
+            AttackWentActive?.Invoke(CurrentAttack);
+            if (State != FighterState.Attacking) return;
             CheckHits(); // check on this frame too, so a 1-frame active window can't be skipped
         }
 
@@ -1497,13 +1595,13 @@ namespace KungFuCrashout.Fighters
 
             // Fire anything the player queued up during this attack (same as the end of Active without a clip).
             if (bufferedHeavy) { StartAttack(heavyAttack, -1); return; }
-            if (bufferedLight && comboIndex >= 0 && comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1])
-                StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
+            TryChainBufferedLight();
         }
 
         void OnAnimAttackEnd()
         {
             if (!animTiming || State != FighterState.Attacking) return;
+            if (TryChainBufferedLight()) return; // a clip without CancelOpen: the queued hit follows at its end
             CancelAttack();
             ReturnToNeutral(); // still in the air → Airborne, else Idle
         }
@@ -1620,6 +1718,8 @@ namespace KungFuCrashout.Fighters
 
             restY = transform.position.y;
             IsAirborne = true;
+            airAttackUsed = false; // a new jump, a new air combo
+            airFloatTime = 0f;
             airVelocity = direction.normalized * jumpLaunchSpeed;
             launchTimer = jumpLaunchTime;
 
@@ -1640,6 +1740,21 @@ namespace KungFuCrashout.Fighters
             {
                 splatTimer -= dt;
                 if (splatTimer <= 0f) airVelocity = new Vector2(-splatSide * 1.5f, 0f);
+                return;
+            }
+
+            // Air combo: hang in the air (slow sink) while the string is going, then the fall carries on.
+            IsAirFloating = floatDuringAirCombo && IsAirAttacking && !IsLaunched &&
+                            (maxAirComboFloat <= 0f || airFloatTime < maxAirComboFloat);
+            if (IsAirFloating)
+            {
+                airFloatTime += dt;
+                launchTimer = 0f;
+                airVelocity = Vector2.Lerp(airVelocity, new Vector2(0f, -airComboSinkSpeed), Mathf.Clamp01(dt / airComboFloatEase));
+                MoveX(airVelocity.x * dt);
+                var fp = transform.position;
+                fp.y = Mathf.Max(restY, fp.y + airVelocity.y * dt); // never sinks through the floor while floating
+                transform.position = fp;
                 return;
             }
 
@@ -1694,6 +1809,16 @@ namespace KungFuCrashout.Fighters
             airVelocity = Vector2.zero;
             launchTimer = 0f;
             nextJumpTime = Time.time + jumpCooldown;
+            airAttackUsed = false;
+            airFloatTime = 0f;
+            IsAirFloating = false;
+
+            // Landed mid air attack: it ends here (its drawing is airborne), straight back to neutral.
+            if (landingEndsAirAttack && State == FighterState.Attacking && comboIndex == AirIndex)
+            {
+                CancelAttack();
+                SetState(FighterState.Idle);
+            }
 
             if (State == FighterState.Airborne) SetState(FighterState.Idle);
             Landed?.Invoke();
