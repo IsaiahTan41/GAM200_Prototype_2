@@ -11,6 +11,7 @@ namespace KungFuCrashout.Props
     /// (ItemHolder.CanPickUp), so the glow never lies. UI standard: white = "you can grab this".
     /// Green outline (Throwable Outline): a steady green rim on every item that's in play and can be thrown — lying on
     /// the floor, falling after a shockwave woke it, or held (by anyone). Sleeping items and items in flight have none.
+    /// Grey outline (Sleeping Outline): a steady grey rim on every sleeping item, so it reads as "not in play yet".
     /// When both apply, the white "grab it now" pulse wins.
     ///
     /// Put on each item prefab next to Carryable (the GDD Build setup does this). Silhouette Material = a material using
@@ -37,6 +38,11 @@ namespace KungFuCrashout.Props
         [Tooltip("Also show it while a fighter is holding the item.")]
         [SerializeField] bool whileHeld = true;
 
+        [Header("Sleeping outline")]
+        [Tooltip("Grey rim on every sleeping item (placed on the stage, not grabbable until a shockwave wakes it).")]
+        [SerializeField] bool sleepingOutline = true;
+        [SerializeField] Color sleepingColour = new Color(0.62f, 0.62f, 0.62f, 0.85f);
+
         Carryable item;
         SpriteRenderer art;
         SpriteRenderer glow;
@@ -60,7 +66,8 @@ namespace KungFuCrashout.Props
             bool visible = art.enabled && art.sprite;
             bool grab = visible && PlayerCanGrab();
             bool throwable = visible && !grab && throwableOutline && IsThrowable();
-            glow.enabled = grab || throwable;
+            bool sleeping = visible && !grab && !throwable && sleepingOutline && item.IsDormant;
+            glow.enabled = grab || throwable || sleeping;
             if (!glow.enabled) return;
 
             glow.sprite = art.sprite;
@@ -75,7 +82,7 @@ namespace KungFuCrashout.Props
                 c.a *= Mathf.Lerp(pulseMin, 1f, pulse);
                 glow.color = c;
             }
-            else glow.color = throwableColour; // steady green
+            else glow.color = sleeping ? sleepingColour : throwableColour; // steady grey (asleep) / green (in play)
 
             // Scale about the sprite's centre so the rim is even all round (same maths as SpriteOutline).
             var sprite = art.sprite;

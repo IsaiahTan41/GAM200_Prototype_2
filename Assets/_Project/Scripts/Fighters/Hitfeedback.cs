@@ -42,7 +42,47 @@ namespace KungFuCrashout.Feedback
 
         [SerializeField] Fighter[] fighters = new Fighter[2];
 
-        [Header("Hitstop (real seconds the game freezes)")]
+        [Header("Hitstop mode")]
+        [Tooltip("ON (new): hitstop in FRAMES (60 fps), tiered by what the hit means (Tiered hitstop below), shorter late in " +
+                 "combos, and a shake on the fighter who was hit. OFF (original): the real-seconds values just below, no hit " +
+                 "shake. Testing switch: flip it any time, even in Play mode.")]
+        [SerializeField] bool tieredHitstop = true;
+
+        [Header("Tiered hitstop (frames at 60 fps; Tiered Hitstop on)")]
+        [Tooltip("A light / combo hit at neutral (red damage).")]
+        [SerializeField, Min(0)] int neutralLightFrames = 6;
+        [Tooltip("The last hit of the light combo or the air combo.")]
+        [SerializeField, Min(0)] int finisherFrames = 8;
+        [Tooltip("Heavy attacks and specials.")]
+        [SerializeField, Min(0)] int heavyFrames = 11;
+        [Tooltip("Blocked hits freeze this many frames less than the same hit landing.")]
+        [SerializeField, Min(0)] int blockReduction = 2;
+        [SerializeField, Min(0)] int parryFrames = 12;
+        [Tooltip("The parried attacker keeps shaking this many frames after the freeze (the defender-only extra stop).")]
+        [SerializeField, Min(0)] int parryVictimExtraFrames = 4;
+        [Tooltip("A thrown item's clean hit (real damage, stagger). The item's slow-motion beat follows. " +
+                 "An item's Hitstop Frames (≥ 0) overrides this.")]
+        [SerializeField, Min(0)] int itemHitFrames = 14;
+        [Tooltip("A hit on a Downed fighter (real damage).")]
+        [SerializeField, Min(0)] int downedHitFrames = 8;
+        [Tooltip("The round-ending hit. The KO slow motion follows.")]
+        [SerializeField, Min(0)] int koFrames = 18;
+        [SerializeField, Min(1)] int maxFrames = 20;
+        [Tooltip("From this hit of a combo on, each light / heavy hit freezes 1 frame less, down to Min Combo Frames.")]
+        [SerializeField, Min(2)] int comboDecayFromHit = 3;
+        [SerializeField, Min(0)] int minComboFrames = 4;
+
+        [Header("Hit shake (the fighter who was hit; Tiered Hitstop on)")]
+        [SerializeField] bool hitShake = true;
+        [Tooltip("Shake size per frame of hitstop (world units). Sideways on the ground, up and down in the air; fades out.")]
+        [SerializeField, Min(0f)] float shakePerFrame = 0.008f;
+        [SerializeField, Min(0f)] float maxHitShake = 0.15f;
+        [Tooltip("Shakes per second.")]
+        [SerializeField, Min(1f)] float shakeFrequency = 30f;
+        [Tooltip("Blocked hits shake this fraction as much.")]
+        [SerializeField, Range(0f, 1f)] float blockShakeScale = 0.5f;
+
+        [Header("Hitstop (original: real seconds the game freezes; Tiered Hitstop off)")]
         [SerializeField] float lightHitstop = 0.04f;
         [SerializeField] float heavyHitstop = 0.09f;
         [SerializeField] float blockHitstop = 0.03f;
@@ -141,7 +181,7 @@ namespace KungFuCrashout.Feedback
             {
                 PlayImpact(heavy: true);
                 Burst(hitSpark, target.transform.position, heavySparkCount);
-                Hitstop(item.impactHitstop,
+                Hitstop(StopFor(item.impactHitstop, target, attack, result),
                         itemSlowMotion ? item.slowMotionScale : 1f,
                         itemSlowMotion ? item.slowMotionTime : 0f);
                 // Already launched by now, so its air velocity is the knockback direction.
@@ -156,20 +196,20 @@ namespace KungFuCrashout.Feedback
                 case HitResult.Hit:
                     PlayImpact(heavy);
                     Burst(hitSpark, point, heavy ? heavySparkCount : lightSparkCount);
-                    Hitstop(heavy ? heavyHitstop : lightHitstop);
+                    Hitstop(StopFor(heavy ? heavyHitstop : lightHitstop, target, attack, result));
                     if (heavy) { Shake(heavyShake, AwayFromAttacker(target), ShakeKind.HeavyHit); Buzz(); }
                     break;
 
                 case HitResult.Blocked:
                     Play(blockImpact);
                     Burst(blockSpark, point, lightSparkCount);
-                    Hitstop(blockHitstop);
+                    Hitstop(StopFor(blockHitstop, target, attack, result));
                     break;
 
                 case HitResult.Parried:
                     Play(parryClang);
                     Burst(parryFlash, point, heavySparkCount);
-                    Hitstop(parryHitstop);
+                    Hitstop(StopFor(parryHitstop, target, attack, result));
                     Shake(parryShake, Vector2.zero, ShakeKind.Parry);
                     Buzz();
                     break;
@@ -194,7 +234,65 @@ namespace KungFuCrashout.Feedback
             return new Vector3(x, t.y + attack.hitboxOffset.y, t.z - 0.1f);
         }
 
+        // ───────────── Tiered hitstop + hit shake ─────────────
+
+        /// <summary>Real seconds the game freezes for this hit, plus the hit shake (Tiered Hitstop); else the original value.</summary>
+        float StopFor(float originalSeconds, Fighter target, AttackData attack, HitResult result)
+        {
+            if (!tieredHitstop) return originalSeconds;
+            int frames = TierFrames(target, attack, result);
+            float seconds = frames / 60f;
+
+            if (hitShake && frames > 0)
+            {
+                // Parry: the parried ATTACKER reels (and keeps shaking a few frames longer); otherwise the fighter who was hit.
+                var victim = result == HitResult.Parried ? target.Opponent : target;
+                float amp = Mathf.Min(maxHitShake, frames * shakePerFrame) * (result == HitResult.Blocked ? blockShakeScale : 1f);
+                float time = seconds + (result == HitResult.Parried ? parryVictimExtraFrames / 60f : 0f);
+                if (victim) HitShake.Shake(victim, amp, time, shakeFrequency);
+            }
+            return seconds;
+        }
+
+        int TierFrames(Fighter target, AttackData attack, HitResult result)
+        {
+            int frames;
+            var attacker = target.Opponent;
+            bool ko = result == HitResult.Hit && target.Health && target.Health.IsDead;
+
+            if (result == HitResult.Parried) frames = parryFrames;
+            else if (ko) frames = koFrames;
+            else if (attack && attack.hitstopFrames >= 0) frames = attack.hitstopFrames;
+            else if (attack is ThrowableData) frames = itemHitFrames;
+            else if (result == HitResult.Hit && target.IsDowned) frames = downedHitFrames;
+            else
+            {
+                bool heavy = attack && (attack.weight == HitWeight.Heavy || (attacker && attacker.IsDoingSpecial));
+                bool finisher = attacker && IsFinisher(attacker);
+                frames = heavy ? heavyFrames : finisher ? finisherFrames : neutralLightFrames;
+
+                // Late in a combo each hit freezes a little less, so mashed strings stay snappy.
+                int n = target.ComboHitsTaken;
+                if (result == HitResult.Hit && n >= comboDecayFromHit)
+                    frames = Mathf.Max(Mathf.Min(minComboFrames, frames), frames - (n - comboDecayFromHit + 1));
+            }
+
+            if (result == HitResult.Blocked) frames -= blockReduction;
+            return Mathf.Clamp(frames, 0, maxFrames);
+        }
+
+        /// <summary>The attacker's current hit is the last of its light combo or air combo.</summary>
+        static bool IsFinisher(Fighter attacker)
+        {
+            if (attacker.IsAirAttacking) return attacker.AirComboStep >= 3;
+            int step = attacker.ComboStep;
+            return step >= 1 && attacker.LightCombo != null && step >= attacker.LightCombo.Count;
+        }
+
         // ───────────── Hitstop ─────────────
+
+        /// <summary>Real time (Time.realtimeSinceStartup) the current hit freeze ends. MatchManager waits for it before the KO slow motion.</summary>
+        public static float FrozenUntil { get; private set; }
 
         void OnDowned(float seconds)
         {
@@ -217,6 +315,7 @@ namespace KungFuCrashout.Feedback
             if (hitstopRoutine != null) StopCoroutine(hitstopRoutine);
             else resumeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
             hitstopRoutine = StartCoroutine(HitstopRoutine(seconds, slowScale, slowTime));
+            FrozenUntil = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
         }
 
         IEnumerator HitstopRoutine(float seconds, float slowScale, float slowTime)

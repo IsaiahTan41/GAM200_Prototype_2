@@ -15,9 +15,13 @@ namespace KungFuCrashout.Props
     ///     this Stage Items object to keep it tidy) is a stage item. Each round they're laid out again at the exact spot
     ///     you placed them, ALL ASLEEP: visible (dimmed / Sleeping Sprite) but not grabbable.
     ///   "Shockwaves make new items drop onto the stage" — ANY attack that connects (light, combo, heavy, special; blocked
-    ///     hits too if Blocked Hits Count) sends out a shockwave with a percentage chance to wake ONE sleeping item:
-    ///     Wake Chance for light attacks, Heavy Wake Chance for heavies and specials. The sleeping item nearest the hit
-    ///     (within Wake Radius; 0 = anywhere on the stage) is knocked loose, falls to the floor and can be grabbed.
+    ///     hits too if Blocked Hits Count) sends out a shockwave. Shockwave Mode picks the rule:
+    ///       Radius (default) — the shockwave reaches Shockwave Radius around the hit (further for heavies and specials).
+    ///         Every sleeping item inside it rolls its OWN chance (Carryable → Wake Chance, by weight unless set; heavies
+    ///         multiply it), highest Wake Priority first, nearest first on ties, until Max Wakes Per Shockwave items woke.
+    ///       Nearest (original) — the hit rolls Wake Chance / Heavy Wake Chance below and the sleeping item nearest the
+    ///         hit (within Wake Radius; 0 = anywhere) wakes.
+    ///     A woken item is knocked loose, falls to the floor and can be grabbed. Playtest switch: pause menu → GAME.
     ///   "Ensuring there will always be at least one item available" — if no item is in play (on the floor, held or
     ///     flying) for Empty Delay seconds, the sleeping item nearest the fighters wakes; if none are left asleep, a
     ///     random stage item drops in from above with a shadow marking where it lands.
@@ -44,16 +48,30 @@ namespace KungFuCrashout.Props
                  "Default at app start; the pause menu toggle can switch it while playing.")]
         [SerializeField] bool originalItemBehaviour = false;
 
+        public enum ShockwaveMode { Radius, Nearest }
+
         [Header("Shockwaves (any attack that connects)")]
-        [Tooltip("Chance (%) that a light attack / combo hit wakes a sleeping item.")]
+        [Tooltip("Radius: each hit's shockwave reaches Shockwave Radius; every sleeping item inside rolls its own Wake Chance " +
+                 "(Carryable), highest Wake Priority first. Nearest (original): the hit rolls the chances below and the nearest " +
+                 "sleeping item wakes. The pause menu can switch it while playing.")]
+        [SerializeField] ShockwaveMode shockwaveMode = ShockwaveMode.Radius;
+        [Tooltip("Radius mode: how far a hit's shockwave reaches from the hit (world units).")]
+        [SerializeField, Min(0.1f)] float shockwaveRadius = 4f;
+        [Tooltip("Radius mode: heavy attacks and specials reach this much further.")]
+        [SerializeField, Min(1f)] float heavyRadiusMultiplier = 1.5f;
+        [Tooltip("Radius mode: heavy attacks and specials multiply every item's Wake Chance by this.")]
+        [SerializeField, Min(0f)] float heavyChanceMultiplier = 1.5f;
+        [Tooltip("Radius mode: the most items one shockwave can wake.")]
+        [SerializeField, Min(1)] int maxWakesPerShockwave = 1;
+        [Tooltip("Nearest mode: chance (%) that a light attack / combo hit wakes a sleeping item.")]
         [SerializeField, Range(0f, 100f)] float wakeChance = 25f;
-        [Tooltip("Chance (%) that a heavy attack or a special wakes a sleeping item.")]
+        [Tooltip("Nearest mode: chance (%) that a heavy attack or a special wakes a sleeping item.")]
         [SerializeField, Range(0f, 100f)] float heavyWakeChance = 60f;
         [Tooltip("Blocked hits also send out a shockwave (parried hits never do).")]
         [SerializeField] bool blockedHitsCount = true;
         [Tooltip("Thrown items hitting a fighter also send out a shockwave.")]
         [SerializeField] bool itemHitsCount = false;
-        [Tooltip("Only items this close to the hit can wake (world units). 0 = anywhere on the stage (the nearest one wakes).")]
+        [Tooltip("Nearest mode: only items this close to the hit can wake (world units). 0 = anywhere on the stage (the nearest one wakes).")]
         [SerializeField, Min(0f)] float wakeRadius = 0f;
         [Tooltip("Seconds after an item WAKES before another hit can wake one (stops one combo waking everything). " +
                  "Hits that roll and wake nothing don't start it: every connecting hit gets its own roll.")]
@@ -101,6 +119,26 @@ namespace KungFuCrashout.Props
         /// <summary>Raised when the mode is switched (pause menu toggle).</summary>
         public event Action<bool> ModeChanged;
 
+        /// <summary>The pause menu's shockwave choice for this app session (null = the Inspector value).</summary>
+        static ShockwaveMode? sessionShockwaveMode;
+
+        /// <summary>Which shockwave rule is in use. Setting it (pause menu) lasts until the app closes.</summary>
+        public ShockwaveMode Shockwaves
+        {
+            get => shockwaveMode;
+            set
+            {
+                sessionShockwaveMode = value;
+                if (value == shockwaveMode) return;
+                shockwaveMode = value;
+                ShockwaveModeChanged?.Invoke(value);
+                if (logWakes) Debug.Log($"[Stage Items] Shockwave mode: {value}", this);
+            }
+        }
+
+        /// <summary>Raised when the shockwave rule is switched (pause menu toggle).</summary>
+        public event Action<ShockwaveMode> ShockwaveModeChanged;
+
         /// <summary>The pause menu's choice for this app session (null = use the Inspector value). Survives scene reloads.</summary>
         static bool? sessionOriginal;
 
@@ -140,6 +178,7 @@ namespace KungFuCrashout.Props
         void Awake()
         {
             if (sessionOriginal.HasValue) originalItemBehaviour = sessionOriginal.Value;
+            if (sessionShockwaveMode.HasValue) shockwaveMode = sessionShockwaveMode.Value;
             if (!stage) stage = FindFirstObjectByType<StageBounds>();
             if (fighters == null || fighters.Length == 0) fighters = FindObjectsByType<Fighter>(FindObjectsSortMode.None);
             ReadTemplates();
@@ -239,6 +278,8 @@ namespace KungFuCrashout.Props
 
             var attacker = target.Opponent;
             bool heavy = attack && (attack.weight == HitWeight.Heavy || (attacker && attacker.IsDoingSpecial));
+            if (shockwaveMode == ShockwaveMode.Radius) { RadiusShockwave(HitPoint(target, attack, attacker), heavy); return; }
+
             float chance = heavy ? heavyWakeChance : wakeChance;
             float roll = Random.value * 100f;
             if (roll >= chance)
@@ -262,6 +303,63 @@ namespace KungFuCrashout.Props
                 if (logWakes) Debug.Log($"[Stage Items] Shockwave ({(heavy ? "heavy" : "light")}, {chance:0}%) woke {item.name}", this);
             }
         }
+
+        /// <summary>Where the hit landed: between the two fighters, at the attack's height (as the hit sparks).</summary>
+        static Vector3 HitPoint(Fighter target, AttackData attack, Fighter attacker)
+        {
+            Vector3 t = target.transform.position;
+            float x = attacker ? Mathf.Lerp(t.x, attacker.X, 0.35f) : t.x;
+            return new Vector3(x, t.y + (attack ? attack.hitboxOffset.y : 0f), 0f);
+        }
+
+        readonly List<Carryable> inRange = new List<Carryable>();
+
+        /// <summary>
+        /// Radius mode: every sleeping item within reach of the hit rolls its own Wake Chance (heavies reach further and
+        /// multiply the chance), highest Wake Priority first, nearest first on ties, until Max Wakes Per Shockwave woke.
+        /// </summary>
+        void RadiusShockwave(Vector3 hit, bool heavy)
+        {
+            float radius = shockwaveRadius * (heavy ? heavyRadiusMultiplier : 1f);
+            float mult = heavy ? heavyChanceMultiplier : 1f;
+            lastShockwave = hit; lastShockwaveRadius = radius; lastShockwaveTime = Time.time;
+
+            sleepers.RemoveAll(s => !s || !s.IsDormant);
+            inRange.Clear();
+            foreach (var s in sleepers)
+                if (Vector2.Distance(s.transform.position, hit) <= radius) inRange.Add(s);
+            if (inRange.Count == 0)
+            {
+                if (logWakes) Debug.Log($"[Stage Items] Shockwave ({(heavy ? "heavy" : "light")}, radius {radius:0.#}): no sleeping item in reach.", this);
+                return;
+            }
+            inRange.Sort((a, b) =>
+            {
+                int p = b.WakePriority.CompareTo(a.WakePriority);
+                if (p != 0) return p;
+                return Vector2.Distance(a.transform.position, hit).CompareTo(Vector2.Distance(b.transform.position, hit));
+            });
+
+            int woke = 0;
+            foreach (var item in inRange)
+            {
+                float chance = Mathf.Clamp(item.WakeChance * mult, 0f, 100f);
+                float roll = Random.value * 100f;
+                bool success = roll < chance && WakeItem(item);
+                if (logWakes)
+                    Debug.Log($"[Stage Items] Shockwave ({(heavy ? "heavy" : "light")}, radius {radius:0.#}): {item.name} " +
+                              $"(priority {item.WakePriority}) rolled {roll:0} vs {chance:0}% → {(success ? "WOKE" : "stays asleep")}", this);
+                if (success && ++woke >= maxWakesPerShockwave) break;
+            }
+            if (woke == 0) return;
+
+            nextShockwave = Time.time + shockwaveCooldown; // only a real wake starts the cooldown
+            AudioManager.Play(wakeCue);
+            Shockwave?.Invoke(hit);
+        }
+
+        Vector3 lastShockwave;
+        float lastShockwaveRadius, lastShockwaveTime = -10f;
 
         /// <summary>The sleeping item nearest a point (within radius; 0 = any distance), or null.</summary>
         Carryable NearestSleeper(Vector3 from, float radius)
@@ -442,10 +540,17 @@ namespace KungFuCrashout.Props
 
         void OnDrawGizmosSelected()
         {
-            if (wakeRadius <= 0f) return;
+            // Play mode: the last shockwave's reach, for a second after it.
+            if (Application.isPlaying && Time.time - lastShockwaveTime < 1f)
+            {
+                Gizmos.color = new Color(1f, 0.5f, 0.1f, 0.9f);
+                DrawCircle(lastShockwave, lastShockwaveRadius);
+            }
+            float r = shockwaveMode == ShockwaveMode.Radius ? shockwaveRadius : wakeRadius;
+            if (r <= 0f) return;
             Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.6f);
             foreach (var f in fighters)
-                if (f) DrawCircle(f.transform.position, wakeRadius);
+                if (f) DrawCircle(f.transform.position, r);
         }
 
         static void DrawCircle(Vector3 c, float r)

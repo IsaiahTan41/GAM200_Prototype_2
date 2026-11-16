@@ -236,6 +236,11 @@ namespace KungFuCrashout.Fighters
         [SerializeField] bool blockOnlyFromFront = true;
 
         [Header("Damage rules (prototype)")]
+        [Tooltip("ON (new): no auto-block; a clean hit at neutral lands properly and turns green health RED (recoverable: " +
+                 "it regrows after Health → Recover Delay, and can't KO). A thrown item's clean hit burns all red off for " +
+                 "good, then staggers as usual; hits while Downed take real health. Chip damage on block is red too. " +
+                 "OFF (original): Auto Block At Neutral and Damage Only When Staggered below.")]
+        [SerializeField] bool recoverableNeutralDamage = true;
         [Tooltip("A melee hit on an idle fighter is blocked automatically: no damage, knockback, short blockstun. " +
                  "Manual block / parry still work. Thrown items are never auto-blocked.")]
         [SerializeField] bool autoBlockAtNeutral = true;
@@ -451,6 +456,8 @@ namespace KungFuCrashout.Fighters
         public float LastDamageTaken { get; private set; }
         /// <summary>Blocking because Auto Block At Neutral kicked in (not a held block).</summary>
         public bool IsAutoBlocking => State == FighterState.Blocking && isAutoBlock;
+        /// <summary>Neutral hits turn health red (recoverable) instead of being auto-blocked / doing nothing.</summary>
+        public bool RecoverableNeutralDamage { get => recoverableNeutralDamage; set => recoverableNeutralDamage = value; }
         /// <summary>Stunned because our guard broke.</summary>
         public bool IsGuardBroken { get; private set; }
         /// <summary>Null if this fighter has no Stamina component (blocking is free).</summary>
@@ -1019,7 +1026,7 @@ namespace KungFuCrashout.Fighters
             if (staggerData) return HeavyStaggerHit(attacker, attack, staggerData, awayFromAttacker);
 
             // ── Auto-block at neutral: an idle fighter guards by itself (no damage, knocked back). ──
-            if (autoBlockAtNeutral && State == FighterState.Idle && !ControlsLocked && HasGuardStamina)
+            if (autoBlockAtNeutral && !recoverableNeutralDamage && State == FighterState.Idle && !ControlsLocked && HasGuardStamina)
             {
                 EnterBlock(allowParry: false, automatic: true);
                 float push = Mathf.Max(attack.blockPushback, attack.knockback * autoBlockKnockbackScale);
@@ -1039,13 +1046,15 @@ namespace KungFuCrashout.Fighters
             IsParryStunned = false;
             IsGuardBroken = false;
 
-            // Not staggered: the hit still lands (hitstun + knockback) but takes no health.
-            float damage = damageOnlyWhenStaggered ? 0f : attack.damage;
+            // Not staggered: recoverable mode turns the damage red; original mode lands the hit without taking health.
+            float damage = recoverableNeutralDamage || !damageOnlyWhenStaggered ? attack.damage : 0f;
             LastDamageTaken = damage;
-            health.TakeDamage(damage);
+            if (recoverableNeutralDamage) health.TakeRecoverableDamage(damage);
+            else health.TakeDamage(damage);
             GotHit?.Invoke(attacker, attack);
             if (logStateChanges)
-                Debug.Log($"[{name}] hit by {attack.name} for {damage}" + (damageOnlyWhenStaggered ? " (not staggered: no damage)" : "") +
+                Debug.Log($"[{name}] hit by {attack.name} for {damage}" +
+                          (recoverableNeutralDamage ? $" RED (recoverable {health.Recoverable:0.#})" : damageOnlyWhenStaggered ? " (not staggered: no damage)" : "") +
                           $" (HP {health.Current}/{health.Max}, combo {ComboHitsTaken})");
 
             CancelAttack();
@@ -1210,9 +1219,12 @@ namespace KungFuCrashout.Fighters
             IsParryStunned = false;
             IsGuardBroken = false;
 
-            LastDamageTaken = data.damage;
+            // Recoverable mode: the item cashes in all red health (lost for good) before its own damage.
+            float burned = recoverableNeutralDamage ? health.LoseRecoverable() : 0f;
+            LastDamageTaken = data.damage + burned;
             health.TakeDamage(data.damage);
             GotHit?.Invoke(thrower, data);
+            if (logStateChanges && burned > 0f) Debug.Log($"[{name}] the item burned {burned:0.#} red health");
             if (logStateChanges)
                 Debug.Log($"[{name}] hit by a thrown {data.name} for {data.damage} (HP {health.Current}/{health.Max})");
 
@@ -1249,7 +1261,8 @@ namespace KungFuCrashout.Fighters
             float taken = chipDamageOnBlock
                 ? Mathf.Min(attack.damage * attack.chipDamage, Mathf.Max(0f, health.Current - 1f))
                 : 0f;
-            health.TakeDamage(taken);
+            if (recoverableNeutralDamage) health.TakeRecoverableDamage(taken); // chip turns red too
+            else health.TakeDamage(taken);
             LastBlockStaminaCost = stamina ? cost : 0f;
             LastBlockDamageTaken = taken;
 

@@ -44,6 +44,8 @@ namespace KungFuCrashout.UI
             [Tooltip("\"n HITS\" while this fighter is comboing the other one.")]
             public TMP_Text comboText;
             [HideInInspector] public float damageShown = 1f;
+            [NonSerialized] public Image recoverableFill;
+            [NonSerialized] public Color damageColour;
             [HideInInspector] public float damageHold;
             [HideInInspector] public float popupUntil;
             [HideInInspector] public float popupStart;
@@ -101,6 +103,12 @@ namespace KungFuCrashout.UI
         [SerializeField, Min(0f)] float moveHoldTime = 0.35f;
         [Tooltip("Real seconds one-off moments stay up (Parry!, Item Catch!, Combo Breaker!, Pick Up).")]
         [SerializeField, Min(0f)] float moveEventTime = 0.6f;
+
+        [Header("Recoverable (red) health")]
+        [Tooltip("The red, recoverable part of the health bar (Fighter → Recoverable Neutral Damage).")]
+        [SerializeField] Color recoverableColour = new Color(0.9f, 0.14f, 0.12f, 1f);
+        [Tooltip("The trailing damage bar's colour while that fighter uses recoverable health (so it doesn't look like red health).")]
+        [SerializeField] Color trailingColourWithRed = new Color(1f, 1f, 1f, 0.75f);
 
         [SerializeField] float damageHoldTime = 0.7f;
         [Tooltip("Damage bar drain speed (full bars per second).")]
@@ -170,6 +178,8 @@ namespace KungFuCrashout.UI
             if (calloutText) CalloutGO.SetActive(false);
             if (telegraphText) telegraphText.gameObject.SetActive(false);
             if (matchOverPanel) matchOverPanel.SetActive(false);
+            MakeRecoverableFill(left);
+            MakeRecoverableFill(right);
             foreach (var s in new[] { left, right })
             {
                 if (s.popup) s.popup.gameObject.SetActive(false);
@@ -239,6 +249,45 @@ namespace KungFuCrashout.UI
                 if (s.holder) s.holder.PickedUp -= pickedUp;
                 if (health) health.Damaged -= damaged;
             });
+        }
+
+        // ───────────── Recoverable (red) health ─────────────
+
+        /// <summary>A copy of the Damage Fill drawn OVER the health fill, for the red recoverable part.</summary>
+        void MakeRecoverableFill(Side s)
+        {
+            if (!s.damageFill || s.recoverableFill) return;
+            s.damageColour = s.damageFill.color;
+            var go = Instantiate(s.damageFill.gameObject, s.damageFill.transform.parent);
+            go.name = "Recoverable Fill";
+            go.transform.SetAsLastSibling(); // in front of the green fill
+            s.recoverableFill = go.GetComponent<Image>();
+            s.recoverableFill.color = recoverableColour;
+            s.recoverableFill.raycastTarget = false;
+            s.recoverableFill.enabled = false;
+        }
+
+        void UpdateRecoverable(Side s, Fighter f)
+        {
+            if (!s.recoverableFill || !s.healthBar || !s.healthBar.fillRect) return;
+            bool mode = f.RecoverableNeutralDamage;
+            if (s.damageFill) s.damageFill.color = mode ? trailingColourWithRed : s.damageColour;
+
+            var h = f.Health;
+            bool show = mode && h.Recoverable > 0.01f;
+            s.recoverableFill.enabled = show;
+            if (!show) return;
+
+            // From the end of the green to the end of the (smoothed) bar.
+            float right = Mathf.InverseLerp(s.healthBar.minValue, s.healthBar.maxValue, s.healthBar.value);
+            float leftEdge = Mathf.Min(h.GreenNormalized, right);
+            var fill = s.healthBar.fillRect;
+            var rt = s.recoverableFill.rectTransform;
+            bool rtl = s.healthBar.direction == Slider.Direction.RightToLeft;
+            rt.anchorMin = new Vector2(rtl ? 1f - right : leftEdge, fill.anchorMin.y);
+            rt.anchorMax = new Vector2(rtl ? 1f - leftEdge : right, fill.anchorMax.y);
+            rt.offsetMin = fill.offsetMin;
+            rt.offsetMax = fill.offsetMax;
         }
 
         // ───────────── Move readout ─────────────
@@ -334,6 +383,8 @@ namespace KungFuCrashout.UI
                 dmg.offsetMin = fill.offsetMin;
                 dmg.offsetMax = fill.offsetMax;
             }
+
+            UpdateRecoverable(s, f);
 
             // Combo counter on the ATTACKER's side: hits this fighter has landed in a row on the other one.
             if (s.comboText)

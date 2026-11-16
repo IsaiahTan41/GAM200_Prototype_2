@@ -262,7 +262,11 @@ namespace KungFuCrashout.Core
             RoundEnded?.Invoke(winner);
             RoundEndedBy?.Invoke(winner, !timeOut);
 
-            // Knockout: a slow-motion beat (the punch-in camera and the hit freeze play over it).
+            // Knockout: let the KO hit's freeze (HitFeedback hitstop) finish first, then a slow-motion beat.
+            float freezeCap = Time.realtimeSinceStartup + 0.5f;
+            while (!timeOut && Time.timeScale == 0f && !Paused && KungFuCrashout.Feedback.HitFeedback.FrozenUntil > Time.realtimeSinceStartup &&
+                   Time.realtimeSinceStartup < freezeCap)
+                yield return null;
             if (!timeOut && koSlowTime > 0f && koSlowScale < 1f && !Paused)
             {
                 Time.timeScale = koSlowScale;

@@ -45,6 +45,9 @@ namespace KungFuCrashout.Fighters
         [Min(0f)] public float knockback = 0.4f;
         [Tooltip("How long the target can't act (seconds). Must be longer than the time until your next hit lands, or the combo can be escaped.")]
         [Min(0f)] public float hitstun = 0.3f;
+        [Tooltip("Hitstop for this attack in frames (60 fps), when HitFeedback → Tiered Hitstop is on. " +
+                 "-1 = by tier (light / finisher / heavy / item…). Parry and KO always use their own tier.")]
+        [Min(-1)] public int hitstopFrames = -1;
 
         [Header("When blocked (M3)")]
         [Tooltip("Fraction of the damage that still gets through a block. Chip damage can never KO.")]

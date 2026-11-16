@@ -76,6 +76,11 @@ namespace KungFuCrashout.Props
         [SerializeField, Range(0.2f, 1f)] float dormantBrightness = 0.65f;
         [Tooltip("Upward speed it's knocked loose with when a shockwave wakes it (world units per second).")]
         [SerializeField, Min(0f)] float wakePopSpeed = 3f;
+        [Tooltip("Chance (%) this item wakes when a hit's shockwave reaches it (StageItemDirector → Radius mode). " +
+                 "-1 = by weight (ItemDurability): Light 70, Medium 50, Heavy 30.")]
+        [SerializeField, Range(-1f, 100f)] float wakeChance = -1f;
+        [Tooltip("Shockwave order (Radius mode): items with a higher priority roll first; equal priority = nearest first.")]
+        [SerializeField] int wakePriority = 0;
 
         [Header("Carry pose")]
         [Tooltip("This item's offset from where it's held (the carrier's CarryPoint, or the distance / angle below if the " +
@@ -149,6 +154,19 @@ namespace KungFuCrashout.Props
         public bool CanMoveWhileHeld => canMoveWhileHeld;
         /// <summary>Asleep at its stage spot: visible, not grabbable, waiting for a shockwave.</summary>
         public bool IsDormant => State == ItemState.Dormant;
+        /// <summary>Wake priority for shockwaves (higher rolls first).</summary>
+        public int WakePriority => wakePriority;
+        /// <summary>Chance (%) a shockwave wakes this item: Wake Chance, or by weight when it's -1.</summary>
+        public float WakeChance
+        {
+            get
+            {
+                if (wakeChance >= 0f) return wakeChance;
+                var d = GetComponent<ItemDurability>();
+                if (!d) return 50f;
+                return d.ItemWeight == ItemDurability.Weight.Light ? 70f : d.ItemWeight == ItemDurability.Weight.Heavy ? 30f : 50f;
+            }
+        }
         /// <summary>The sprite it shows on the ground (prefabs too: used for the drop-in stand-in).</summary>
         public Sprite GroundSprite => groundSprite ? groundSprite : GetComponent<SpriteRenderer>().sprite;
         /// <summary>The sprite while asleep (Sleeping Sprite, else the Ground Sprite).</summary>
