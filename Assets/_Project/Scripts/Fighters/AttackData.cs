@@ -1,7 +1,72 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace KungFuCrashout.Fighters
 {
+    /// <summary>One box in Visual-local units (the art's pivot at the feet = 0,0; drawn facing right). Mirrors with facing.</summary>
+    [Serializable]
+    public class FrameBox
+    {
+        public Vector2 offset;
+        public Vector2 size = Vector2.one;
+    }
+
+    /// <summary>Boxes that start on a frame and stay until the next set (Quantum-style "sets": one per pose, not per frame).</summary>
+    [Serializable]
+    public class BoxSet
+    {
+        [Tooltip("First frame (60 fps, 0 = the attack's first frame) these boxes are used.")]
+        [Min(0)] public int frame;
+        [Tooltip("Empty = no boxes from this frame on (e.g. a hitbox that ends before the active window).")]
+        public List<FrameBox> boxes = new List<FrameBox>();
+    }
+
+    /// <summary>Move the fighter forward by Distance on this frame (world units; matches a step drawn into the art).</summary>
+    [Serializable]
+    public class TravelKey
+    {
+        [Min(0)] public int frame;
+        public float distance;
+    }
+
+    /// <summary>
+    /// The move's FRAME DATA (Fighter → Use Frame Data): its timing in frames at a fixed 60 fps, independent of the
+    /// screen's frame rate, plus hitbox / hurtbox sets keyed to frames and the drawn travel. When set, it replaces the clip's
+    /// Animation Events and keyed Hitbox, and the Animator just shows the frame the game is on.
+    /// Build: Window → KungFu Crashout → Animation → Frame Data → Convert Clip Events (all mapped attacks), or a move's own
+    /// setup menu (e.g. Set Up Monk Basic Attack).
+    /// </summary>
+    [Serializable]
+    public class FrameData
+    {
+        [Tooltip("Length of the move in frames (60 fps). 0 = no frame data: clip events / Startup-Active-Recovery are used.")]
+        [Min(0)] public int totalFrames;
+        [Tooltip("First frame the hitbox is live (the strike drawing).")]
+        [Min(0)] public int activeStart;
+        [Tooltip("First frame AFTER the active window (active = Active Start … Active End − 1).")]
+        [Min(0)] public int activeEnd;
+        [Tooltip("From this frame the next combo hit / heavy can start. -1 = only when the move ends.")]
+        public int cancelFrame = -1;
+        public List<BoxSet> hitboxSets = new List<BoxSet>();
+        [Tooltip("Optional: the body (hurtbox) per pose. Empty = the fighter's normal body box.")]
+        public List<BoxSet> hurtboxSets = new List<BoxSet>();
+        [Tooltip("Optional: steps forward drawn into the art. Empty = Lunge / Active Travel are spread over the frames instead.")]
+        public List<TravelKey> travel = new List<TravelKey>();
+
+        public bool IsSet => totalFrames > 0;
+
+        /// <summary>The set in use on this frame: the last one starting on or before it (null = none yet).</summary>
+        public static BoxSet SetAt(List<BoxSet> sets, int frame)
+        {
+            BoxSet found = null;
+            if (sets == null) return null;
+            foreach (var s in sets)
+                if (s != null && s.frame <= frame && (found == null || s.frame >= found.frame)) found = s;
+            return found;
+        }
+    }
+
     /// <summary>Light or heavy hit. Picks the hit sound, hitstop length and screen shake (M8).</summary>
     public enum HitWeight { Light, Heavy }
 
@@ -75,6 +140,10 @@ namespace KungFuCrashout.Fighters
         [Tooltip("Launch direction for a target on your right (x is mirrored). (0.1, 1) = nearly straight up. " +
                  "The angle is kept inside the Launch On Hit asset's Min / Max Launch Angle.")]
         public Vector2 launchDirection = new Vector2(0.1f, 1f);
+
+        [Header("Frame data (Fighter → Use Frame Data)")]
+        [Tooltip("Timing and boxes in frames at 60 fps. Total Frames 0 = not used (clip events / the seconds above).")]
+        public FrameData frames = new FrameData();
 
         public float TotalDuration => startup + active + recovery;
         public float Blockstun => blockstun > 0f ? blockstun : hitstun * 0.6f;

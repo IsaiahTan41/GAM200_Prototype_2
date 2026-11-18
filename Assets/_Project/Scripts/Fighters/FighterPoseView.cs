@@ -196,9 +196,12 @@ namespace KungFuCrashout.Fighters
         {
             if (!fighter) return;
 
-            var pose = PickPose();
-            // While a FighterAnimator clip plays (e.g. Monk_Attack), the Animator owns the sprite.
-            if (pose && !(animator && animator.IsPlaying)) art.sprite = pose;
+            var slot = PickPose();
+            var pose = SpriteFor(slot);
+            // Pose clips (FighterAnimator → Use Pose Clips): the Animator draws the pose on its frame counter.
+            // While an attack clip plays (e.g. Monk_BasicAttack), the Animator owns the sprite too.
+            bool drawn = animator && animator.ShowPose(slot, Time.deltaTime);
+            if (!drawn && pose && !(animator && animator.IsPlaying)) art.sprite = pose;
             // The fighter is already turned toward the opponent (root scale = Facing). If the dash goes the other way, mirror the art.
             bool againstDash = dashFacesMovement && fighter.DashDirection != 0 && fighter.DashDirection != fighter.Facing;
             art.flipX = artFacesLeft ^ againstDash;
@@ -247,55 +250,79 @@ namespace KungFuCrashout.Fighters
             }
         }
 
-        Sprite PickPose()
+        /// <summary>The drawing assigned to this pose (null = none).</summary>
+        public Sprite SpriteFor(PoseSlot slot) => slot switch
+        {
+            PoseSlot.Idle => idle,
+            PoseSlot.Block => block,
+            PoseSlot.Dash => dash,
+            PoseSlot.Hitstun => hitstun,
+            PoseSlot.Airborne => airborne,
+            PoseSlot.Downed => downed,
+            PoseSlot.KO => ko,
+            PoseSlot.Carry => carry,
+            PoseSlot.Throw => throwPose,
+            PoseSlot.WindUp => windUp,
+            PoseSlot.Attack => attack,
+            PoseSlot.HeavyAttack => heavyAttack,
+            PoseSlot.Recovery => recovery,
+            PoseSlot.SideSpecial => sideSpecialPose,
+            PoseSlot.UpSpecial => upSpecialPose,
+            PoseSlot.DownSpecial => downSpecialPose,
+            _ => null,
+        };
+
+        /// <summary>Which pose to show now: the first one in each fallback list that has a drawing.</summary>
+        PoseSlot PickPose()
         {
             switch (fighter.State)
             {
-                case FighterState.KO:     return First(ko, downed, hitstun, idle);
-                case FighterState.Downed: return First(downed, hitstun, idle);
+                case FighterState.KO:     return First(PoseSlot.KO, PoseSlot.Downed, PoseSlot.Hitstun, PoseSlot.Idle);
+                case FighterState.Downed: return First(PoseSlot.Downed, PoseSlot.Hitstun, PoseSlot.Idle);
             }
 
-            if (Time.time < throwUntil) return First(throwPose, attack, idle);
+            if (Time.time < throwUntil) return First(PoseSlot.Throw, PoseSlot.Attack, PoseSlot.Idle);
 
             switch (fighter.State)
             {
                 case FighterState.Hitstun:
-                    return First(hitstun, idle);
+                    return First(PoseSlot.Hitstun, PoseSlot.Idle);
 
                 case FighterState.Attacking:
                     // Item throw without a clip: hold the item while winding up, throw pose from the release on.
                     if (fighter.IsThrowing)
-                        return fighter.Phase == AttackPhase.Startup ? First(carry, windUp, idle) : First(throwPose, attack, idle);
+                        return fighter.Phase == AttackPhase.Startup ? First(PoseSlot.Carry, PoseSlot.WindUp, PoseSlot.Idle)
+                                                                    : First(PoseSlot.Throw, PoseSlot.Attack, PoseSlot.Idle);
                     var cur = fighter.CurrentAttack;
                     bool heavy = cur && cur == fighter.HeavyAttackData;
-                    Sprite hit = heavy ? First(heavyAttack, attack) : attack;
+                    PoseSlot hit = heavy ? First(PoseSlot.HeavyAttack, PoseSlot.Attack) : First(PoseSlot.Attack);
                     if (fighter.IsDoingSpecial)
                     {
-                        Sprite special = cur == fighter.SpecialFor(SpecialMove.Side) ? sideSpecialPose
-                                       : cur == fighter.SpecialFor(SpecialMove.Up) ? upSpecialPose
-                                       : downSpecialPose;
-                        hit = First(special, heavyAttack, attack);
+                        PoseSlot special = cur == fighter.SpecialFor(SpecialMove.Side) ? PoseSlot.SideSpecial
+                                         : cur == fighter.SpecialFor(SpecialMove.Up) ? PoseSlot.UpSpecial
+                                         : PoseSlot.DownSpecial;
+                        hit = First(special, PoseSlot.HeavyAttack, PoseSlot.Attack);
                     }
                     return fighter.Phase switch
                     {
-                        AttackPhase.Startup => First(windUp, idle),
-                        AttackPhase.Recovery => First(recovery, hit, idle),
-                        _ => First(hit, idle)
+                        AttackPhase.Startup => First(PoseSlot.WindUp, PoseSlot.Idle),
+                        AttackPhase.Recovery => First(PoseSlot.Recovery, hit, PoseSlot.Idle),
+                        _ => First(hit, PoseSlot.Idle)
                     };
 
-                case FighterState.Blocking: return First(block, idle);
-                case FighterState.Dashing:  return First(dash, idle);
+                case FighterState.Blocking: return First(PoseSlot.Block, PoseSlot.Idle);
+                case FighterState.Dashing:  return First(PoseSlot.Dash, PoseSlot.Idle);
             }
 
-            if (fighter.IsAirborne) return First(airborne, idle);
-            if (holder && holder.IsCarrying) return First(carry, idle);
-            return idle;
+            if (fighter.IsAirborne) return First(PoseSlot.Airborne, PoseSlot.Idle);
+            if (holder && holder.IsCarrying) return First(PoseSlot.Carry, PoseSlot.Idle);
+            return PoseSlot.Idle;
         }
 
-        static Sprite First(params Sprite[] options)
+        PoseSlot First(params PoseSlot[] options)
         {
-            foreach (var s in options) if (s) return s;
-            return null;
+            foreach (var s in options) if (s != PoseSlot.None && SpriteFor(s)) return s;
+            return PoseSlot.None;
         }
     }
 }

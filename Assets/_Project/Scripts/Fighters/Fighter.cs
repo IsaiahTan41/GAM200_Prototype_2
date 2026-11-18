@@ -226,6 +226,17 @@ namespace KungFuCrashout.Fighters
                  "AttackEnd) and uses its keyed Hitbox, so the hit lands on the drawn frame. OFF: the clip only plays " +
                  "visually; timing and hitbox come from AttackData.")]
         [SerializeField] bool useAnimationTiming = true;
+        [Tooltip("ON: attacks that have Frame Data (AttackData → Frame data, Total Frames > 0) run on a fixed 60 fps frame " +
+                 "counter: phases, hitbox / hurtbox sets and travel come from the frame data, hits are checked every frame " +
+                 "(swept between frames), and the Animator just shows that frame. Screen frame rate can't skip a hitbox. " +
+                 "OFF: Use Animation Timing / the seconds in AttackData, as before.")]
+        [SerializeField] bool useFrameData = true;
+        [Tooltip("Frame data hurtbox sets reshape this fighter's body collider during a move (e.g. lower while crouched). " +
+                 "OFF: the body collider never changes.")]
+        [SerializeField] bool useHurtboxSets = true;
+        [Tooltip("ON: the heavy attack plays its animation (clip / frame data, e.g. Monk_HeavyAttack). OFF: the original heavy " +
+                 "(sprite poses + the Startup / Active / Recovery seconds). The pause menu can switch it while playing.")]
+        [SerializeField] bool heavyUsesAnimation = true;
         [Tooltip("How long an attacker is stunned after being parried (seconds). Long enough to punish with a full combo.")]
         [SerializeField] float parryStun = 0.6f;
         [Tooltip("Parrying a melee attack pushes the attacker back a little (they slide away while parry-stunned).")]
@@ -398,6 +409,12 @@ namespace KungFuCrashout.Fighters
         public AttackData AirAttackData => AirHit(0);
         /// <summary>True while one of the air combo's hits is the current attack.</summary>
         public bool IsAirAttacking => State == FighterState.Attacking && comboIndex == AirIndex;
+        /// <summary>Attacks with frame data run on the 60 fps frame counter (testing switch).</summary>
+        public bool UseFrameData { get => useFrameData; set => useFrameData = value; }
+        /// <summary>The heavy plays its animation (clip / frame data); off = the original pose-based heavy.</summary>
+        public bool HeavyUsesAnimation { get => heavyUsesAnimation; set => heavyUsesAnimation = value; }
+        /// <summary>The current attack's frame (60 fps) when it runs on frame data; -1 otherwise.</summary>
+        public int AttackFrame => frameTiming ? attackFrame : -1;
         /// <summary>1, 2, 3 during the air combo; 0 otherwise.</summary>
         public int AirComboStep => IsAirAttacking ? airStep + 1 : 0;
         /// <summary>True while hanging in the air for the air combo string.</summary>
@@ -881,7 +898,7 @@ namespace KungFuCrashout.Fighters
             if (IsAirAttacking)
             {
                 if (!AirHit(airStep + 1)) return; // last hit of the string
-                if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAirHit(airStep + 1);
+                if (Phase == AttackPhase.Recovery && (!(animTiming || frameTiming) || animCancelOpen)) StartAirHit(airStep + 1);
                 else bufferedLight = true; // fires at recovery / the clip's CancelOpen / the clip's end
                 return;
             }
@@ -906,7 +923,7 @@ namespace KungFuCrashout.Fighters
                 bool hasNext = inLightCombo && comboIndex + 1 < lightCombo.Length && lightCombo[comboIndex + 1];
                 if (!inLightCombo || !hasNext) return;
 
-                if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
+                if (Phase == AttackPhase.Recovery && (!(animTiming || frameTiming) || animCancelOpen)) StartAttack(lightCombo[comboIndex + 1], comboIndex + 1);
                 else bufferedLight = true; // remembered, fires as soon as recovery starts (or the clip's CancelOpen)
                 return;
             }
@@ -925,7 +942,7 @@ namespace KungFuCrashout.Fighters
             {
                 if (comboIndex < 0) return; // already doing the heavy
 
-                if (Phase == AttackPhase.Recovery && (!animTiming || animCancelOpen)) StartAttack(heavyAttack, -1);
+                if (Phase == AttackPhase.Recovery && (!(animTiming || frameTiming) || animCancelOpen)) StartAttack(heavyAttack, -1);
                 else bufferedHeavy = true;
                 return;
             }
@@ -1479,10 +1496,22 @@ namespace KungFuCrashout.Fighters
             Phase = AttackPhase.Startup;
             phaseTimer = attack.startup;
 
-            // Play this attack's clip if the FighterAnimator has one; its events then drive the phases.
+            // Frame data: the 60 fps frame counter drives everything; the clip (if any) just shows the frame.
             animTiming = false;
             animCancelOpen = false;
-            if (fighterAnimator)
+            RestoreHurtbox();
+            bool plainHeavy = attack == heavyAttack && !heavyUsesAnimation; // the original heavy: poses + seconds only
+            frameTiming = !plainHeavy && useFrameData && attack.frames != null && attack.frames.IsSet;
+            if (frameTiming)
+            {
+                attackFrame = 0;
+                frameAcc = 0f;
+                prevHitRects.Clear();
+                if (fighterAnimator && !fighterAnimator.TryPlayFrames(attack)) fighterAnimator.Stop();
+            }
+            else if (fighterAnimator && plainHeavy) fighterAnimator.Stop();
+            // Otherwise play this attack's clip if the FighterAnimator has one; its events then drive the phases.
+            else if (fighterAnimator)
             {
                 if (fighterAnimator.TryPlay(attack, out float clipLength))
                 {
@@ -1494,11 +1523,13 @@ namespace KungFuCrashout.Fighters
 
             SetState(FighterState.Attacking);
             AttackStarted?.Invoke(attack);
-            if (logStateChanges) Debug.Log($"[{name}] starts {attack.name}");
+            if (logStateChanges) Debug.Log($"[{name}] starts {attack.name}" + (frameTiming ? $" (frame data, {attack.frames.totalFrames} f)" : ""));
+            if (frameTiming) ApplyFrame(0);
         }
 
         void UpdateAttack(float dt)
         {
+            if (frameTiming) { UpdateFrameAttack(dt); return; }
             if (animTiming) { UpdateAnimatedAttack(dt); return; }
 
             var attack = CurrentAttack;
@@ -1542,6 +1573,189 @@ namespace KungFuCrashout.Fighters
                     }
                     break;
             }
+        }
+
+        // ───────────── Frame data (fixed 60 fps frame counter) ─────────────
+
+        const float FrameTime = 1f / 60f;
+        bool frameTiming;          // the current attack runs on its frame data
+        int attackFrame;           // current frame of the attack (0 = first)
+        float frameAcc;            // game time not yet turned into frames (scaled time: hitstop / pause freeze it)
+        readonly List<Rect> prevHitRects = new List<Rect>(); // last frame's hitboxes, for the sweep
+        Collider2D bodyCollider;
+        Vector2 bodyOffset, bodySize;
+        bool bodyChanged, bodyCached;
+
+        /// <summary>Advance the frame counter by whole 60 fps frames (several on a slow screen frame, none in hitstop).</summary>
+        void UpdateFrameAttack(float dt)
+        {
+            var attack = CurrentAttack;
+            frameAcc += dt;
+            int steps = 0;
+            while (frameAcc >= FrameTime && steps < 8)
+            {
+                frameAcc -= FrameTime;
+                steps++;
+                attackFrame++;
+                ApplyFrame(attackFrame);
+                // Ended, interrupted or chained into the next move (which runs its own frame 0): stop here.
+                if (!frameTiming || State != FighterState.Attacking || CurrentAttack != attack) return;
+            }
+            if (steps >= 8) frameAcc = 0f; // a huge hitch: don't fast-forward the rest of the move
+        }
+
+        /// <summary>Everything that happens on frame f of the current attack.</summary>
+        void ApplyFrame(int f)
+        {
+            var attack = CurrentAttack;
+            var fd = attack.frames;
+            if (fighterAnimator && fighterAnimator.IsFrameDriven) fighterAnimator.ShowFrame(f);
+
+            // Movement: the steps drawn into the art, else Lunge over startup / Active Travel over the active frames.
+            if (fd.travel != null && fd.travel.Count > 0)
+            {
+                foreach (var k in fd.travel)
+                    if (k != null && k.frame == f && Mathf.Abs(k.distance) > 0f) MoveX(Facing * k.distance);
+            }
+            else if (f > 0 && f <= fd.activeStart && fd.activeStart > 0) MoveX(Facing * attack.lunge / fd.activeStart);
+            else if (f > fd.activeStart && f <= fd.activeEnd && attack.activeTravel > 0f)
+                MoveX(Facing * attack.activeTravel / Mathf.Max(1, fd.activeEnd - fd.activeStart));
+
+            if (useHurtboxSets) ApplyHurtbox(f);
+
+            // Phases.
+            if (f >= fd.activeStart && f < fd.activeEnd)
+            {
+                if (Phase == AttackPhase.Startup)
+                {
+                    Phase = AttackPhase.Active;
+                    prevHitRects.Clear();
+                    if (comboIndex == ThrowIndex) ThrowReleased?.Invoke(); // the item leaves now
+                    else AttackWentActive?.Invoke(attack);
+                    if (State != FighterState.Attacking || CurrentAttack != attack) return;
+                }
+                CheckHits();
+                if (State != FighterState.Attacking || CurrentAttack != attack) return; // parried mid-swing
+            }
+            else if (f >= fd.activeEnd && Phase != AttackPhase.Recovery)
+            {
+                if (Phase == AttackPhase.Startup && comboIndex == ThrowIndex) ThrowReleased?.Invoke(); // zero-length window
+                Phase = AttackPhase.Recovery;
+                prevHitRects.Clear();
+            }
+
+            // Cancel window: queued taps fire now.
+            if (fd.cancelFrame >= 0 && f >= fd.cancelFrame && !animCancelOpen)
+            {
+                animCancelOpen = true;
+                if (Phase == AttackPhase.Active) Phase = AttackPhase.Recovery;
+                if (bufferedHeavy && heavyAttack) { StartAttack(heavyAttack, -1); return; }
+                if (TryChainBufferedLight()) return;
+            }
+
+            // Last frame: chain anything still queued, else back to neutral.
+            if (f >= fd.totalFrames - 1)
+            {
+                if (bufferedHeavy && heavyAttack) { StartAttack(heavyAttack, -1); return; }
+                if (TryChainBufferedLight()) return;
+                CancelAttack();
+                ReturnToNeutral(); // still in the air → Airborne, else Idle
+            }
+        }
+
+        /// <summary>This frame's hitboxes, each swept from where it was last frame so fast swings can't skip a target.</summary>
+        void CheckFrameHits(AttackData attack)
+        {
+            var set = FrameData.SetAt(attack.frames.hitboxSets, attackFrame);
+            if (set == null || set.boxes == null || set.boxes.Count == 0) { prevHitRects.Clear(); return; }
+
+            var now = new List<Rect>(set.boxes.Count);
+            foreach (var b in set.boxes) if (b != null) now.Add(BoxWorldRect(b));
+
+            for (int i = 0; i < now.Count; i++)
+            {
+                Rect r = now[i];
+                if (i < prevHitRects.Count) r = Union(r, prevHitRects[i]);
+                overlapResults.Clear();
+                Physics2D.OverlapBox(r.center, r.size, 0f, hurtboxFilter, overlapResults);
+                if (ResolveOverlaps(attack)) { prevHitRects.Clear(); return; }
+            }
+            prevHitRects.Clear();
+            prevHitRects.AddRange(now);
+        }
+
+        static Rect Union(Rect a, Rect b) =>
+            Rect.MinMaxRect(Mathf.Min(a.xMin, b.xMin), Mathf.Min(a.yMin, b.yMin), Mathf.Max(a.xMax, b.xMax), Mathf.Max(a.yMax, b.yMax));
+
+        /// <summary>A frame-data box in world space: Visual-local, so it follows the art's pivot, scale and facing.</summary>
+        Rect BoxWorldRect(FrameBox b)
+        {
+            Vector2 c, size;
+            var v = fighterAnimator ? fighterAnimator.transform : null;
+            if (v)
+            {
+                c = v.TransformPoint(b.offset);
+                Vector3 ls = v.lossyScale;
+                size = new Vector2(Mathf.Abs(b.size.x * ls.x), Mathf.Abs(b.size.y * ls.y));
+            }
+            else
+            {
+                c = (Vector2)transform.position + new Vector2(b.offset.x * Facing, b.offset.y);
+                size = new Vector2(Mathf.Abs(b.size.x), Mathf.Abs(b.size.y));
+            }
+            return new Rect(c - size * 0.5f, size);
+        }
+
+        /// <summary>The current frame's hitboxes as one box (for effects and the debug box). False if none this frame.</summary>
+        bool TryFrameHitbox(out Vector2 centre, out Vector2 size)
+        {
+            centre = size = Vector2.zero;
+            var attack = CurrentAttack;
+            if (!attack) return false;
+            var set = FrameData.SetAt(attack.frames.hitboxSets, attackFrame);
+            if (set == null || set.boxes == null || set.boxes.Count == 0) return false;
+            Rect u = default; bool any = false;
+            foreach (var b in set.boxes)
+            {
+                if (b == null) continue;
+                var r = BoxWorldRect(b);
+                u = any ? Union(u, r) : r;
+                any = true;
+            }
+            centre = u.center; size = u.size;
+            return any;
+        }
+
+        /// <summary>Frame data hurtbox set: reshape the body collider (Visual-local box → this object's space).</summary>
+        void ApplyHurtbox(int f)
+        {
+            var set = FrameData.SetAt(CurrentAttack.frames.hurtboxSets, f);
+            if (set == null || set.boxes == null || set.boxes.Count == 0 || set.boxes[0] == null) return;
+            if (!bodyCached)
+            {
+                bodyCached = true;
+                bodyCollider = GetComponent<CapsuleCollider2D>();
+                if (!bodyCollider) bodyCollider = GetComponent<BoxCollider2D>();
+                if (bodyCollider is CapsuleCollider2D cc) { bodyOffset = cc.offset; bodySize = cc.size; }
+                else if (bodyCollider is BoxCollider2D bc) { bodyOffset = bc.offset; bodySize = bc.size; }
+            }
+            if (!bodyCollider) return;
+
+            var r = BoxWorldRect(set.boxes[0]);
+            Vector2 local = transform.InverseTransformPoint(r.center);
+            Vector3 ls = transform.lossyScale;
+            var size = new Vector2(r.width / Mathf.Max(0.0001f, Mathf.Abs(ls.x)), r.height / Mathf.Max(0.0001f, Mathf.Abs(ls.y)));
+            if (bodyCollider is CapsuleCollider2D c2) { c2.offset = local; c2.size = size; }
+            else if (bodyCollider is BoxCollider2D b2) { b2.offset = local; b2.size = size; }
+            bodyChanged = true;
+        }
+
+        void RestoreHurtbox()
+        {
+            if (!bodyChanged || !bodyCollider) return;
+            if (bodyCollider is CapsuleCollider2D c2) { c2.offset = bodyOffset; c2.size = bodySize; }
+            else if (bodyCollider is BoxCollider2D b2) { b2.offset = bodyOffset; b2.size = bodySize; }
+            bodyChanged = false;
         }
 
         // ───────────── Frame-driven attacks (Animation Events) ─────────────
@@ -1622,6 +1836,7 @@ namespace KungFuCrashout.Fighters
         /// <summary>The current attack's hitbox in world space: the clip's keyed Hitbox, else the AttackData box.</summary>
         void GetHitbox(AttackData attack, out Vector2 centre, out Vector2 size)
         {
+            if (frameTiming && TryFrameHitbox(out centre, out size)) return;
             if (animTiming && fighterAnimator && fighterAnimator.TryGetHitbox(out centre, out size)) return;
             centre = HitboxCentre(attack, Facing);
             size = attack.hitboxSize;
@@ -1644,10 +1859,17 @@ namespace KungFuCrashout.Fighters
             // Make sure colliders are at this frame's positions before querying.
             Physics2D.SyncTransforms();
 
+            if (frameTiming) { CheckFrameHits(attack); return; }
+
             overlapResults.Clear();
             GetHitbox(attack, out Vector2 boxCentre, out Vector2 boxSize);
             Physics2D.OverlapBox(boxCentre, boxSize, 0f, hurtboxFilter, overlapResults);
+            ResolveOverlaps(attack);
+        }
 
+        /// <summary>Hit every new fighter in overlapResults. True if the attack was parried (it's over).</summary>
+        bool ResolveOverlaps(AttackData attack)
+        {
             foreach (var col in overlapResults)
             {
                 var target = col.GetComponentInParent<Fighter>();
@@ -1660,8 +1882,9 @@ namespace KungFuCrashout.Fighters
                 if (result == HitResult.Hit || result == HitResult.Blocked) attackConnected = true;
                 HitConnected?.Invoke(target, attack, result);
                 if (result == HitResult.Hit) HitLanded?.Invoke(target, attack);
-                if (result == HitResult.Parried) return; // our attack is over
+                if (result == HitResult.Parried) return true; // our attack is over
             }
+            return false;
         }
 
         void CancelAttack()
@@ -1672,6 +1895,9 @@ namespace KungFuCrashout.Fighters
             bufferedLight = bufferedHeavy = false;
             animTiming = false;
             animCancelOpen = false;
+            frameTiming = false;
+            prevHitRects.Clear();
+            RestoreHurtbox();
             if (fighterAnimator) fighterAnimator.Stop(); // back to the sprite poses (e.g. interrupted by a hit)
         }
 

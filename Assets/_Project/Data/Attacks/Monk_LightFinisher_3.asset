@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 739ae8cec40e2524f974867dc8f4ce51, type: 3}
   m_Name: Monk_LightFinisher_3
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.AttackData
-  damage: 9
-  weight: 1
-  startup: 0.18
-  active: 0.1
-  recovery: 0.35
+  damage: 4.5
+  weight: 0
+  startup: 0.16666667
+  active: 0.06666667
+  recovery: 0.15
   hitboxOffset: {x: 0.9, y: 0.5}
   hitboxSize: {x: 2, y: 0.9}
   knockback: 1.8
   hitstun: 0.5
+  hitstopFrames: -1
   chipDamage: 0.15
   blockstun: 0.3
   blockPushback: 0.6
@@ -29,3 +30,41 @@ MonoBehaviour:
   activeTravel: 0
   launchOnHit: {fileID: 0}
   launchDirection: {x: 0.1, y: 1}
+  frames:
+    totalFrames: 23
+    activeStart: 10
+    activeEnd: 14
+    cancelFrame: 14
+    hitboxSets:
+    - frame: 10
+      boxes:
+      - offset: {x: 1.1342857, y: 0.96428573}
+        size: {x: 1.5714285, y: 1.9285715}
+    - frame: 12
+      boxes:
+      - offset: {x: 0.99142855, y: 0.22142857}
+        size: {x: 1.8571428, y: 0.44285715}
+    hurtboxSets:
+    - frame: 0
+      boxes:
+      - offset: {x: 0.06, y: 0.87}
+        size: {x: 1.0857143, y: 1.7628572}
+    - frame: 3
+      boxes:
+      - offset: {x: 0.07714286, y: 0.62142855}
+        size: {x: 1.2571429, y: 1.2142857}
+    - frame: 6
+      boxes:
+      - offset: {x: -0.071428575, y: 1.1071428}
+        size: {x: 0.9142857, y: 2.1}
+    - frame: 10
+      boxes:
+      - offset: {x: 0.17714286, y: 0.62714285}
+        size: {x: 1.1428572, y: 1.2314286}
+    travel:
+    - frame: 3
+      distance: 0.12571429
+    - frame: 6
+      distance: 0.09142857
+    - frame: 10
+      distance: 0.09428571
