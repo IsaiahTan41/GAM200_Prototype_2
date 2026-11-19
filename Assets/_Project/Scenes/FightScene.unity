@@ -10335,6 +10335,7 @@ GameObject:
   - component: {fileID: 1061516971}
   - component: {fileID: 1061516970}
   - component: {fileID: 1061516972}
+  - component: {fileID: 1061516973}
   m_Layer: 0
   m_Name: Opponent
   m_TagString: Untagged
@@ -10723,7 +10724,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterMovementSfx
   dashCue: {fileID: 11400000, guid: bbe472b472902d64598bc6c6bca786f7, type: 2}
   jumpCue: {fileID: 11400000, guid: a2242d031fd667246bac0ac4ad7ac25d, type: 2}
-  landCue: {fileID: 0}
+  landCue: {fileID: 11400000, guid: 0e09a85f635e0114b9930c2679b4b5f8, type: 2}
 --- !u!114 &1061516969
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10886,6 +10887,26 @@ MonoBehaviour:
   bodyOffset: {x: 0, y: 0}
   showAnchors: 1
   sizeMultiplier: 1
+--- !u!114 &1061516973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1061516959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 899d03d5e2bc94b47a620dfa6ad4932f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterHitVocals
+  playVocals: 1
+  vocalCue: {fileID: 11400000, guid: 88b3dc41a8f88f1468068fec82f07443, type: 2}
+  minInterval: 2.5
+  randomExtra: 1.5
+  chance: 0.6
+  bigHitsAlways: 1
+  includeThrownItems: 1
+  delay: 0.04
 --- !u!1 &1066966355
 GameObject:
   m_ObjectHideFlags: 0
@@ -22377,9 +22398,32 @@ MonoBehaviour:
   pitchJitter: 0.08
   lightImpactCue: {fileID: 11400000, guid: 27d290dc607ac48448617f60a5dcc0b2, type: 2}
   heavyImpactCue: {fileID: 11400000, guid: 90ae0f7aef20be04a972dd1524cf4ea6, type: 2}
+  useWoodHitSounds: 1
+  basicAttackWoodCue: {fileID: 11400000, guid: 31742884a42ee5c4496945579395daaf, type: 2}
+  woodLayering: 1
+  punchLayerCue: {fileID: 11400000, guid: c11d9acb28657ab40bddea09ad9f426e, type: 2}
+  overWoodVolume: 0.62
+  overPunchVolume: 0.45
+  overStagger: 0.006
+  afterWoodVolume: 0.9
+  afterPunchVolume: 0.7
+  afterDelay: 0.045
+  heavyLayerCue: {fileID: 11400000, guid: fd651b0b691a04e42b071c79caf29261, type: 2}
+  sideSpecialLayerCue: {fileID: 11400000, guid: 25fea655faac2794e8e305ea423a3dff, type: 2}
+  downSpecialLayerCue: {fileID: 11400000, guid: 4ddc949fd9eb33241a5e20d4cc34664a, type: 2}
+  upSpecialLayerCue: {fileID: 11400000, guid: 5e89cdc7013f6e144af458c18e8082ac, type: 2}
+  airLayerCue: {fileID: 0}
+  blockLayerCue: {fileID: 11400000, guid: c783769f4b85a4a4889e9b0c299e9dae, type: 2}
+  layerBlockedHits: 1
+  useSwingWhooshes: 1
+  swingWhooshCue: {fileID: 11400000, guid: 77e50782f727c9549a476dffcc9e477e, type: 2}
+  alignWhooshToStrike: 1
+  whooshLead: 0.03
   vibrate: 1
   itemSlowMotion: 1
   downedThud: {fileID: 0}
+  downedCue: {fileID: 11400000, guid: bc1207a39b7990241a6e85e9a40f6e75, type: 2}
+  parryCue: {fileID: 11400000, guid: 4768f400dcc23e94caab85736499ddf2, type: 2}
   downedShake: 0.12
 --- !u!1 &1956322280
 GameObject:
@@ -22672,6 +22716,7 @@ GameObject:
   - component: {fileID: 1960580407}
   - component: {fileID: 1960580408}
   - component: {fileID: 1960580409}
+  - component: {fileID: 1960580410}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -23062,7 +23107,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterMovementSfx
   dashCue: {fileID: 11400000, guid: bbe472b472902d64598bc6c6bca786f7, type: 2}
   jumpCue: {fileID: 11400000, guid: a2242d031fd667246bac0ac4ad7ac25d, type: 2}
-  landCue: {fileID: 0}
+  landCue: {fileID: 11400000, guid: 0e09a85f635e0114b9930c2679b4b5f8, type: 2}
 --- !u!114 &1960580407
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23132,6 +23177,26 @@ MonoBehaviour:
   bodyOffset: {x: 0, y: 0}
   showAnchors: 1
   sizeMultiplier: 1
+--- !u!114 &1960580410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960580397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 899d03d5e2bc94b47a620dfa6ad4932f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.FighterHitVocals
+  playVocals: 1
+  vocalCue: {fileID: 11400000, guid: 88b3dc41a8f88f1468068fec82f07443, type: 2}
+  minInterval: 2.5
+  randomExtra: 1.5
+  chance: 0.6
+  bigHitsAlways: 1
+  includeThrownItems: 1
+  delay: 0.04
 --- !u!1 &1978094154
 GameObject:
   m_ObjectHideFlags: 0

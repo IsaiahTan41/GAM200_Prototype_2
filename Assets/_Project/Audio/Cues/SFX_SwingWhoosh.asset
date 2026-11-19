@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2791658c364a7604596868d555ef149c, type: 3}
+  m_Name: SFX_SwingWhoosh
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 0a7421605d5d4e04892f7cac131a5f41, type: 3}
+  - {fileID: 8300000, guid: fec1cf3d653f4ef449ab5160e9075826, type: 3}
+  - {fileID: 8300000, guid: 4ef2ab070cb12484f8cb830bdc91b541, type: 3}
+  - {fileID: 8300000, guid: ebcbe1dc07200a94181de6e6078a5e0a, type: 3}
+  - {fileID: 8300000, guid: 0de085971eeaa9441ac4fc7d2af46512, type: 3}
+  - {fileID: 8300000, guid: 911fc8324725f1d42852042e05a8169f, type: 3}
+  - {fileID: 8300000, guid: 9af16845e0f110142b88cd8dce0da37d, type: 3}
+  resourceOverride: {fileID: 0}
+  order: 2
+  avoidRepeatingLast: 2
+  volume: 0.5
+  volumeVariation: 0.1
+  pitch: 1
+  pitchVariation: 0.05
+  maxVoices: 3
+  cooldown: 0.03
+  priority: 96

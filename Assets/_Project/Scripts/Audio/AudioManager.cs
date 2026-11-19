@@ -107,6 +107,42 @@ namespace KungFuCrashout.Sound
             voice.priority = cue.priority;
         }
 
+        /// <summary>
+        /// Layered sounds: play THIS clip (picked from the cue by the caller) at a set volume and pitch, starting Start At
+        /// seconds into the clip (skips a lead-in), Delay seconds from now on the audio clock (sample-accurate, ignores
+        /// frame rate and hitstop). Voices, priority and Max Voices come from the cue; Check Cooldown applies its Cooldown.
+        /// False = not played (cooldown, or no voice free).
+        /// </summary>
+        public bool PlayClip(SfxCue cue, AudioClip clip, float volume, float pitch, float startAt = 0f, double delay = 0d, bool checkCooldown = true)
+        {
+            if (!cue || !clip) return false;
+            float now = Time.unscaledTime;
+            if (checkCooldown)
+            {
+                if (lastPlay.TryGetValue(cue, out float t) && now - t < cue.cooldown) return false;
+                lastPlay[cue] = now;
+            }
+
+            var voice = PickVoice(cue);
+            if (voice == null) return false;
+
+            var src = voice.source;
+            src.Stop();
+            src.priority = cue.priority;
+            src.volume = Mathf.Clamp01(volume) * Mathf.Clamp01(SfxVolume);
+            src.pitch = pitch;
+            src.resource = clip;
+            src.time = Mathf.Clamp(startAt, 0f, Mathf.Max(0f, clip.length - 0.01f));
+            if (delay > 0d) src.PlayScheduled(AudioSettings.dspTime + delay);
+            else src.Play();
+            if (logPlays) Debug.Log($"[AudioManager] {cue.name} → {clip.name} (vol {src.volume:0.00}, pitch {src.pitch:0.00}, from {startAt * 1000f:0}ms, +{delay * 1000d:0}ms)");
+
+            voice.cue = cue;
+            voice.startTime = now;
+            voice.priority = cue.priority;
+            return true;
+        }
+
         /// <summary>A free voice; else this cue's oldest copy if it's at Max Voices; else the least important sound.</summary>
         Voice PickVoice(SfxCue cue)
         {

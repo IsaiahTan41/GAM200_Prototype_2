@@ -58,7 +58,12 @@ namespace KungFuCrashout.Sound
             if (holder) holder.Caught += OnCaught;
         }
 
-        void OnBlocked(Fighter attacker, AttackData attack) => AudioManager.Play(blockCue);
+        void OnBlocked(Fighter attacker, AttackData attack)
+        {
+            // Blocked staff hits are the wood + Punch C layer now (HitFeedback); thrown items still play the block sound.
+            if (KungFuCrashout.Feedback.HitFeedback.PlaysBlockedStaffHits(attack)) return;
+            AudioManager.Play(blockCue);
+        }
         void OnCaught(Carryable item) => AudioManager.Play(catchCue);
 
         void OnGuardBroken()

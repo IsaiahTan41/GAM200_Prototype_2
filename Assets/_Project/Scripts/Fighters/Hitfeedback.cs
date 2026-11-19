@@ -119,6 +119,65 @@ namespace KungFuCrashout.Feedback
         [Tooltip("Heavy hits, finishers, thrown-item impacts and wall splats, e.g. SFX_PunchHeavy.")]
         [SerializeField] SfxCue heavyImpactCue;
 
+        [Header("Basic attack hits: wooden staff")]
+        [Tooltip("ON: every basic attack (light combo) hit plays the next sound of Basic Attack Wood Cue, cycling through " +
+                 "Wooden_Stick_Hit_1…5 in order. OFF: the old sounds (Light / Heavy Impact Cue, the punches).")]
+        [SerializeField] bool useWoodHitSounds = true;
+        [Tooltip("SFX_WoodStickHit (Sequential order = cycles 1 → 5). Built by Window → KungFu Crashout → Audio → Set Up Wood Stick Hits.")]
+        [SerializeField] SfxCue basicAttackWoodCue;
+
+        public enum WoodLayering
+        {
+            [Tooltip("The wooden stick hit alone (the original).")] WoodOnly,
+            [Tooltip("Punch B layered OVER the wood: one fused hit, the wood's low knock + the punch's crack.")] LayeredOver,
+            [Tooltip("Punch B right AFTER the wood: a quick crack-then-thump double hit.")] LayeredAfter,
+        }
+        [Tooltip("How basic attack hits sound while Use Wood Hit Sounds is on. Wood Only = as before. " +
+                 "Layered Over / After add the Punch B layer (Punch Layer Cue), cycling 1 → 5 alongside the wood.")]
+        [SerializeField] WoodLayering woodLayering = WoodLayering.LayeredOver;
+        [Tooltip("SFX_PunchB_Layer (Punch_B_fx_01…05, Sequential).")]
+        [SerializeField] SfxCue punchLayerCue;
+        [Header("Layered Over")]
+        [Tooltip("Both layers are lowered so their peaks don't clip when summed (the fuller hit still sounds as loud).")]
+        [SerializeField, Range(0f, 1f)] float overWoodVolume = 0.62f;
+        [SerializeField, Range(0f, 1f)] float overPunchVolume = 0.45f;
+        [Tooltip("The punch's peak lands this long after the wood's peak (seconds). Under ~0.015 it still reads as ONE hit; " +
+                 "a few ms keeps the two peaks from stacking.")]
+        [SerializeField, Range(0f, 0.03f)] float overStagger = 0.006f;
+        [Header("Layered After")]
+        [SerializeField, Range(0f, 1f)] float afterWoodVolume = 0.9f;
+        [SerializeField, Range(0f, 1f)] float afterPunchVolume = 0.7f;
+        [Tooltip("The punch starts this long after the wood's peak (seconds). ~0.03–0.06 = crack-thump; longer = two hits.")]
+        [SerializeField, Range(0f, 0.15f)] float afterDelay = 0.045f;
+
+        [Header("Punch layer per move (same Wood Layering mode, levels and timing as the basic attack)")]
+        [Tooltip("Heavy attack: Punch_A_fx_01.")]
+        [SerializeField] SfxCue heavyLayerCue;
+        [Tooltip("Side special: Punch_A_fx_02.")]
+        [SerializeField] SfxCue sideSpecialLayerCue;
+        [Tooltip("Down special: Punch_A_fx_03.")]
+        [SerializeField] SfxCue downSpecialLayerCue;
+        [Tooltip("Up special: Punch_A_fx_04.")]
+        [SerializeField] SfxCue upSpecialLayerCue;
+        [Tooltip("Air combo hits. Empty = the basic attack's Punch Layer Cue (Punch B, cycling with it).")]
+        [SerializeField] SfxCue airLayerCue;
+        [Tooltip("Blocked staff hits: Punch_C_fx_01, layered with the wood INSTEAD of the block sound. " +
+                 "Blocked thrown items keep the block sound. Wood Only mode = the block sound as before.")]
+        [SerializeField] SfxCue blockLayerCue;
+        [SerializeField] bool layerBlockedHits = true;
+
+        [Header("Attack swing whooshes (every Monk swing: basic, heavy, air, specials — hit or miss; not item throws)")]
+        [Tooltip("ON: every swing plays the next whoosh of Swing Whoosh Cue (cycling through all of them). OFF: the old " +
+                 "Light / Heavy Whoosh clips (empty = silent, as before).")]
+        [SerializeField] bool useSwingWhooshes = true;
+        [Tooltip("SFX_SwingWhoosh (Sequential). Built by Window → KungFu Crashout → Audio → Set Up Swing Whooshes.")]
+        [SerializeField] SfxCue swingWhooshCue;
+        [Tooltip("Line each whoosh's loudest moment up with the moment the swing's hitbox turns on (skips the clip's lead-in, " +
+                 "or waits if the strike is later). Off = every whoosh plays from its start the moment the swing starts.")]
+        [SerializeField] bool alignWhooshToStrike = true;
+        [Tooltip("The whoosh peaks this long BEFORE the hitbox turns on (seconds): the rush of air just ahead of the impact.")]
+        [SerializeField, Range(0f, 0.15f)] float whooshLead = 0.03f;
+
         [Header("Mobile")]
         [Tooltip("Vibrate the phone on heavy hits and parries.")]
         [SerializeField] bool vibrate = true;
@@ -128,6 +187,13 @@ namespace KungFuCrashout.Feedback
         [SerializeField] bool itemSlowMotion = true;
         [Tooltip("Played when a launched fighter lands Downed (optional).")]
         [SerializeField] AudioClip downedThud;
+        [Tooltip("Knockdown: played when a launched fighter lands Downed (SFX_Knockdown). Empty = Downed Thud above.")]
+        [SerializeField] SfxCue downedCue;
+
+        [Header("Parry")]
+        [Tooltip("Parry impact (SFX_Parry). Played from its first contact (the silent lead-in is skipped), so the tap lands on " +
+                 "the parry frame and the deflect ring fills the parry freeze. Empty = Parry Clang above.")]
+        [SerializeField] SfxCue parryCue;
         [Tooltip("Screen shake when a fighter lands Downed or splats on a wall (world units).")]
         [SerializeField] float downedShake = 0.12f;
 
@@ -143,10 +209,16 @@ namespace KungFuCrashout.Feedback
 
         void OnEnable()
         {
+            Active = this;
             foreach (var f in fighters)
             {
                 if (!f) continue;
-                f.AttackStarted += OnAttackStarted;
+                if (!swingHandlers.ContainsKey(f))
+                {
+                    var fighter = f;
+                    swingHandlers[f] = attack => OnAttackStarted(fighter, attack);
+                }
+                f.AttackStarted += swingHandlers[f];
                 f.HitConnected += OnHitConnected;
                 f.Downed += OnDowned;
                 f.WallSplatted += OnWallSplatted;
@@ -155,10 +227,11 @@ namespace KungFuCrashout.Feedback
 
         void OnDisable()
         {
+            if (Active == this) Active = null;
             foreach (var f in fighters)
             {
                 if (!f) continue;
-                f.AttackStarted -= OnAttackStarted;
+                if (swingHandlers.TryGetValue(f, out var h)) f.AttackStarted -= h;
                 f.HitConnected -= OnHitConnected;
                 f.Downed -= OnDowned;
                 f.WallSplatted -= OnWallSplatted;
@@ -166,10 +239,59 @@ namespace KungFuCrashout.Feedback
             if (hitstopRoutine != null) { StopCoroutine(hitstopRoutine); RestoreTime(); }
         }
 
-        void OnAttackStarted(AttackData attack)
+        readonly System.Collections.Generic.Dictionary<Fighter, System.Action<AttackData>> swingHandlers =
+            new System.Collections.Generic.Dictionary<Fighter, System.Action<AttackData>>();
+
+        void OnAttackStarted(Fighter fighter, AttackData attack)
         {
+            if (useSwingWhooshes && swingWhooshCue && swingWhooshCue.HasSound && AudioManager.Instance)
+            {
+                if (fighter && !fighter.IsThrowing && !(attack is ThrowableData)) PlaySwing(fighter, attack);
+                return;
+            }
             Play(attack.weight == HitWeight.Heavy ? heavyWhoosh : lightWhoosh);
         }
+
+        /// <summary>The next whoosh, its peak timed to land Whoosh Lead before this swing's hitbox turns on.</summary>
+        void PlaySwing(Fighter fighter, AttackData attack)
+        {
+            var clip = swingWhooshCue.NextClip();
+            if (!clip) { AudioManager.Play(swingWhooshCue); return; }
+            float pitch = swingWhooshCue.NextPitch();
+            float volume = swingWhooshCue.NextVolume();
+            float startAt = 0f;
+            double delay = 0d;
+            if (alignWhooshToStrike)
+            {
+                var timing = ClipTiming(clip, 0.01f);               // whooshes swell: a 10 ms envelope finds the real peak
+                float peak = timing.y / pitch;                       // seconds of real time into the clip
+                float strike = Mathf.Max(0f, TimeToStrike(fighter, attack) - whooshLead);
+                if (peak > strike) startAt = (peak - strike) * pitch; // skip the lead-in
+                else delay = strike - peak;                           // slow wind-up: wait
+            }
+            AudioManager.Instance.PlayClip(swingWhooshCue, clip, volume, pitch, startAt, delay);
+        }
+
+        /// <summary>Play the cue's next clip from its onset (a few ms before), skipping any silent lead-in. False = no cue / AudioManager.</summary>
+        bool PlayFromOnset(SfxCue cue)
+        {
+            if (!cue || !cue.HasSound || !AudioManager.Instance) return false;
+            var clip = cue.NextClip();
+            if (!clip) { AudioManager.Play(cue); return true; }
+            float start = Mathf.Max(0f, ClipTiming(clip).x - 0.005f);
+            AudioManager.Instance.PlayClip(cue, clip, cue.NextVolume(), cue.NextPitch(), start);
+            return true;
+        }
+
+        /// <summary>Seconds from the start of this swing to its first active (hitbox) frame.</summary>
+        static float TimeToStrike(Fighter fighter, AttackData attack)
+        {
+            bool plainHeavy = attack == fighter.HeavyAttackData && !fighter.HeavyUsesAnimation;
+            bool frames = !plainHeavy && fighter.UseFrameData && attack.frames != null && attack.frames.IsSet;
+            return frames ? attack.frames.activeStart / 60f : attack.startup;
+        }
+
+        public bool UseSwingWhooshes { get => useSwingWhooshes; set => useSwingWhooshes = value; }
 
         void OnHitConnected(Fighter target, AttackData attack, HitResult result)
         {
@@ -194,20 +316,20 @@ namespace KungFuCrashout.Feedback
             switch (result)
             {
                 case HitResult.Hit:
-                    PlayImpact(heavy);
+                    if (!PlayStaffHit(target, attack, false)) PlayImpact(heavy);
                     Burst(hitSpark, point, heavy ? heavySparkCount : lightSparkCount);
                     Hitstop(StopFor(heavy ? heavyHitstop : lightHitstop, target, attack, result));
                     if (heavy) { Shake(heavyShake, AwayFromAttacker(target), ShakeKind.HeavyHit); Buzz(); }
                     break;
 
                 case HitResult.Blocked:
-                    Play(blockImpact);
+                    if (!PlayStaffHit(target, attack, true)) Play(blockImpact); // else FighterDefenseSfx's block cue plays
                     Burst(blockSpark, point, lightSparkCount);
                     Hitstop(StopFor(blockHitstop, target, attack, result));
                     break;
 
                 case HitResult.Parried:
-                    Play(parryClang);
+                    if (!PlayFromOnset(parryCue)) Play(parryClang);
                     Burst(parryFlash, point, heavySparkCount);
                     Hitstop(StopFor(parryHitstop, target, attack, result));
                     Shake(parryShake, Vector2.zero, ShakeKind.Parry);
@@ -296,7 +418,8 @@ namespace KungFuCrashout.Feedback
 
         void OnDowned(float seconds)
         {
-            Play(downedThud);
+            if (downedCue && AudioManager.Instance) AudioManager.Play(downedCue);
+            else Play(downedThud);
             Shake(downedShake, Vector2.down, ShakeKind.Downed);
             Buzz();
         }
@@ -373,6 +496,147 @@ namespace KungFuCrashout.Feedback
             ps.transform.position = at;
             ps.Emit(count);
         }
+
+        /// <summary>The punch layer for this staff hit (null = not a staff hit: items, wall splats…). Wood-only mode still needs a non-null answer.</summary>
+        SfxCue LayerFor(Fighter attacker, AttackData attack, bool blocked, out bool isStaffHit)
+        {
+            isStaffHit = false;
+            if (!attacker || !attack || attack is ThrowableData || attacker.State != FighterState.Attacking || attacker.IsThrowing) return null;
+            isStaffHit = true;
+            if (blocked) return blockLayerCue;
+            if (attacker.IsAirAttacking) return airLayerCue ? airLayerCue : punchLayerCue;
+            if (attacker.IsDoingSpecial)
+            {
+                if (attack == attacker.SpecialFor(SpecialMove.Side)) return sideSpecialLayerCue;
+                if (attack == attacker.SpecialFor(SpecialMove.Up)) return upSpecialLayerCue;
+                if (attack == attacker.SpecialFor(SpecialMove.Down)) return downSpecialLayerCue;
+                return heavyLayerCue;
+            }
+            if (attack == attacker.HeavyAttackData) return heavyLayerCue;
+            if (attacker.ComboStep >= 1) return punchLayerCue;   // basic attack (light combo)
+            isStaffHit = false;
+            return null;
+        }
+
+        /// <summary>True while blocked staff hits are played here (wood + Punch C), so FighterDefenseSfx skips its block cue.</summary>
+        public static bool PlaysBlockedStaffHits(AttackData attack) =>
+            Active && Active.isActiveAndEnabled && !(attack is ThrowableData) && Active.BlockLayerOn;
+
+        bool BlockLayerOn => useWoodHitSounds && layerBlockedHits && blockLayerCue && blockLayerCue.HasSound &&
+                             basicAttackWoodCue && woodLayering != WoodLayering.WoodOnly && AudioManager.Instance;
+
+        static HitFeedback Active;
+
+        /// <summary>
+        /// Wood sounds on: a Monk staff hit = the wooden stick hit (cycling 1 → 5) + this move's punch layer, layered the same
+        /// way for every move (Wood Layering: Wood Only / Layered Over / Layered After, same levels and timing).
+        /// Basic attack → Punch B (cycling), air combo → Punch B, heavy → Punch A 01, side / down / up special → Punch A 02 / 03 / 04,
+        /// blocked → Punch C. False = not handled (not a staff hit, or wood sounds off): the old sound plays.
+        /// </summary>
+        bool PlayStaffHit(Fighter target, AttackData attack, bool blocked)
+        {
+            if (!useWoodHitSounds || !basicAttackWoodCue || !AudioManager.Instance) return false;
+            var attacker = target ? target.Opponent : null;
+            var layer = LayerFor(attacker, attack, blocked, out bool staff);
+            if (!staff) return false;
+            if (blocked && !BlockLayerOn) return false;                 // the block sound as before
+
+            if (woodLayering == WoodLayering.WoodOnly || !layer || !layer.HasSound)
+            {
+                AudioManager.Play(basicAttackWoodCue);
+                return true;
+            }
+
+            var am = AudioManager.Instance;
+            var wood = basicAttackWoodCue.NextClip();
+            var punch = layer.NextClip();
+            if (!wood) { AudioManager.Play(basicAttackWoodCue); return true; }
+            float pitch = basicAttackWoodCue.NextPitch();  // one pitch for both layers, so they fuse
+            var wt = ClipTiming(wood);
+            var pt = ClipTiming(punch);
+            bool over = woodLayering == WoodLayering.LayeredOver;
+
+            // Variation only ever lowers a layer here, so the summed peaks stay under the levels tested for clipping.
+            float woodVol = (over ? overWoodVolume : afterWoodVolume) * Mathf.Min(basicAttackWoodCue.volume, basicAttackWoodCue.NextVolume());
+            if (!am.PlayClip(basicAttackWoodCue, wood, woodVol, pitch)) return true; // cooldown: a double trigger
+            if (!punch) return true;
+
+            float punchVol = (over ? overPunchVolume : afterPunchVolume) * Mathf.Min(layer.volume, layer.NextVolume());
+            if (over)
+            {
+                // Skip the punch's lead-in so its peak lands Over Stagger after the wood's peak.
+                float skip = pt.y - wt.y - overStagger * pitch;
+                if (skip >= 0f) am.PlayClip(layer, punch, punchVol, pitch, skip, 0d, false);
+                else am.PlayClip(layer, punch, punchVol, pitch, 0f, -skip / pitch, false);
+            }
+            else
+            {
+                // From the punch's own onset (no lead-in), After Delay after the wood's peak.
+                am.PlayClip(layer, punch, punchVol, pitch, pt.x, wt.y / pitch + afterDelay, false);
+            }
+            return true;
+        }
+
+        public WoodLayering Layering { get => woodLayering; set => woodLayering = value; }
+
+        // Onset (x) and peak (y) of each clip in seconds, measured once from its samples (2 ms envelope; onset = 10 % of peak).
+        static readonly System.Collections.Generic.Dictionary<(AudioClip, int), Vector2> clipTiming =
+            new System.Collections.Generic.Dictionary<(AudioClip, int), Vector2>();
+
+        /// <summary>Onset (x) and peak (y) in seconds, from an envelope Window seconds long (2 ms for hits, longer for whooshes).</summary>
+        static Vector2 ClipTiming(AudioClip clip, float window = 0.002f)
+        {
+            if (!clip) return Vector2.zero;
+            var key = (clip, Mathf.RoundToInt(window * 10000f));
+            if (clipTiming.TryGetValue(key, out var v)) return v;
+            v = Vector2.zero;
+            if (clip.loadState != AudioDataLoadState.Loaded) clip.LoadAudioData();
+            int ch = Mathf.Max(1, clip.channels), frames = clip.samples;
+            if (frames > 0 && clip.loadType == AudioClipLoadType.DecompressOnLoad && clip.loadState == AudioDataLoadState.Loaded)
+            {
+                var data = new float[frames * ch];
+                if (clip.GetData(data, 0))
+                {
+                    int win = Mathf.Max(1, Mathf.RoundToInt(clip.frequency * window));
+                    var env = new float[frames];
+                    float sum = 0f, max = 0f; int peak = 0;
+                    for (int i = 0; i < frames; i++)
+                    {
+                        float a = 0f;
+                        for (int c = 0; c < ch; c++) a += Mathf.Abs(data[i * ch + c]);
+                        a /= ch;
+                        sum += a;
+                        if (i >= win)
+                        {
+                            float o = 0f;
+                            for (int c = 0; c < ch; c++) o += Mathf.Abs(data[(i - win) * ch + c]);
+                            sum -= o / ch;
+                        }
+                        env[i] = sum / win;
+                        if (env[i] > max) { max = env[i]; peak = i; }
+                    }
+                    int onset = 0;
+                    for (int i = 0; i < frames; i++) if (env[i] >= max * 0.1f) { onset = i; break; }
+                    float half = win * 0.5f; // the window trails the signal
+                    v = new Vector2(Mathf.Max(0f, (onset - half) / clip.frequency), Mathf.Max(0f, (peak - half) / clip.frequency));
+                }
+            }
+            clipTiming[key] = v;
+            return v;
+        }
+
+        void Start()
+        {
+            // Measure the layer clips now, not on the first hit.
+            foreach (var cue in new[] { basicAttackWoodCue, punchLayerCue, heavyLayerCue, sideSpecialLayerCue,
+                                        downSpecialLayerCue, upSpecialLayerCue, airLayerCue, blockLayerCue })
+                if (cue && cue.clips != null) foreach (var c in cue.clips) ClipTiming(c);
+            if (swingWhooshCue && swingWhooshCue.clips != null) foreach (var c in swingWhooshCue.clips) ClipTiming(c, 0.01f);
+            if (parryCue && parryCue.clips != null) foreach (var c in parryCue.clips) ClipTiming(c);
+        }
+
+        /// <summary>Wood (true) or the old punch sounds (false) for basic attack hits.</summary>
+        public bool UseWoodHitSounds { get => useWoodHitSounds; set => useWoodHitSounds = value; }
 
         /// <summary>Hit sound: the randomised cue through AudioManager if set up, else the single clip.</summary>
         void PlayImpact(bool heavy)
