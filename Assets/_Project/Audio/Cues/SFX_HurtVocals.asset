@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2791658c364a7604596868d555ef149c, type: 3}
+  m_Name: SFX_HurtVocals
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 1068732141f1f5c47bcd4e4ca34e6651, type: 3}
+  - {fileID: 8300000, guid: 578f4b11487a42c4da389084dc0c71e2, type: 3}
+  - {fileID: 8300000, guid: c82637dd3ca39f2468248f798f5ace37, type: 3}
+  resourceOverride: {fileID: 0}
+  order: 0
+  avoidRepeatingLast: 2
+  volume: 0.85
+  volumeVariation: 0.06
+  pitch: 1
+  pitchVariation: 0.03
+  maxVoices: 1
+  cooldown: 0.5
+  priority: 50
