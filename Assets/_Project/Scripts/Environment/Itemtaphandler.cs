@@ -134,6 +134,18 @@ namespace KungFuCrashout.Props
             foreach (var touch in ETouch.activeTouches)
             {
                 int id = touch.touchId;
+                // Simulated touches in the editor can report an infinite / NaN position (e.g. a touch that starts
+                // outside the Game view): skip them, a camera can't map them to the world.
+                if (!IsValidScreenPos(touch.screenPosition))
+                {
+                    if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                    {
+                        onCarriedItem.Remove(id);
+                        TouchClaims.Release(id);
+                        free.Remove(id);
+                    }
+                    continue;
+                }
                 switch (touch.phase)
                 {
                     case TouchPhase.Began:
@@ -274,7 +286,7 @@ namespace KungFuCrashout.Props
         /// <summary>Is this screen position within Held Item Tap Radius of the carried item's edge?</summary>
         bool NearHeldItem(Vector2 screenPos)
         {
-            if (!cam || !holder.Held) return false;
+            if (!cam || !holder.Held || !IsValidScreenPos(screenPos)) return false;
             Vector2 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
             var item = holder.Held;
 
@@ -305,10 +317,12 @@ namespace KungFuCrashout.Props
             Gizmos.DrawWireSphere(holder.Held.transform.position, r);
         }
 
+        static bool IsValidScreenPos(Vector2 p) => float.IsFinite(p.x) && float.IsFinite(p.y);
+
         /// <summary>The carryable item under a screen position, if any.</summary>
         Carryable ItemUnder(Vector2 screenPos)
         {
-            if (!cam) return null;
+            if (!cam || !IsValidScreenPos(screenPos)) return null;
 
             Vector2 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
             var filter = new ContactFilter2D { useTriggers = true };

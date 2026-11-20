@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Roster.unity
     guid: f7eb5411e52c51642902877e7bb549cb
   - enabled: 1
+    path: Assets/_Project/Scenes/LevelSelect.unity
+    guid: 1b83e7d930d051749b3fc9b3a3490ba7
+  - enabled: 1
     path: Assets/_Project/Scenes/FightScene.unity
     guid: 12d2810ce3021a24ea3e10976d042785
   - enabled: 0

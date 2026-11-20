@@ -165,6 +165,8 @@ MonoBehaviour:
   dimWhileDormant: 1
   dormantBrightness: 0.65
   wakePopSpeed: 3
+  wakeChance: -1
+  wakePriority: 0
   carryOffset: {x: 0, y: 0}
   carryDistance: 1
   carryAngle: 135
@@ -174,9 +176,9 @@ MonoBehaviour:
   followSharpness: 25
   useCarrierCarryPoint: 1
   carriedSortingOrder: 10
-  throwSpeed: 18
+  throwSpeed: 21
   maxThrowDistance: 40
-  hitData: {fileID: 11400000, guid: b6a6ca0c5591d5b41838275b0459f6e5, type: 2}
+  hitData: {fileID: 11400000, guid: 974bd8c01bce74948be397c29e68d0ac, type: 2}
   hitsFighters: 1
   hitPopSpeed: 4
   dropDistance: 0.8
@@ -207,6 +209,8 @@ MonoBehaviour:
   throwableOutline: 1
   throwableColour: {r: 0.2, g: 0.9, b: 0.3, a: 0.9}
   whileHeld: 1
+  sleepingOutline: 1
+  sleepingColour: {r: 0.62, g: 0.62, b: 0.62, a: 0.85}
 --- !u!114 &7842097167064324824
 MonoBehaviour:
   m_ObjectHideFlags: 0

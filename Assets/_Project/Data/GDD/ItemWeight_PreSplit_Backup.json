@@ -1,0 +1,112 @@
+{
+    "items": [
+        {
+            "item": "Item_Plate",
+            "hitDataGuid": "b6a6ca0c5591d5b41838275b0459f6e5",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Bowl",
+            "hitDataGuid": "b6a6ca0c5591d5b41838275b0459f6e5",
+            "throwSpeed": 18.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 2,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Kettle",
+            "hitDataGuid": "4fa6088e1f31aae489cb3b5f52ae1cd1",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Lantern_Red",
+            "hitDataGuid": "e86aa0c7d91d6144690c9222dacd68c7",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Lantern_White",
+            "hitDataGuid": "ba40f608c198e4c4a8e88a10acfb682f",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Pot",
+            "hitDataGuid": "f2c74902db6e2fb4eac21f96d17d167b",
+            "throwSpeed": 10.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": false,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 2
+        },
+        {
+            "item": "Item_Vase",
+            "hitDataGuid": "be88a8d9081c8094c9c5887ef0b40d42",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Container",
+            "hitDataGuid": "0579a18144037144cbd04ec371cba3b8",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": true,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 0,
+            "blocksBeforeBreaking": 0
+        },
+        {
+            "item": "Item_Chair",
+            "hitDataGuid": "50127601eebb35e4dae40747bf22614c",
+            "throwSpeed": 14.0,
+            "wakeChance": -1.0,
+            "canMoveWhileHeld": false,
+            "breakOnShield": true,
+            "maxHolds": 3,
+            "hasDurability": true,
+            "durabilityWeight": 2,
+            "blocksBeforeBreaking": 0
+        }
+    ]
+}

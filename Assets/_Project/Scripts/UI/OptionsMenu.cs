@@ -13,10 +13,11 @@ namespace KungFuCrashout.UI
 {
     /// <summary>
     /// Options popup (the pause menu), opened by the HUD's Options button — and by any button in Also Opened By (the GDD
-    /// match timer). Two tabs:
+    /// match timer). Three tabs:
     ///   GAME  — Enemy AI toggle: ON = State Machine (moves, fetches and throws items, attacks), OFF = Practice Dummy
     ///           (TrainingDummy → Behaviour Mode)
     ///   AUDIO — Master (AudioListener), Music (MusicPlayer) and Sound Effects (AudioManager) volume sliders
+    ///   TUNING — balance values for playtests (TuningPanel, M2D02); optional, added by Add Tuning Tab + Scrolling Pages
     ///
     /// While open: the game is paused (optional) and the fight touch controls are switched off, so taps on the menu never
     /// punch / block / pick things up. They come back once every finger has left the screen after closing.
@@ -42,6 +43,11 @@ namespace KungFuCrashout.UI
         [SerializeField] Button audioTab;
         [SerializeField] GameObject gamePage;
         [SerializeField] GameObject audioPage;
+        [Tooltip("Optional third tab (TUNING). Empty = two tabs as before.")]
+        [SerializeField] Button tuningTab;
+        [SerializeField] GameObject tuningPage;
+        [Tooltip("Open on the tab used last time (handy while tuning). Off = always open on GAME.")]
+        [SerializeField] bool reopenLastTab = true;
         [SerializeField] Color tabSelectedColour = new Color(0.85f, 0.25f, 0.2f);
         [SerializeField] Color tabNormalColour = new Color(0.25f, 0.25f, 0.3f);
 
@@ -81,6 +87,9 @@ namespace KungFuCrashout.UI
         readonly List<int> buttonTouches = new List<int>(); // fingers that started on the Options button
         Coroutine resumeInput;
         float timeScaleBeforeOpen = 1f;
+        int currentTab;
+
+        const int GameTab = 0, AudioTab = 1, TuningTab = 2;
 
         void Awake()
         {
@@ -88,8 +97,9 @@ namespace KungFuCrashout.UI
             if (optionsButton) optionsButton.onClick.AddListener(Toggle);
             foreach (var b in alsoOpenedBy) if (b && b != optionsButton) b.onClick.AddListener(Toggle);
             if (closeButton) closeButton.onClick.AddListener(Close);
-            if (gameTab) gameTab.onClick.AddListener(() => ShowTab(true));
-            if (audioTab) audioTab.onClick.AddListener(() => ShowTab(false));
+            if (gameTab) gameTab.onClick.AddListener(() => ShowTab(GameTab));
+            if (audioTab) audioTab.onClick.AddListener(() => ShowTab(AudioTab));
+            if (tuningTab) tuningTab.onClick.AddListener(() => ShowTab(TuningTab));
         }
 
         void Start()
@@ -118,7 +128,10 @@ namespace KungFuCrashout.UI
             }
             OnEnemyMode(stateMachine);
 
-            ShowTab(true);
+            ShowTab(GameTab);
+
+            // Saved tuning values apply from the start of the fight, not only once the TUNING page is opened.
+            foreach (var page in GetComponentsInChildren<TuningPanel>(true)) page.ApplySaved();
 
             // The GDD AI page lives inside the (hidden) panel, so it wouldn't run until the menu is first opened:
             // apply its saved choices (AI on / off, show thinking) now.
@@ -153,7 +166,7 @@ namespace KungFuCrashout.UI
             if (!panel || IsOpen) return;
             panel.SetActive(true);
             transform.SetAsLastSibling(); // draw over the HUD
-            ShowTab(true);
+            ShowTab(reopenLastTab ? currentTab : GameTab);
             PauseFightInput();
             if (pauseWhileOpen)
             {
@@ -172,12 +185,16 @@ namespace KungFuCrashout.UI
             resumeInput = StartCoroutine(ResumeFightInputWhenReleased());
         }
 
-        void ShowTab(bool game)
+        void ShowTab(int tab)
         {
-            if (gamePage) gamePage.SetActive(game);
-            if (audioPage) audioPage.SetActive(!game);
-            Tint(gameTab, game);
-            Tint(audioTab, !game);
+            if (tab == TuningTab && !tuningPage) tab = GameTab;
+            currentTab = tab;
+            if (gamePage) gamePage.SetActive(tab == GameTab);
+            if (audioPage) audioPage.SetActive(tab == AudioTab);
+            if (tuningPage) tuningPage.SetActive(tab == TuningTab);
+            Tint(gameTab, tab == GameTab);
+            Tint(audioTab, tab == AudioTab);
+            Tint(tuningTab, tab == TuningTab);
         }
 
         void Tint(Button tab, bool selected)

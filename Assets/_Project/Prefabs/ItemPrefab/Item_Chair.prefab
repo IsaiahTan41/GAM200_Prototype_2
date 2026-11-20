@@ -159,14 +159,16 @@ MonoBehaviour:
   groundSprite: {fileID: 21300000, guid: 58b905366597ef641bbf1c3685f2af87, type: 3}
   heldSprite: {fileID: 21300000, guid: 9cb023f159b05d54fb86e8ca4974294a, type: 3}
   sleepingSprite: {fileID: 0}
-  fightScale: 0.6
+  fightScale: 0.5
   resizeTime: 0.12
   backToStageSizeWhenDropped: 0
   canMoveWhileHeld: 0
   dimWhileDormant: 1
   dormantBrightness: 0.65
   wakePopSpeed: 3
-  carryOffset: {x: 0, y: 1}
+  wakeChance: -1
+  wakePriority: 0
+  carryOffset: {x: 0, y: 0}
   carryDistance: 1
   carryAngle: 135
   carryTilt: 20
@@ -175,9 +177,9 @@ MonoBehaviour:
   followSharpness: 25
   useCarrierCarryPoint: 1
   carriedSortingOrder: 10
-  throwSpeed: 14
+  throwSpeed: 10
   maxThrowDistance: 40
-  hitData: {fileID: 11400000, guid: 50127601eebb35e4dae40747bf22614c, type: 2}
+  hitData: {fileID: 11400000, guid: dc8fbd2978d2fd44695315b5dd99af0c, type: 2}
   hitsFighters: 1
   hitPopSpeed: 4
   dropDistance: 0.8
@@ -186,8 +188,8 @@ MonoBehaviour:
   breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
   breakSoundOnLifetimeEnd: 0
   lifetime: 300
-  maxHolds: 3
-  breakOnShield: 1
+  maxHolds: 2
+  breakOnShield: 0
 --- !u!114 &7249842750614246595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -208,6 +210,8 @@ MonoBehaviour:
   throwableOutline: 1
   throwableColour: {r: 0.2, g: 0.9, b: 0.3, a: 0.9}
   whileHeld: 1
+  sleepingOutline: 1
+  sleepingColour: {r: 0.62, g: 0.62, b: 0.62, a: 0.85}
 --- !u!114 &181303241994580314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -220,9 +224,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20078e7fd15e44e4390ac754fe57e271, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Props.ItemDurability
-  weight: 1
+  weight: 2
   breakOnCleanHit: 0
-  blocksBeforeBreaking: 0
+  blocksBeforeBreaking: 2
   breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
 --- !u!114 &1367046049179407281
 MonoBehaviour:

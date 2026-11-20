@@ -165,6 +165,8 @@ MonoBehaviour:
   dimWhileDormant: 1
   dormantBrightness: 0.65
   wakePopSpeed: 3
+  wakeChance: -1
+  wakePriority: 0
   carryOffset: {x: 0, y: 0}
   carryDistance: 1
   carryAngle: 35
@@ -174,9 +176,9 @@ MonoBehaviour:
   followSharpness: 25
   useCarrierCarryPoint: 1
   carriedSortingOrder: 10
-  throwSpeed: 14
+  throwSpeed: 21
   maxThrowDistance: 14
-  hitData: {fileID: 11400000, guid: ba40f608c198e4c4a8e88a10acfb682f, type: 2}
+  hitData: {fileID: 11400000, guid: 974bd8c01bce74948be397c29e68d0ac, type: 2}
   hitsFighters: 1
   hitPopSpeed: 4
   dropDistance: 0.8
@@ -207,6 +209,8 @@ MonoBehaviour:
   throwableOutline: 1
   throwableColour: {r: 0.2, g: 0.9, b: 0.3, a: 0.9}
   whileHeld: 1
+  sleepingOutline: 1
+  sleepingColour: {r: 0.62, g: 0.62, b: 0.62, a: 0.85}
 --- !u!114 &6981530512388812220
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,7 +223,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20078e7fd15e44e4390ac754fe57e271, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Props.ItemDurability
-  weight: 1
+  weight: 0
   breakOnCleanHit: 0
   blocksBeforeBreaking: 0
   breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
