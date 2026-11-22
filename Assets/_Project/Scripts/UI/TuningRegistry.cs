@@ -135,6 +135,7 @@ namespace KungFuCrashout.UI
         {
             var t = First(d);
             if (t == null) return float.NaN;
+            if (!Application.isPlaying) return t.Read(); // in the Editor the project's value is what's there now
             if (t.IsAsset && assetOriginals.TryGetValue(t.Key, out var o)) return o.value;
             return sceneDefaults.TryGetValue(d.id, out var v) ? v : t.Read();
         }
