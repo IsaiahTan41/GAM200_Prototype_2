@@ -46,7 +46,7 @@ MonoBehaviour:
   groundBounce: 0.3
   minGroundBounceSpeed: 5
   skidTime: 0.15
-  downedTime: 0.45
+  downedTime: 0.5
   downedDamageMultiplier: 1
   getUpInvulnerability: 0.2
   wallBounce: 0.315

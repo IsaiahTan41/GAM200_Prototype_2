@@ -57,7 +57,7 @@ namespace KungFuCrashout.Controls
             if (applyPending) { applyPending = false; Apply(); }
 
             var kb = Keyboard.current;
-            if (kb != null && toggleKey != Key.None && kb[toggleKey].wasPressedThisFrame) Next();
+            if (kb != null && toggleKey != Key.None && PcInput.KeyboardAllowed(true) && kb[toggleKey].wasPressedThisFrame) Next(); // never on phones
         }
 
         /// <summary>Switch to the other scheme. Hook a UI Button here to swap on the phone.</summary>

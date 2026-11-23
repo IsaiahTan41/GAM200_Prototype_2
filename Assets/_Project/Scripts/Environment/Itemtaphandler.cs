@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
+using UnityEngine.Serialization;
 using KungFuCrashout.Controls;
+using KungFuCrashout.Fighters;
 using ETouch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
@@ -76,6 +78,10 @@ namespace KungFuCrashout.Props
         [Tooltip("Snap the throw to set angles (Throw Snap Angle apart, starting from straight right), " +
                  "so a slightly crooked swipe still flies straight across or exactly diagonal. Off = exact swipe direction.")]
         [SerializeField] bool snapThrowDirection = true;
+        [Tooltip("ON: the held-item glow (VFX_Monk_Holding) is stretched so its bright ring sits exactly on the area a throw " +
+                 "swipe can start from (the item's touch collider + Held Item Tap Radius), for the player's carried item. " +
+                 "OFF: the glow fits the item's art, as before. Can be flipped in Play mode. The CPU's items always use the old glow.")]
+        [SerializeField] bool heldGlowShowsThrowArea = true;
         [Tooltip("Degrees between the allowed throw directions. 45 = 8 directions (across, diagonals, up, down); " +
                  "90 = 4 directions; 30 = 12 directions.")]
         [SerializeField, Range(5f, 180f)] float throwSnapAngle = 45f;
@@ -88,12 +94,52 @@ namespace KungFuCrashout.Props
         [Tooltip("Hold to aim with the direction keys (W/A/S/D or arrows, two = diagonal), release to throw. " +
                  "No direction held = forward. None = off.")]
         [SerializeField] Key throwKey = Key.G;
-        [Tooltip("Also use these keys in Development Builds (e.g. a Windows test build). Off = editor only. " +
-                 "Release builds never read them.")]
-        [SerializeField] bool keysInDevelopmentBuilds = true;
+        [Tooltip("Also use these keys in Windows / Mac / Linux builds (release or Development). Off = editor only. " +
+                 "Phones never read them.")]
+        [FormerlySerializedAs("keysInDevelopmentBuilds")]
+        [SerializeField] bool keysInPcBuilds = true;
 
         /// <summary>The throw key, so KeyboardDebugInput can stop moving while it's held (aiming).</summary>
         public Key ThrowKey => throwKey;
+
+        /// <summary>Held glow mode (see the Inspector tooltip). Settable at runtime for A/B testing.</summary>
+        public bool HeldGlowShowsThrowArea { get => heldGlowShowsThrowArea; set => heldGlowShowsThrowArea = value; }
+
+        static readonly List<ItemTapHandler> active = new List<ItemTapHandler>();
+
+        /// <summary>The enabled touch handler that reads touches for this fighter's items (the human player), or null (CPU).</summary>
+        public static ItemTapHandler For(Fighter carrier)
+        {
+            if (!carrier) return null;
+            foreach (var h in active)
+                if (h && h.isActiveAndEnabled && h.holder && h.holder.Fighter == carrier) return h;
+            return null;
+        }
+
+        /// <summary>
+        /// The world-space box a throw swipe (or tap-to-drop) on the carried item can start in: the item's collider grown by
+        /// Held Item Tap Radius on every side. Same test as the touch code (NearHeldItem), whose corners are slightly rounded.
+        /// </summary>
+        public bool TryGetThrowArea(Carryable item, out Vector2 centre, out Vector2 size)
+        {
+            centre = size = default;
+            if (!item) return false;
+            if (!cam) cam = Camera.main;
+            float r = HeldRadiusWorld();
+            var col = item.GetComponentInChildren<Collider2D>();
+            if (col && col.enabled)
+            {
+                var b = col.bounds;
+                centre = b.center;
+                size = (Vector2)b.size + Vector2.one * (2f * r);
+            }
+            else
+            {
+                centre = item.transform.position;
+                size = Vector2.one * (2f * r);
+            }
+            return true;
+        }
 
         readonly List<Collider2D> hits = new List<Collider2D>();
 
@@ -116,10 +162,15 @@ namespace KungFuCrashout.Props
             itemLayers = LayerMask.GetMask("Environment");
         }
 
-        void OnEnable() => EnhancedTouchSupport.Enable();
+        void OnEnable()
+        {
+            EnhancedTouchSupport.Enable();
+            if (!active.Contains(this)) active.Add(this);
+        }
 
         void OnDisable()
         {
+            active.Remove(this);
             EnhancedTouchSupport.Disable();
             TouchClaims.Clear();
             onCarriedItem.Clear();
@@ -308,13 +359,11 @@ namespace KungFuCrashout.Props
 
         void OnDrawGizmos()
         {
-            // Play mode: shows the grab area around the carried item (cyan ring) so you can tune Held Item Tap Radius.
+            // Play mode: shows the throw area around the carried item (cyan box) so you can tune Held Item Tap Radius.
             if (!Application.isPlaying || !holder || !holder.Held) return;
-            if (!cam) cam = Camera.main;
+            if (!TryGetThrowArea(holder.Held, out var c, out var s)) return;
             Gizmos.color = Color.cyan;
-            var col = holder.Held.GetComponentInChildren<Collider2D>();
-            float r = HeldRadiusWorld() + (col ? Mathf.Max(col.bounds.extents.x, col.bounds.extents.y) : 0f);
-            Gizmos.DrawWireSphere(holder.Held.transform.position, r);
+            Gizmos.DrawWireCube(c, s);
         }
 
         static bool IsValidScreenPos(Vector2 p) => float.IsFinite(p.x) && float.IsFinite(p.y);
@@ -346,7 +395,7 @@ namespace KungFuCrashout.Props
 
         void KeyboardControls()
         {
-            if (!Application.isEditor && !(keysInDevelopmentBuilds && Debug.isDebugBuild)) return;
+            if (!PcInput.KeyboardAllowed(keysInPcBuilds)) return;
             var kb = Keyboard.current;
             if (kb == null) return;
 

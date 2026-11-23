@@ -71,6 +71,11 @@ namespace KungFuCrashout.UI
         public TuneDisplay display;
         /// <summary>Re-applied every half second, for objects that appear later (spawned items).</summary>
         public bool sweep;
+        /// <summary>
+        /// A testing toggle (TESTING section): works on the tab like any value, but is never exported to JSON, never imported,
+        /// and not counted as a tuning change, so it stays out of the tuning journal / tracker.
+        /// </summary>
+        public bool testOnly;
         public Func<IEnumerable<TuneTarget>> targets;
     }
 
@@ -86,7 +91,7 @@ namespace KungFuCrashout.UI
     /// </summary>
     public static class TuningRegistry
     {
-        public static readonly string[] Sections = { "Rules", "Moves", "Items", "Stage", "Input", "CPU" };
+        public static readonly string[] Sections = { "Rules", "Moves", "Items", "Stage", "Input", "CPU", "Testing" };
 
         const string Prefix = "kfc.tune.";
         const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -287,6 +292,25 @@ namespace KungFuCrashout.UI
             foreach (var c in All<T>()) if (c != first) yield return new TuneTarget(c, c, f);
         }
 
+        /// <summary>The field on the human player's fighter only.</summary>
+        static IEnumerable<TuneTarget> OnPlayer<T>(string field) where T : Component
+        {
+            var f = Field(typeof(T), field);
+            var player = Player();
+            var c = player ? player.GetComponent<T>() : null;
+            if (f != null && c) yield return new TuneTarget(c, c, f);
+        }
+
+        /// <summary>The field on every fighter except the human player (the CPU).</summary>
+        static IEnumerable<TuneTarget> OnCpu<T>(string field) where T : Component
+        {
+            var f = Field(typeof(T), field);
+            if (f == null) yield break;
+            var player = Player();
+            foreach (var c in All<T>())
+                if (!player || c.gameObject != player.gameObject) yield return new TuneTarget(c, c, f);
+        }
+
         static Fighter Player()
         {
             Fighter any = null, notAi = null;
@@ -406,11 +430,12 @@ namespace KungFuCrashout.UI
 
             void Add(string id, string section, string group, string label, string unit,
                      float min, float max, float step, TuneApply apply, Func<IEnumerable<TuneTarget>> targets,
-                     TuneDisplay display = TuneDisplay.Number, bool sweep = false) =>
+                     TuneDisplay display = TuneDisplay.Number, bool sweep = false, bool testOnly = false) =>
                 list.Add(new TuneDef
                 {
                     id = id, section = section, group = group, label = label, unit = unit,
                     min = min, max = max, step = step, apply = apply, targets = targets, display = display, sweep = sweep,
+                    testOnly = testOnly,
                 });
 
             const TuneApply Live = TuneApply.Live, Next = TuneApply.NextRound;
@@ -494,6 +519,12 @@ namespace KungFuCrashout.UI
                 Add($"ai.{tier}.comboBreakChance", "CPU", name, "Combo-break chance", "", 0, 1, 0.05f, Live, () => Cpu(tier, "comboBreakChance"), TuneDisplay.Percent01);
                 Add($"ai.{tier}.punishChance", "CPU", name, "Punish chance", "", 0, 1, 0.05f, Live, () => Cpu(tier, "punishChance"), TuneDisplay.Percent01);
             }
+
+            // Testing toggles: on the tab for A/B tests, never exported / imported / logged (TuneDef.testOnly)
+            const string toggles = "Testing toggles (not exported or logged)";
+            Add("test.playerCanParryMelee", "Testing", toggles, "Player can parry melee", "", 0, 1, 1, Live, () => OnPlayer<Fighter>("canParryMelee"), TuneDisplay.OnOff, testOnly: true);
+            Add("test.cpuCanParryMelee", "Testing", toggles, "CPU can parry melee", "", 0, 1, 1, Live, () => OnCpu<Fighter>("canParryMelee"), TuneDisplay.OnOff, testOnly: true);
+            Add("test.heldGlowShowsThrowArea", "Testing", toggles, "Held glow shows throw area", "", 0, 1, 1, Live, () => On<ItemTapHandler>("heldGlowShowsThrowArea"), TuneDisplay.OnOff, testOnly: true);
 
             return list;
         }

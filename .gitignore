@@ -74,3 +74,11 @@ crashlytics-build.properties
 Thumbs.db
 desktop.ini
 __MACOSX/
+
+# Build outputs outside Builds/ (Windows test builds, IL2CPP / Burst side folders)
+/[Ww]indows[Bb]uilds/
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
+
+# Office lock / temp files (e.g. ~$M2D02_Tuning_Tracker.xlsx while the sheet is open)
+~$*

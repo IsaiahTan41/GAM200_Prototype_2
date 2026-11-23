@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 219b61842fa95514794d8db5b458fac0, type: 3}
   m_Name: Item_Heavy_Hit
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.ThrowableData
-  damage: 5
+  damage: 4
   weight: 1
   startup: 0
   active: 0.01
@@ -20,7 +20,7 @@ MonoBehaviour:
   hitboxOffset: {x: 0, y: 0}
   hitboxSize: {x: 1, y: 0.7}
   knockback: 0
-  hitstun: 0.45
+  hitstun: 0.3
   hitstopFrames: -1
   chipDamage: 0.1
   blockstun: 0.3
@@ -38,7 +38,7 @@ MonoBehaviour:
     hitboxSets: []
     hurtboxSets: []
     travel: []
-  launchSpeed: 7
+  launchSpeed: 10
   launchGravity: 18
   minLaunchAngle: 35
   maxLaunchAngle: 55
@@ -46,7 +46,7 @@ MonoBehaviour:
   groundBounce: 0
   minGroundBounceSpeed: 5
   skidTime: 0.15
-  downedTime: 2.75
+  downedTime: 2
   downedDamageMultiplier: 1
   getUpInvulnerability: 0.4
   wallBounce: 0.315

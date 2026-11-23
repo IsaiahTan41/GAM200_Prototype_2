@@ -168,7 +168,7 @@ namespace KungFuCrashout.UI
         {
             if (!footer) return;
             int changed = 0;
-            foreach (var d in TuningRegistry.Defs) if (TuningRegistry.IsChanged(d)) changed++;
+            foreach (var d in TuningRegistry.Defs) if (!d.testOnly && TuningRegistry.IsChanged(d)) changed++; // testing toggles aren't tuning
             if (!string.IsNullOrEmpty(status) && Time.unscaledTime < statusUntil)
             {
                 footer.text = "<color=#FFC733>" + status + "</color>";

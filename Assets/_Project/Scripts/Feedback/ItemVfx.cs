@@ -21,6 +21,9 @@ namespace KungFuCrashout.Feedback
         [SerializeField] VfxCue heldGlow;
         [Tooltip("Also light the fighter and item while held (uses Held Glow's light colour / intensity / radius).")]
         [SerializeField] bool heldLight = true;
+        [Tooltip("Throw-area mode (ItemTapHandler → Held Glow Shows Throw Area): where the glow sprite's bright ring sits, as a " +
+                 "fraction of the sprite's width / height. The ring is placed on the edge of the area a throw swipe can start from.")]
+        [SerializeField] Vector2 glowRimFraction = new Vector2(0.69f, 0.62f);
 
         [Header("One-shots")]
         [SerializeField] VfxCue breakBurst;
@@ -92,13 +95,30 @@ namespace KungFuCrashout.Feedback
             float pulse = 1f + Mathf.Sin(glowAge * heldGlow.pulseSpeed * Mathf.PI * 2f) * heldGlow.pulseAmount;
             float popIn = heldGlow.ScaleAt(Mathf.Min(glowAge, heldGlow.popTime)); // pops in once, then breathes
             Vector3 centre = art ? art.bounds.center : transform.position;
+            float breathe = 1f; // throw-area mode breathes with opacity, so the ring stays on the area's edge
 
             var t = glow.transform;
-            t.position = new Vector3(centre.x + heldGlow.offset.x, centre.y + heldGlow.offset.y, centre.z + 0.01f);
-            t.localScale = Vector3.one * Fit(heldGlow) * heldGlow.scale * popIn * pulse;
+            var tap = ItemTapHandler.For(item.Carrier);
+            if (tap && tap.HeldGlowShowsThrowArea && tap.TryGetThrowArea(item, out var areaCentre, out var areaSize))
+            {
+                // The ring = where a throw swipe can start (the item's touch collider + Held Item Tap Radius).
+                var sb = heldGlow.sprite.bounds.size;
+                float sx = areaSize.x / Mathf.Max(0.001f, sb.x * glowRimFraction.x);
+                float sy = areaSize.y / Mathf.Max(0.001f, sb.y * glowRimFraction.y);
+                t.position = new Vector3(areaCentre.x, areaCentre.y, centre.z + 0.01f);
+                t.localScale = new Vector3(sx * popIn, sy * popIn, 1f);
+                breathe = 0.8f + 0.2f * Mathf.Clamp01((pulse - 1f) / Mathf.Max(0.0001f, heldGlow.pulseAmount) * 0.5f + 0.5f);
+                centre = new Vector3(areaCentre.x, areaCentre.y, centre.z);
+            }
+            else
+            {
+                // As before: the glow fits the item's art.
+                t.position = new Vector3(centre.x + heldGlow.offset.x, centre.y + heldGlow.offset.y, centre.z + 0.01f);
+                t.localScale = Vector3.one * Fit(heldGlow) * heldGlow.scale * popIn * pulse;
+            }
             glow.sortingLayerID = art ? art.sortingLayerID : 0;
             glow.sortingOrder = (art ? art.sortingOrder : 0) + heldGlow.sortingOffset;
-            var c = heldGlow.tint; c.a *= heldGlow.alpha * Mathf.Clamp01(glowAge / Mathf.Max(0.01f, heldGlow.popTime)); glow.color = c;
+            var c = heldGlow.tint; c.a *= heldGlow.alpha * breathe * Mathf.Clamp01(glowAge / Mathf.Max(0.01f, heldGlow.popTime)); glow.color = c;
 
             if (glowLight)
             {

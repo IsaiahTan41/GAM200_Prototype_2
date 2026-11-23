@@ -32,9 +32,12 @@ namespace KungFuCrashout.Controls
         [SerializeField] Fighter fighter;
         [SerializeField] GestureSettings settings = new GestureSettings();
 
-        [Header("Testing (editor and development builds only)")]
+        [Header("Testing (editor and PC builds; overlay / logs: editor and development builds)")]
         [Tooltip("In the editor, the mouse acts as one finger.")]
         [SerializeField] bool simulateTouchInEditor = true;
+        [Tooltip("In Windows / Mac / Linux builds the mouse acts as one finger (click = tap, hold = hold, drag = swipe). " +
+                 "Phones never use it.")]
+        [SerializeField] bool simulateTouchInPcBuilds = true;
         [Tooltip("Draw each finger's state and the last few gestures on screen.")]
         [SerializeField] bool showOverlay = true;
         [Tooltip("Write every recognised gesture to the Console.")]
@@ -79,16 +82,12 @@ namespace KungFuCrashout.Controls
         void OnEnable()
         {
             EnhancedTouchSupport.Enable();
-#if UNITY_EDITOR
-            if (simulateTouchInEditor) TouchSimulation.Enable();
-#endif
+            if (PcInput.MouseAsFinger(simulateTouchInEditor, simulateTouchInPcBuilds)) TouchSimulation.Enable();
         }
 
         void OnDisable()
         {
-#if UNITY_EDITOR
-            if (simulateTouchInEditor) TouchSimulation.Disable();
-#endif
+            if (PcInput.MouseAsFinger(simulateTouchInEditor, simulateTouchInPcBuilds)) TouchSimulation.Disable();
             EnhancedTouchSupport.Disable();
             engine?.Reset(); // never leave the fighter stuck blocking
             FlushLog();

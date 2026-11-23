@@ -16,7 +16,15 @@ namespace KungFuCrashout.EditorTools
     ///
     /// Reads a tuning snapshot exported from the TUNING tab (a build on the phone, or Play mode) and writes its values
     /// into the project, so the next build plays with them:
-    ///   1. Source: Open File… (any .json) or Paste from Clipboard (code fences / extra text around the JSON are ignored).
+    ///   1. Source: Open File… (.json or .txt) or Paste from Clipboard (code fences / extra text around the JSON are ignored).
+    ///      A text file can hold the exported JSON (e.g. saved from Notepad or a chat app; smart quotes, BOM and
+    ///      trailing commas are tidied) OR a plain list, one value per line:
+    ///          rules.roundTime = 60
+    ///          items.light.canMoveWhileHeld: Off
+    ///          ai.easy.blockChance 30%
+    ///      id, then = / : / tab / comma / space, then the value (On / Off, true / false, yes / no and n% are understood;
+    ///      % follows the TUNING tab's display). Blank lines and lines starting with # or // are skipped;
+    ///      "name = tune_v3" names the import. Values not listed are left as they are.
     ///   2. Check: not a tuning file → stop. Unknown id, not in this scene, not a number → skipped and listed.
     ///      Outside the value's range → clamped, with a note. Different data asset or player than the export → not
     ///      ticked (tick it to apply anyway). Missing values are left as they are.
@@ -109,7 +117,8 @@ namespace KungFuCrashout.EditorTools
         void OpenFile()
         {
             string start = Directory.Exists(TuningExport.ExportFolder) ? TuningExport.ExportFolder : DocsTuningFolder;
-            string path = EditorUtility.OpenFilePanel("Import tuning JSON", start, "json");
+            string path = EditorUtility.OpenFilePanelWithFilters("Import tuning values", start,
+                new[] { "Tuning files (JSON or text)", "json,txt", "All files", "*" });
             if (string.IsNullOrEmpty(path)) return;
             try { Load(File.ReadAllText(path), Path.GetFileName(path)); }
             catch (Exception ex) { Fail("Couldn't read the file: " + ex.Message); }
@@ -140,19 +149,36 @@ namespace KungFuCrashout.EditorTools
             rows.Clear();
             warnings.Clear();
 
+            text = Tidy(text);
+
             // Pasted from a chat app: keep only the outermost { … } (drops ```json fences and any message text).
             int start = text.IndexOf('{'), end = text.LastIndexOf('}');
-            if (start < 0 || end <= start) { Fail("No JSON object found (expected { … })."); return; }
-            string json = text.Substring(start, end - start + 1);
-
-            TuningSnapshot snap;
-            try { snap = JsonUtility.FromJson<TuningSnapshot>(json); }
-            catch (Exception ex) { Fail("Not valid JSON: " + ex.Message); return; }
+            TuningSnapshot snap = null;
+            string jsonError = null;
+            if (start >= 0 && end > start)
+            {
+                string json = System.Text.RegularExpressions.Regex.Replace(text.Substring(start, end - start + 1), @",(\s*[}\]])", "$1");
+                try { snap = JsonUtility.FromJson<TuningSnapshot>(json); }
+                catch (Exception ex) { jsonError = ex.Message; }
+            }
 
             if (snap == null || snap.format != TuningExport.Format)
             {
-                Fail($"Not a KungFu Crashout tuning file (format is \"{snap?.format}\", expected \"{TuningExport.Format}\").");
-                return;
+                // Not the exported JSON: try the plain "id = value" list.
+                var plain = ParsePlainText(text, label, out var skipped);
+                if (plain != null)
+                {
+                    snap = plain;
+                    foreach (var line in skipped) warnings.Add("Line not read: " + line);
+                }
+                else if (jsonError != null) { Fail("Not valid JSON, and no \"id = value\" lines found: " + jsonError); return; }
+                else
+                {
+                    Fail(snap != null
+                        ? $"Not a KungFu Crashout tuning file (format is \"{snap.format}\", expected \"{TuningExport.Format}\"), and no \"id = value\" lines found."
+                        : "No tuning values found: expected the exported JSON or lines like \"rules.roundTime = 60\".");
+                    return;
+                }
             }
             if (snap.values == null || snap.values.Count == 0) { Fail("The file has no values."); return; }
             if (snap.schema > TuningExport.Schema)
@@ -160,6 +186,76 @@ namespace KungFuCrashout.EditorTools
 
             snapshot = snap;
             BuildRows();
+        }
+
+        /// <summary>Undo what text editors / chat apps do to a file: BOM, smart quotes, non-breaking spaces.</summary>
+        static string Tidy(string t)
+        {
+            if (string.IsNullOrEmpty(t)) return t;
+            return t.Replace("\uFEFF", "")
+                    .Replace('\u201C', '"').Replace('\u201D', '"').Replace('\u201E', '"')
+                    .Replace('\u2018', '\'').Replace('\u2019', '\'')
+                    .Replace('\u00A0', ' ').Replace('\u2212', '-');
+        }
+
+        /// <summary>
+        /// A plain list, one value per line: "id = value" (also ':', tab, ',' or spaces). Returns null when no line holds a
+        /// known id. Lines that look like values but can't be read are returned in skipped.
+        /// </summary>
+        static TuningSnapshot ParsePlainText(string text, string label, out List<string> skipped)
+        {
+            skipped = new List<string>();
+            var snap = new TuningSnapshot
+            {
+                name = Path.GetFileNameWithoutExtension(label ?? "text"),
+                note = "Imported from a plain text list",
+                values = new List<TuningEntry>()
+            };
+            var split = new System.Text.RegularExpressions.Regex(@"^\s*([A-Za-z0-9_.\-]+)\s*(?:=|:|,|\t|\s)\s*(.+?)\s*[,;]?\s*$");
+            foreach (var raw in text.Split('\n'))
+            {
+                string line = raw.Replace("\"", "").Trim(); // also reads "id": value, lines
+                if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("//")) continue;
+                var m = split.Match(line);
+                if (!m.Success) continue;
+                string id = m.Groups[1].Value.Trim('"');
+                string val = m.Groups[2].Value.Trim().Trim('"').Trim();
+
+                if (id.Equals("name", StringComparison.OrdinalIgnoreCase)) { snap.name = val; continue; }
+                var def = TuningRegistry.Find(id);
+                if (def != null && def.testOnly) { skipped.Add($"{line}   (testing toggle, not imported)"); continue; }
+                if (def == null)
+                {
+                    if (id.Contains(".")) skipped.Add($"{line}   (unknown id)");
+                    continue;
+                }
+                if (!TryValue(val, def, out double v)) { skipped.Add($"{line}   (not a number / On / Off)"); continue; }
+                snap.values.Add(new TuningEntry
+                {
+                    id = id, section = def.section, group = def.group, label = def.label, unit = def.unit,
+                    value = v, projectValue = double.NaN, changed = true, inScene = true, asset = ""
+                });
+            }
+            if (snap.values.Count == 0) return null;
+            snap.valueCount = snap.changedCount = snap.values.Count;
+            return snap;
+        }
+
+        static bool TryValue(string s, TuneDef def, out double v)
+        {
+            v = 0;
+            string t = s.ToLowerInvariant();
+            if (t == "on" || t == "true" || t == "yes") { v = 1; return true; }
+            if (t == "off" || t == "false" || t == "no") { v = 0; return true; }
+            bool percent = t.EndsWith("%");
+            t = t.TrimEnd('%').Trim();
+            int unit = t.IndexOfAny(new[] { ' ', 's', 'f' }); // "0.3 s", "12f", "60s"
+            if (unit > 0 && !double.TryParse(t, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _))
+                t = t.Substring(0, unit).Trim();
+            t = t.Replace(',', '.');
+            if (!double.TryParse(t, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) return false;
+            if (percent && def.display == TuneDisplay.Percent01) v /= 100.0;
+            return !double.IsNaN(v) && !double.IsInfinity(v);
         }
 
         static bool SceneReady(out string why)
@@ -203,7 +299,7 @@ namespace KungFuCrashout.EditorTools
             if (duplicates.Count > 0) warnings.Add("Repeated ids (the last one is used): " + string.Join(", ", duplicates));
 
             int missing = 0;
-            foreach (var d in TuningRegistry.Defs) if (!seen.Contains(d.id)) missing++;
+            foreach (var d in TuningRegistry.Defs) if (!d.testOnly && !seen.Contains(d.id)) missing++;
             if (missing > 0) warnings.Add($"{missing} value(s) of this project are not in the file; they are left as they are (older export).");
             Repaint();
         }
@@ -212,6 +308,7 @@ namespace KungFuCrashout.EditorTools
         {
             var r = new Row { entry = e, def = TuningRegistry.Find(e.id) };
             if (r.def == null) { r.status = Status.UnknownId; r.note = "No such value in this project (renamed or removed)"; return r; }
+            if (r.def.testOnly) { r.status = Status.UnknownId; r.note = "Testing toggle: set it on the TUNING tab, it is never imported"; return r; }
             if (!e.inScene) { r.status = Status.NotInScene; r.note = "Not in the scene it was exported from"; return r; }
             if (double.IsNaN(e.value) || double.IsInfinity(e.value)) { r.status = Status.Invalid; r.note = "Not a number"; return r; }
 

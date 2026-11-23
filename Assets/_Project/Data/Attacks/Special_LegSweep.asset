@@ -19,8 +19,9 @@ MonoBehaviour:
   recovery: 0.33333334
   hitboxOffset: {x: 0, y: -0.6}
   hitboxSize: {x: 3.6, y: 0.6}
-  knockback: 1
+  knockback: 2.2
   hitstun: 0.55
+  hitstopFrames: -1
   chipDamage: 0.15
   blockstun: 0.3
   blockPushback: 0.6
@@ -29,3 +30,11 @@ MonoBehaviour:
   activeTravel: 0
   launchOnHit: {fileID: 0}
   launchDirection: {x: 0.1, y: 1}
+  frames:
+    totalFrames: 0
+    activeStart: 0
+    activeEnd: 0
+    cancelFrame: -1
+    hitboxSets: []
+    hurtboxSets: []
+    travel: []

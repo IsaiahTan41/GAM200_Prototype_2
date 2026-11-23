@@ -45,6 +45,9 @@ namespace KungFuCrashout.Controls
         [Header("Editor / debug")]
         [Tooltip("Lets the mouse act as a finger in the Game view. Turn off if you get double inputs in the Simulator view.")]
         [SerializeField] bool simulateTouchInEditor = true;
+        [Tooltip("In Windows / Mac / Linux builds the mouse acts as one finger (click = tap, hold = hold, drag = swipe). " +
+                 "Phones never use it.")]
+        [SerializeField] bool simulateTouchInPcBuilds = true;
         [SerializeField] bool showDebugOverlay = true;
 
         enum Side { Left, Right }
@@ -75,16 +78,12 @@ namespace KungFuCrashout.Controls
         void OnEnable()
         {
             EnhancedTouchSupport.Enable();
-#if UNITY_EDITOR
-            if (simulateTouchInEditor) TouchSimulation.Enable();
-#endif
+            if (PcInput.MouseAsFinger(simulateTouchInEditor, simulateTouchInPcBuilds)) TouchSimulation.Enable();
         }
 
         void OnDisable()
         {
-#if UNITY_EDITOR
-            if (simulateTouchInEditor) TouchSimulation.Disable();
-#endif
+            if (PcInput.MouseAsFinger(simulateTouchInEditor, simulateTouchInPcBuilds)) TouchSimulation.Disable();
             EnhancedTouchSupport.Disable();
             tracked.Clear();
         }

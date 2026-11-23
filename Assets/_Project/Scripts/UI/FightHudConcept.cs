@@ -191,6 +191,7 @@ namespace KungFuCrashout.UI
             Action<Fighter, AttackData> parried = (a, atk) => AddMoment(s, "parry", atk is ThrowableData ? "CATCH" : "PARRY");
             Action guardBroken = () => AddMoment(s, "guard", "GUARD BREAK");
             Action broke = () => AddMoment(s, "break", "BREAK OUT");
+            Action<Fighter> punish = _ => AddMoment(s, "punish", "PUNISH!");
             Action<Fighter, ThrowableData, HitResult, Vector2> byItem = (t, d, r, dir) =>
             {
                 if (r == HitResult.Hit && f.IsLaunched) AddMoment(s, "stagger", "STAGGER");
@@ -199,6 +200,7 @@ namespace KungFuCrashout.UI
             f.Parried += parried;
             f.GuardBroken += guardBroken;
             f.ComboBroken += broke;
+            f.ParryPunishLanded += punish;
             f.HitByItem += byItem;
             unsubscribe.Add(() =>
             {
@@ -207,6 +209,7 @@ namespace KungFuCrashout.UI
                 f.Parried -= parried;
                 f.GuardBroken -= guardBroken;
                 f.ComboBroken -= broke;
+                f.ParryPunishLanded -= punish;
                 f.HitByItem -= byItem;
             });
         }

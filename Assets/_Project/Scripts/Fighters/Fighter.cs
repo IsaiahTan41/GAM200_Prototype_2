@@ -138,6 +138,19 @@ namespace KungFuCrashout.Fighters
         [Tooltip("Up special out of a jump that's still this close to the ground (units): put the fighter back on the " +
                  "ground first, so it's a grounded Uppercut. 0 = never.")]
         [SerializeField, Range(0f, 2f)] float upSpecialGroundSnapHeight = 0.6f;
+
+        [Header("Air side special")]
+        [Tooltip("The Side special (Elbow Slide) can be used in the air: from a jump, or cancelling an air combo hit that " +
+                 "connected. Once per jump. Off = ground only, as before.")]
+        [SerializeField] bool sideSpecialInAir = true;
+        [Tooltip("In the air, the Side special ignores gravity for its whole duration: the fighter holds its height and " +
+                 "travels straight along its slide, then falls when it ends. Off = it falls under the jump's gravity.")]
+        [SerializeField] bool airSideSpecialNoGravity = true;
+        [Tooltip("An opponent who is in the air when the air Side special hits them is held at that height (no gravity) " +
+                 "for Target Hold Time, so they stay up for a follow-up. Off = they keep falling as normal.")]
+        [SerializeField] bool airSideSpecialKeepsTargetAirborne = true;
+        [Tooltip("How long the hit opponent hangs in the air (seconds), then falls as normal.")]
+        [SerializeField, Min(0f)] float airSideSpecialTargetHoldTime = 0.4f;
         [Tooltip("Juggle limit: how many melee hits this fighter can take while launched in the air. Further hits whiff " +
                  "until they land.")]
         [SerializeField, Range(1, 10)] int maxJuggleHits = 3;
@@ -243,6 +256,29 @@ namespace KungFuCrashout.Fighters
         [SerializeField] bool parryKnocksBack = true;
         [Tooltip("How far the parried attacker slides back (world units). Uses the normal knockback slide time.")]
         [SerializeField, Min(0f)] float parryKnockback = 0.6f;
+
+        [Header("Parry punish window (this fighter, when parried)")]
+        [Tooltip("ON: when this fighter's melee attack is parried, it is left in a clear, punishable stun: Punish Stun Time " +
+                 "long, pushed only Punish Knockback away so the parrier can reach, the art pulses Punish Tint and sways " +
+                 "(fading as the window closes), and the punish combo is rewarded (below). It can't be combo-broken. " +
+                 "OFF: the original parry stun (Parry Stun, the parrier's Parry Knockback). Not on the TUNING tab.")]
+        [SerializeField] bool parryPunishWindow = true;
+        [Tooltip("Stun length while the window is on (seconds). Long enough to reach and land a full light combo.")]
+        [SerializeField, Min(0f)] float punishStunTime = 0.9f;
+        [Tooltip("How far the parried fighter is pushed back while the window is on (world units). Small = stays in reach.")]
+        [SerializeField, Min(0f)] float punishKnockback = 0.15f;
+        [Tooltip("Pulse the art in Punish Tint while stunned; the pulse fades as the window runs out.")]
+        [SerializeField] bool showPunishTint = true;
+        [SerializeField] Color punishTint = new Color(1f, 0.8f, 0.25f);
+        [Tooltip("Tint pulses per second.")]
+        [SerializeField, Min(0f)] float punishTintSpeed = 6f;
+        [Tooltip("Dazed sway of the art while stunned (degrees either way). 0 = none.")]
+        [SerializeField, Range(0f, 15f)] float punishSway = 5f;
+        [Tooltip("The punish combo (the first clean hit during the stun, and every hit chained from it while still in " +
+                 "hitstun) takes real health instead of recoverable red health.")]
+        [SerializeField] bool punishDealsRealDamage = true;
+        [Tooltip("Damage multiplier on the first punish hit (a counter hit). 1 = normal.")]
+        [SerializeField, Min(1f)] float punishFirstHitMultiplier = 1.5f;
         [Tooltip("Blocks and parries only work against hits from the front. Turn off to block cross-ups too.")]
         [SerializeField] bool blockOnlyFromFront = true;
 
@@ -460,6 +496,20 @@ namespace KungFuCrashout.Fighters
 
         /// <summary>True while stunned from being parried.</summary>
         public bool IsParryStunned { get; private set; }
+
+        float parryStunLength = 1f;
+        /// <summary>In the parry punish window right now (art tint / sway, HUD).</summary>
+        public bool InParryPunishWindow => parryPunishWindow && IsParryStunned && State == FighterState.Hitstun;
+        /// <summary>1 when the parry stun starts, 0 when it ends.</summary>
+        public float ParryStunLeft01 => IsParryStunned ? Mathf.Clamp01(hitstunTimer / Mathf.Max(0.01f, parryStunLength)) : 0f;
+        public bool ShowsPunishTint => InParryPunishWindow && showPunishTint;
+        public Color PunishTint => punishTint;
+        public float PunishTintSpeed => punishTintSpeed;
+        public float PunishSway => InParryPunishWindow ? punishSway : 0f;
+        /// <summary>Being hit by a punish combo (started by a hit during the parry stun; ends when hitstun ends).</summary>
+        public bool InPunishCombo { get; private set; }
+        /// <summary>Raised on the PUNISHER when its hit lands on a parry-stunned opponent (HUD "PUNISH!").</summary>
+        public event Action<Fighter> ParryPunishLanded;
         /// <summary>Lying on the floor after an item launch: can't act or block, takes extra damage.</summary>
         public bool IsDowned => State == FighterState.Downed;
         public float DownedTimeLeft => IsDowned ? Mathf.Max(0f, downedTimer) : 0f;
@@ -733,6 +783,16 @@ namespace KungFuCrashout.Fighters
         const int ThrowIndex = -3;   // comboIndex while winding up / throwing an item (no hitbox of its own)
         const int AirIndex = -4;     // comboIndex while doing an air combo hit (airStep says which; ends on landing)
         bool airAttackUsed;          // this jump's air combo has been started (One Air Attack Per Jump)
+        bool airSideSpecialUsed;     // this jump's air Side special has been used (once per jump)
+        bool airSideSpecialActive;   // the current special is an air Side special (no gravity while it plays)
+        float airHoldTimer;          // hit by an air Side special while airborne: held at this height until 0
+
+        /// <summary>Doing the Side special in the air (Sideways special midair; no gravity with Air Side Special No Gravity).</summary>
+        public bool IsAirSideSpecial => airSideSpecialActive && State == FighterState.Attacking && comboIndex == SpecialIndex;
+
+        /// <summary>This hit is our air Side special and should keep an airborne target up.</summary>
+        bool KeepsTargetAirborne(AttackData attack) =>
+            airSideSpecialKeepsTargetAirborne && airSideSpecialTargetHoldTime > 0f && airSideSpecialActive && attack == sideSpecial;
         int airStep;                 // which air combo hit is playing (0 = the first)
         float airFloatTime;          // seconds floated this jump (Max Air Combo Float)
 
@@ -849,6 +909,15 @@ namespace KungFuCrashout.Fighters
                 attackConnected && Phase != AttackPhase.Startup) ok = true;
             if (!ok && specialsCancelHeavyStartup && State == FighterState.Attacking && comboIndex == -1 &&
                 Phase == AttackPhase.Startup) ok = true; // -1 = the heavy
+            // Side special in the air (Side Special In Air): from our own jump, or cancelling an air hit that connected.
+            bool airSide = false;
+            if (!ok && move == SpecialMove.Side && sideSpecialInAir && IsAirborne && !IsLaunched && !airSideSpecialUsed &&
+                (State == FighterState.Airborne ||
+                 (State == FighterState.Attacking && comboIndex == AirIndex && attackConnected && Phase != AttackPhase.Startup)))
+            {
+                ok = true;
+                airSide = true;
+            }
             if (!ok) return false;
 
             // Cancelling a dash / rising jump: the dash ends here, and its startup invincibility doesn't carry over
@@ -879,7 +948,15 @@ namespace KungFuCrashout.Fighters
                 }
             }
 
+            if (airSide)
+            {
+                airSideSpecialUsed = true;
+                IsAirFloating = false;
+                if (airSideSpecialNoGravity) { airVelocity = Vector2.zero; launchTimer = 0f; } // stop the jump arc here
+            }
+
             StartAttack(attack, SpecialIndex);
+            airSideSpecialActive = airSide; // after StartAttack, which may reset attack state
             // A side special goes the way it was swiped (it can slide away from the opponent too): turn the whole
             // fighter (art included), not just the hitbox / travel direction.
             if (move == SpecialMove.Side && direction != 0) SetFacing(direction > 0 ? 1 : -1);
@@ -1060,14 +1137,28 @@ namespace KungFuCrashout.Fighters
             // A parried attacker starts a fresh combo count when punished.
             bool comboContinues = State == FighterState.Hitstun && !IsParryStunned;
             ComboHitsTaken = comboContinues ? ComboHitsTaken + 1 : 1;
+            // Parry punish window: the first hit on a parry-stunned fighter starts a rewarded punish combo.
+            bool punishHit = parryPunishWindow && IsParryStunned;
+            if (punishHit) InPunishCombo = true;
+            else if (!comboContinues) InPunishCombo = false;
+            bool punishing = InPunishCombo && parryPunishWindow;
             IsParryStunned = false;
             IsGuardBroken = false;
 
             // Not staggered: recoverable mode turns the damage red; original mode lands the hit without taking health.
             float damage = recoverableNeutralDamage || !damageOnlyWhenStaggered ? attack.damage : 0f;
+            bool realPunish = punishing && punishDealsRealDamage;
+            if (realPunish) damage = attack.damage;
+            if (punishHit) damage *= punishFirstHitMultiplier;
             LastDamageTaken = damage;
-            if (recoverableNeutralDamage) health.TakeRecoverableDamage(damage);
+            if (realPunish) health.TakeDamage(damage);
+            else if (recoverableNeutralDamage) health.TakeRecoverableDamage(damage);
             else health.TakeDamage(damage);
+            if (punishHit)
+            {
+                attacker.ParryPunishLanded?.Invoke(this);
+                if (logStateChanges) Debug.Log($"[{name}] PUNISHED after parry by {attacker.name}: {damage} ({(realPunish ? "real" : "normal")} damage)");
+            }
             GotHit?.Invoke(attacker, attack);
             if (logStateChanges)
                 Debug.Log($"[{name}] hit by {attack.name} for {damage}" +
@@ -1075,6 +1166,7 @@ namespace KungFuCrashout.Fighters
                           $" (HP {health.Current}/{health.Max}, combo {ComboHitsTaken})");
 
             CancelAttack();
+            airHoldTimer = 0f; // a new hit replaces an air hold (an air Side special hit re-applies it below)
             blockstunTimer = 0f; // a held block resumes (without parry) once hitstun ends
             StopAirDrift(); // hit mid-jump: knockback takes over X, gravity keeps pulling down
 
@@ -1089,6 +1181,14 @@ namespace KungFuCrashout.Fighters
                 kbElapsed = float.MaxValue; // the launch moves us, not the slide
                 var dir = new Vector2(attack.launchDirection.x * awayFromAttacker, Mathf.Abs(attack.launchDirection.y));
                 Launch(attack.launchOnHit.LaunchVelocity(dir, awayFromAttacker, ko), attack.launchOnHit);
+            }
+
+            // Air Side special: an opponent already in the air is held at this height for a moment (stays up).
+            if (!ko && IsAirborne && attacker && attacker.KeepsTargetAirborne(attack))
+            {
+                airHoldTimer = attacker.airSideSpecialTargetHoldTime;
+                airVelocity.y = 0f;
+                launchTimer = 0f;
             }
 
             if (ko)
@@ -1173,11 +1273,17 @@ namespace KungFuCrashout.Fighters
             CancelAttack();
             kbElapsed = float.MaxValue;
             StopAirDrift();
-            hitstunTimer = parryStun;
+            hitstunTimer = parryStunLength = parryPunishWindow ? punishStunTime : parryStun;
             IsParryStunned = true;
+            InPunishCombo = false;
 
+            if (parryPunishWindow)
+            {
+                // Punish window: only a short push, so the parrier can reach us.
+                if (defender && punishKnockback > 0f) StartSlide((defender.X < X ? 1 : -1) * punishKnockback);
+            }
             // The parrier's settings decide the push: a short slide away from them.
-            if (defender && defender.parryKnocksBack && defender.parryKnockback > 0f)
+            else if (defender && defender.parryKnocksBack && defender.parryKnockback > 0f)
                 StartSlide((defender.X < X ? 1 : -1) * defender.parryKnockback);
 
             IsGuardBroken = false;
@@ -1340,6 +1446,7 @@ namespace KungFuCrashout.Fighters
             if (!IsAirborne) restY = transform.position.y; // land back where we stood
             IsAirborne = true;
             IsLaunched = true;
+            airHoldTimer = 0f; // a launch (item, launcher) takes over from an air hold
             airVelocity = velocity;
             launchTimer = 0f;          // gravity starts straight away
             launchData = data;
@@ -1456,6 +1563,9 @@ namespace KungFuCrashout.Fighters
             airAttackUsed = false;
             airFloatTime = 0f;
             IsAirFloating = false;
+            airSideSpecialUsed = false;
+            airSideSpecialActive = false;
+            airHoldTimer = 0f;
             downedData = null;
             downedTimer = 0f;
             splatTimer = 0f;
@@ -1958,6 +2068,7 @@ namespace KungFuCrashout.Fighters
             restY = transform.position.y;
             IsAirborne = true;
             airAttackUsed = false; // a new jump, a new air combo
+            airSideSpecialUsed = false;
             airFloatTime = 0f;
             airVelocity = direction.normalized * jumpLaunchSpeed;
             launchTimer = jumpLaunchTime;
@@ -1980,6 +2091,28 @@ namespace KungFuCrashout.Fighters
                 splatTimer -= dt;
                 if (splatTimer <= 0f) airVelocity = new Vector2(-splatSide * 1.5f, 0f);
                 return;
+            }
+
+            // Hit by an air Side special while airborne: held at this height (no gravity) for a moment.
+            // Sideways, the hit's knockback slide still moves us.
+            if (airHoldTimer > 0f)
+            {
+                airHoldTimer -= dt;
+                airVelocity.y = 0f;
+                launchTimer = 0f;
+                return;
+            }
+
+            // Doing the Side special in the air: no gravity while it plays (its own travel moves us sideways).
+            if (airSideSpecialActive)
+            {
+                if (!IsAirSideSpecial) airSideSpecialActive = false; // ended or cancelled: fall from here
+                else if (airSideSpecialNoGravity)
+                {
+                    airVelocity = Vector2.zero;
+                    launchTimer = 0f;
+                    return;
+                }
             }
 
             // Air combo: hang in the air (slow sink) while the string is going, then the fall carries on.
@@ -2051,6 +2184,9 @@ namespace KungFuCrashout.Fighters
             airAttackUsed = false;
             airFloatTime = 0f;
             IsAirFloating = false;
+            airSideSpecialUsed = false;
+            airSideSpecialActive = false;
+            airHoldTimer = 0f;
 
             // Landed mid air attack: it ends here (its drawing is airborne), straight back to neutral.
             if (landingEndsAirAttack && State == FighterState.Attacking && comboIndex == AirIndex)
@@ -2243,6 +2379,7 @@ namespace KungFuCrashout.Fighters
             if (next == State) return;
             var previous = State;
             State = next;
+            if (next != FighterState.Hitstun) InPunishCombo = false; // the punish combo ends with the hitstun
             if (logStateChanges) Debug.Log($"[{name}] {previous} → {next}");
             StateChanged?.Invoke(previous, next);
         }

@@ -81,6 +81,7 @@ namespace KungFuCrashout.UI
 
             foreach (var d in TuningRegistry.Defs)
             {
+                if (d.testOnly) continue; // testing toggles are never exported
                 float now = TuningRegistry.Current(d);
                 float project = TuningRegistry.Default(d);
                 bool inScene = !float.IsNaN(now);

@@ -1,13 +1,14 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using KungFuCrashout.Fighters;
 
 namespace KungFuCrashout.Controls
 {
     /// <summary>
     /// Keyboard controls for testing, so you can test block + attack at the same time (a mouse can only simulate one
-    /// finger). Works in the editor, and in Development Builds (e.g. a Windows test build) when Work In Development
-    /// Builds is on. Release builds (the phone build you ship) never read the keyboard.
+    /// finger). Works in the editor, and in any Windows / Mac / Linux build (release or Development) when Work In PC
+    /// Builds is on. Phones never read the keyboard, Development Build or not (PcInput).
     ///
     ///   A / ←  dash left        D / →  dash right
     ///   W / ↑  jump up          Q / E  jump up-left / up-right (45°)
@@ -22,9 +23,10 @@ namespace KungFuCrashout.Controls
     public class KeyboardDebugInput : MonoBehaviour
     {
         [SerializeField] Fighter fighter;
-        [Tooltip("Also work in Development Builds (Build Profiles → Development Build). Off = editor only. " +
-                 "Release builds never read the keyboard.")]
-        [SerializeField] bool workInDevelopmentBuilds = true;
+        [Tooltip("Also work in Windows / Mac / Linux builds (release or Development). Off = editor only. " +
+                 "Phones never read the keyboard.")]
+        [FormerlySerializedAs("workInDevelopmentBuilds")]
+        [SerializeField] bool workInPcBuilds = true;
         [Tooltip("Optional: the item handler. While its throw key is held, the direction keys aim the throw instead " +
                  "of moving. Empty = found automatically.")]
         [SerializeField] KungFuCrashout.Props.ItemTapHandler itemKeys;
@@ -34,7 +36,7 @@ namespace KungFuCrashout.Controls
 
         void Awake()
         {
-            if (!Application.isEditor && !(workInDevelopmentBuilds && Debug.isDebugBuild)) { enabled = false; return; }
+            if (!PcInput.KeyboardAllowed(workInPcBuilds)) { enabled = false; return; }
             commands = fighter;
             if (!itemKeys) itemKeys = FindFirstObjectByType<KungFuCrashout.Props.ItemTapHandler>();
         }

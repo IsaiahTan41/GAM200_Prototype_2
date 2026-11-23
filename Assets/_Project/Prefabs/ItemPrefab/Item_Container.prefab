@@ -176,7 +176,7 @@ MonoBehaviour:
   followSharpness: 25
   useCarrierCarryPoint: 1
   carriedSortingOrder: 10
-  throwSpeed: 21
+  throwSpeed: 15
   maxThrowDistance: 14
   hitData: {fileID: 11400000, guid: 974bd8c01bce74948be397c29e68d0ac, type: 2}
   hitsFighters: 1

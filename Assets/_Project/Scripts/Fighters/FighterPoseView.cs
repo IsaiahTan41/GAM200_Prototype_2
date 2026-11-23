@@ -188,6 +188,8 @@ namespace KungFuCrashout.Fighters
         }
 
         FighterAnimator animator;
+        bool swaying;
+        Quaternion swayBase = Quaternion.identity;
 
         /// <summary>The art is drawn mirrored this frame (facing the dash, not the opponent). The carry point follows it.</summary>
         public bool ArtMirrored { get; private set; }
@@ -209,6 +211,26 @@ namespace KungFuCrashout.Fighters
 
             // Colour: hit flash, invincibility flicker.
             Color c = Time.unscaledTime < flashUntil ? hitFlashColour : Color.white;
+            // Parry punish window: pulse the punish tint, fading as the window runs out (Fighter → Parry punish window).
+            if (fighter.ShowsPunishTint && Time.unscaledTime >= flashUntil)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * fighter.PunishTintSpeed * Mathf.PI * 2f);
+                float strength = (0.35f + 0.65f * pulse) * Mathf.Max(0.3f, fighter.ParryStunLeft01);
+                c = Color.Lerp(Color.white, fighter.PunishTint, strength);
+            }
+            // Dazed sway while parry-stunned (rocks about the art's pivot).
+            float sway = fighter.PunishSway;
+            if (sway > 0f)
+            {
+                if (!swaying) swayBase = transform.localRotation;
+                transform.localRotation = swayBase * Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 9f) * sway * Mathf.Max(0.3f, fighter.ParryStunLeft01));
+                swaying = true;
+            }
+            else if (swaying)
+            {
+                transform.localRotation = swayBase;
+                swaying = false;
+            }
             if (fighter.IsInvulnerable)
                 c.a = Mathf.Repeat(Time.time * 12f, 1f) < 0.5f ? invincibleAlpha : 0.85f;
             art.color = c;
