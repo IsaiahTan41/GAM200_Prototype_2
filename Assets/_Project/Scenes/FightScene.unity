@@ -75955,6 +75955,10 @@ MonoBehaviour:
   specialBufferTime: 0.15
   upSpecialStopsRise: 1
   upSpecialGroundSnapHeight: 0.6
+  sideSpecialInAir: 1
+  airSideSpecialNoGravity: 1
+  airSideSpecialKeepsTargetAirborne: 1
+  airSideSpecialTargetHoldTime: 0.4
   maxJuggleHits: 6
   invincibleMovementStartup: 1
   dashInvincibleTime: 0.1
@@ -75992,6 +75996,15 @@ MonoBehaviour:
   parryStun: 0.6
   parryKnocksBack: 1
   parryKnockback: 0.6
+  parryPunishWindow: 1
+  punishStunTime: 0.9
+  punishKnockback: 0.15
+  showPunishTint: 1
+  punishTint: {r: 1, g: 0.8, b: 0.25, a: 1}
+  punishTintSpeed: 6
+  punishSway: 5
+  punishDealsRealDamage: 1
+  punishFirstHitMultiplier: 1.5
   blockOnlyFromFront: 1
   recoverableNeutralDamage: 1
   autoBlockAtNeutral: 1
@@ -76405,7 +76418,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bffbed7e497cb445a21abff707df1d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.FighterVfx
-  set: {fileID: 11400000, guid: 2840f8db0005eee4ead6b4cb732cde6e, type: 2}
+  staticSet: {fileID: 11400000, guid: 2840f8db0005eee4ead6b4cb732cde6e, type: 2}
+  animatedSet: {fileID: 11400000, guid: 59ae212428536324ea193388a0220de5, type: 2}
+  parryWindowTint: {r: 1, g: 0.85, b: 0.45, a: 1}
   attacks: 1
   hits: 1
   blocks: 1
@@ -89801,6 +89816,8 @@ MonoBehaviour:
   blur: {fileID: 594762183}
   background: {fileID: 1407773053}
   content: {fileID: 1072286419}
+  victoryVoice: {fileID: 11400000, guid: b3a6413fbd329134da5074af37cbf9f6, type: 2}
+  defeatVoice: {fileID: 11400000, guid: 9be18fc4a3297c645ad5346c51ddf802, type: 2}
   victoryBackground: {fileID: 21300000, guid: 041638ac4047aab489650e33de5dc647, type: 3}
   defeatBackground: {fileID: 21300000, guid: e17b93798cf9158498291596e095457b, type: 3}
   banner: {fileID: 1244092806}
@@ -106598,6 +106615,12 @@ MonoBehaviour:
   timeCue: {fileID: 0}
   winCue: {fileID: 0}
   loseCue: {fileID: 0}
+  matchKoCue: {fileID: 11400000, guid: c43e2ed58b14cf94396a51c598821ae4, type: 2}
+  roundVoices:
+  - {fileID: 11400000, guid: ff45994d95367f34da9ff9adc2bf53b6, type: 2}
+  - {fileID: 11400000, guid: 5f62053c3e8360d459e5c36b36e911c2, type: 2}
+  - {fileID: 11400000, guid: 823e5d082de162c4d9289a4a640cf1f0, type: 2}
+  matchKoDelay: 0.05
   mixer: {fileID: 0}
   announcer: {fileID: 0}
   music: {fileID: 0}
@@ -115891,6 +115914,7 @@ MonoBehaviour:
   spriteMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   poolSize: 24
   globalScale: 1
+  useAnimatedVfx: 1
   lightsOn: 1
   maxLights: 3
   lightIntensityScale: 1
@@ -144376,6 +144400,10 @@ MonoBehaviour:
   specialBufferTime: 0.15
   upSpecialStopsRise: 1
   upSpecialGroundSnapHeight: 0.6
+  sideSpecialInAir: 1
+  airSideSpecialNoGravity: 1
+  airSideSpecialKeepsTargetAirborne: 1
+  airSideSpecialTargetHoldTime: 0.4
   maxJuggleHits: 6
   invincibleMovementStartup: 1
   dashInvincibleTime: 0.1
@@ -144413,6 +144441,15 @@ MonoBehaviour:
   parryStun: 0.6
   parryKnocksBack: 1
   parryKnockback: 0.6
+  parryPunishWindow: 1
+  punishStunTime: 0.9
+  punishKnockback: 0.15
+  showPunishTint: 1
+  punishTint: {r: 1, g: 0.8, b: 0.25, a: 1}
+  punishTintSpeed: 6
+  punishSway: 5
+  punishDealsRealDamage: 1
+  punishFirstHitMultiplier: 1.5
   blockOnlyFromFront: 1
   recoverableNeutralDamage: 1
   autoBlockAtNeutral: 1
@@ -144732,7 +144769,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bffbed7e497cb445a21abff707df1d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.FighterVfx
-  set: {fileID: 11400000, guid: 2840f8db0005eee4ead6b4cb732cde6e, type: 2}
+  staticSet: {fileID: 11400000, guid: 2840f8db0005eee4ead6b4cb732cde6e, type: 2}
+  animatedSet: {fileID: 11400000, guid: 59ae212428536324ea193388a0220de5, type: 2}
+  parryWindowTint: {r: 1, g: 0.85, b: 0.45, a: 1}
   attacks: 1
   hits: 1
   blocks: 1

@@ -29,6 +29,9 @@ namespace KungFuCrashout.Feedback
         [SerializeField, Min(1)] int poolSize = 24;
         [Tooltip("Multiplies every cue's size (quick global tune).")]
         [SerializeField, Min(0f)] float globalScale = 1f;
+        [Tooltip("ON: fighters and items use the animated (sprite sheet) effects: FighterVfx → Animated Set, ItemVfx → " +
+                 "Animated. OFF: the original single-frame effects. Also on the TUNING tab (Testing).")]
+        [SerializeField] bool useAnimatedVfx = true;
 
         [Header("Light flashes")]
         [SerializeField] bool lightsOn = true;
@@ -51,6 +54,9 @@ namespace KungFuCrashout.Feedback
             public int facing;
             public bool alive;
             public float started;
+            public Transform follow;     // followOwner: stays this far from it
+            public Vector3 followOffset;
+            public int layer, order;
         }
 
         class Flash
@@ -80,6 +86,10 @@ namespace KungFuCrashout.Feedback
         /// <summary>The material used for effect sprites (ItemVfx's held glow uses it too).</summary>
         public Material SpriteMaterial => spriteMaterial;
         public bool EffectsOn { get => effectsOn; set => effectsOn = value; }
+
+        /// <summary>Animated (sprite sheet) effects on? True when there's no VfxPlayer yet.</summary>
+        public static bool AnimatedVfxOn => !instance || instance.useAnimatedVfx;
+        public bool UseAnimatedVfx { get => useAnimatedVfx; set => useAnimatedVfx = value; }
 
         void Awake()
         {
@@ -132,16 +142,18 @@ namespace KungFuCrashout.Feedback
         /// Play a cue. position = the spawn point (before the cue's offset); facing = +1 / −1;
         /// size = the owner's size factor (e.g. the fighter's Visual scale); sorting copied from the owner's sprite.
         /// </summary>
-        public static void Play(VfxCue cue, Vector3 position, int facing, float size, int sortingLayerID, int ownerOrder)
+        public static void Play(VfxCue cue, Vector3 position, int facing, float size, int sortingLayerID, int ownerOrder,
+                                Transform follow = null)
         {
-            if (!cue || !cue.sprite) return;
-            Instance.Spawn(cue, position, facing, size, sortingLayerID, ownerOrder);
+            if (!cue || !cue.HasArt) return;
+            Instance.Spawn(cue, position, facing, size, sortingLayerID, ownerOrder, follow);
         }
 
-        /// <summary>Play with the owner's sprite renderer giving the sorting (null = default layer, order 0).</summary>
-        public static void Play(VfxCue cue, Vector3 position, int facing, float size, SpriteRenderer owner)
+        /// <summary>Play with the owner's sprite renderer giving the sorting (null = default layer, order 0).
+        /// follow: the transform a Follow Owner cue moves with (e.g. the fighter).</summary>
+        public static void Play(VfxCue cue, Vector3 position, int facing, float size, SpriteRenderer owner, Transform follow = null)
         {
-            Play(cue, position, facing, size, owner ? owner.sortingLayerID : 0, owner ? owner.sortingOrder : 0);
+            Play(cue, position, facing, size, owner ? owner.sortingLayerID : 0, owner ? owner.sortingOrder : 0, follow);
         }
 
         /// <summary>Just the light flash of a cue (used by looping effects that draw their own sprite).</summary>
@@ -151,7 +163,7 @@ namespace KungFuCrashout.Feedback
             Instance.StartFlash(cue, position, facing, size);
         }
 
-        void Spawn(VfxCue cue, Vector3 position, int facing, float size, int layer, int order)
+        void Spawn(VfxCue cue, Vector3 position, int facing, float size, int layer, int order, Transform follow = null)
         {
             if (!effectsOn) return;
             if (facing == 0) facing = 1;
@@ -159,14 +171,17 @@ namespace KungFuCrashout.Feedback
 
             var fx = Take();
             fx.cue = cue;
-            fx.age = 0f;
+            fx.age = -cue.Delay; // negative = waiting for its start frame (hidden)
+            fx.layer = layer;
+            fx.order = order;
             fx.size = size * cue.scale * globalScale;
             fx.facing = dir;
             fx.angle = (cue.rotation + Random.Range(-cue.randomRotation, cue.randomRotation)) * dir;
             fx.alive = true;
             fx.started = Time.unscaledTime;
 
-            fx.sr.sprite = cue.sprite;
+            fx.sr.sprite = cue.FrameAt(0f);
+            fx.sr.enabled = fx.age >= 0f;
             fx.sr.sortingLayerID = layer;
             fx.sr.sortingOrder = order + cue.sortingOffset;
             fx.sr.flipX = (dir < 0) != cue.paintedFacingLeft;
@@ -176,9 +191,11 @@ namespace KungFuCrashout.Feedback
             fx.t.position = new Vector3(position.x + off.x, position.y + off.y, position.z - 0.05f);
             fx.t.rotation = Quaternion.Euler(0f, 0f, fx.angle);
             fx.t.localScale = Vector3.one * fx.size * cue.ScaleAt(0f);
+            fx.follow = cue.followOwner ? follow : null;
+            fx.followOffset = fx.follow ? fx.t.position - fx.follow.position : Vector3.zero;
             fx.t.gameObject.SetActive(true);
 
-            if (cue.light) StartFlash(cue, position, facing, size);
+            if (cue.light && cue.Delay <= 0f) StartFlash(cue, position, facing, size);
         }
 
         Fx Take()
@@ -233,9 +250,24 @@ namespace KungFuCrashout.Feedback
                 if (!fx.alive) continue;
                 var cue = fx.cue;
                 // Frozen (hitstop / pause): still finish the pop so the effect holds at full size on the impact frame.
-                fx.age += dt > 0f ? dt : (cue && fx.age < cue.popTime ? Time.unscaledDeltaTime : 0f);
-                if (!cue || fx.age >= cue.lifetime) { Kill(fx); continue; }
+                float before = fx.age;
+                fx.age += dt > 0f ? dt : (cue && fx.age >= 0f && fx.age < cue.popTime && !cue.IsAnimated ? Time.unscaledDeltaTime : 0f);
+                if (!cue) { Kill(fx); continue; }
+                if (fx.age < 0f) continue; // start delay: still hidden
+                if (before < 0f)
+                {
+                    fx.sr.enabled = true;
+                    if (cue.light) StartFlash(cue, fx.t.position, fx.facing, fx.size / Mathf.Max(0.0001f, cue.scale * globalScale));
+                }
+                if (fx.age >= cue.Life)
+                {
+                    // Chain (e.g. Block Start → Block Idle): the next cue takes over this slot, same place and size.
+                    if (cue.next && !cue.loop) { Chain(fx, cue.next); continue; }
+                    Kill(fx); continue;
+                }
 
+                if (fx.follow) fx.t.position = fx.follow.position + fx.followOffset;
+                if (cue.IsAnimated) fx.sr.sprite = cue.FrameAt(fx.age);
                 fx.t.localScale = Vector3.one * fx.size * cue.ScaleAt(fx.age);
                 if (cue.drift != Vector2.zero)
                     fx.t.position += new Vector3(cue.drift.x * fx.facing, cue.drift.y, 0f) * fx.size * dt;
@@ -250,6 +282,19 @@ namespace KungFuCrashout.Feedback
                 float k = 1f - f.age / f.duration;
                 f.light.intensity = f.peak * k * k;
             }
+        }
+
+        void Chain(Fx fx, VfxCue next)
+        {
+            float baseSize = fx.size / Mathf.Max(0.0001f, fx.cue.scale);
+            fx.cue = next;
+            fx.age = -next.Delay;
+            fx.size = baseSize * next.scale;
+            fx.sr.sprite = next.FrameAt(0f);
+            fx.sr.enabled = fx.age >= 0f;
+            fx.sr.sortingOrder = fx.order + next.sortingOffset;
+            var c = next.tint; c.a *= next.AlphaAt(0f); fx.sr.color = c;
+            fx.t.localScale = Vector3.one * fx.size * next.ScaleAt(0f);
         }
 
         static void Kill(Fx fx)

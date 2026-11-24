@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using KungFuCrashout.Fighters;
 using KungFuCrashout.Props;
 
 namespace KungFuCrashout.Feedback
@@ -29,6 +30,23 @@ namespace KungFuCrashout.Feedback
         [SerializeField] VfxCue breakBurst;
         [SerializeField] VfxCue landDust;
 
+        [Header("Animated (used while VfxPlayer → Use Animated VFX is on and Hold Idle is set)")]
+        [Tooltip("Picked up: the aura forms (Hold Start), then Hold Idle loops.")]
+        [SerializeField] VfxCue animHoldStart;
+        [SerializeField] VfxCue animHoldIdle;
+        [Tooltip("While the player's finger rests on the carried item (before the throw swipe).")]
+        [SerializeField] VfxCue animHoldAim;
+        [Tooltip("Thrown: Throw Start, then Throw Idle loops for the flight, turned the way the item flies.")]
+        [SerializeField] VfxCue animThrowStart;
+        [SerializeField] VfxCue animThrowIdle;
+        [Tooltip("The thrown item hits a fighter or lands (once per throw).")]
+        [SerializeField] VfxCue animHit;
+        [Tooltip("Aura size: Hold Idle's drawn content (its largest side) = the item's art × this. The other animated " +
+                 "effects keep their size relative to Hold Idle, as drawn.")]
+        [SerializeField, Min(0f)] float animatedAuraScale = 1.3f;
+        [Tooltip("Throw-area mode: where the aura's rim sits, as a fraction of Hold Idle's drawn content.")]
+        [SerializeField, Range(0.3f, 1.2f)] float animatedRimFraction = 0.9f;
+
         Carryable item;
         SpriteRenderer art;
         SpriteRenderer glow;
@@ -46,12 +64,16 @@ namespace KungFuCrashout.Feedback
         {
             item.Broken += OnBroken;
             item.FlightEnded += OnFlightEnded;
+            item.Thrown += OnThrown;
+            item.HitFighter += OnItemHitFighter;
         }
 
         void OnDisable()
         {
             item.Broken -= OnBroken;
             item.FlightEnded -= OnFlightEnded;
+            item.Thrown -= OnThrown;
+            item.HitFighter -= OnItemHitFighter;
             ShowGlow(false);
         }
 
@@ -81,12 +103,140 @@ namespace KungFuCrashout.Feedback
         void OnFlightEnded()
         {
             if (landDust && item.State != Carryable.ItemState.Carried) VfxPlayer.Play(landDust, Bottom, 1, Fit(landDust), art);
+            if (item.State != Carryable.ItemState.Carried) PlayThrowHit(); // landed without hitting anyone
+        }
+
+        // ───────────── Animated (sprite sheet) effects ─────────────
+
+        enum AnimPhase { None, Hold, Aim, Throw }
+        AnimPhase phase;
+        float phaseAge, flightAngle;
+        bool hitPlayed;
+        Vector3 lastPos;
+
+        bool Animated => VfxPlayer.AnimatedVfxOn && animHoldIdle && animHoldIdle.IsAnimated;
+
+        void OnThrown(Fighter thrower, Vector2 direction)
+        {
+            hitPlayed = false;
+            if (direction.sqrMagnitude > 0.0001f) flightAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        }
+
+        void OnItemHitFighter(Fighter thrower, Fighter target, HitResult result) => PlayThrowHit();
+
+        void PlayThrowHit()
+        {
+            if (hitPlayed || !Animated || !animHit) return;
+            hitPlayed = true;
+            Vector3 c = art ? art.bounds.center : transform.position;
+            VfxPlayer.Play(animHit, c, 1, AuraFit(), art);
+        }
+
+        /// <summary>World size per sprite unit that makes Hold Idle's drawn content (largest side) = item art × Aura Scale.
+        /// Every animated item effect uses it, so they keep the sizes they were drawn at relative to each other.</summary>
+        float AuraFit()
+        {
+            Vector2 cs = animHoldIdle && animHoldIdle.contentSize != Vector2.zero ? animHoldIdle.contentSize
+                       : animHoldIdle && animHoldIdle.FirstSprite ? (Vector2)animHoldIdle.FirstSprite.bounds.size : Vector2.one;
+            return ItemSize * animatedAuraScale / Mathf.Max(0.01f, Mathf.Max(cs.x, cs.y));
+        }
+
+        /// <summary>Plays First once, then loops Then (age in seconds).</summary>
+        static Sprite Chain(VfxCue first, VfxCue then, float age)
+        {
+            if (first && first.IsAnimated && age < first.Duration) return first.FrameAt(age);
+            float t = age - (first && first.IsAnimated ? first.Duration : 0f);
+            return then ? then.FrameAt(t) : first ? first.FrameAt(first.Duration) : null;
+        }
+
+        void UpdateAnimated()
+        {
+            var state = item.State;
+            bool held = state == Carryable.ItemState.Carried, thrown = state == Carryable.ItemState.Thrown;
+            Vector3 centre = art ? art.bounds.center : transform.position;
+            float dt = Time.deltaTime;
+            if (thrown && dt > 0f)
+            {
+                Vector3 v = (centre - lastPos) / dt;
+                if (v.sqrMagnitude > 0.04f) flightAngle = Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg; // the way it flies
+            }
+            lastPos = centre;
+
+            if (!held && !thrown) { phase = AnimPhase.None; ShowGlow(false); return; }
+
+            var tap = held ? ItemTapHandler.For(item.Carrier) : null;
+            var next = thrown ? AnimPhase.Throw : (tap && tap.FingerOnHeldItem && animHoldAim ? AnimPhase.Aim : AnimPhase.Hold);
+            if (next != phase)
+            {
+                // Aim ↔ Hold keeps the aura formed (no Hold Start replay); a new pick-up / throw starts from the top.
+                bool keepFormed = (next == AnimPhase.Hold && phase == AnimPhase.Aim);
+                phaseAge = keepFormed ? 999f : 0f;
+                phase = next;
+            }
+            else phaseAge += dt;
+            ShowGlow(true);
+
+            var t = glow.transform;
+            float k = AuraFit();
+            VfxCue look;
+            switch (phase)
+            {
+                case AnimPhase.Aim:
+                    look = animHoldAim;
+                    glow.sprite = animHoldAim.FrameAt(phaseAge);
+                    break;
+                case AnimPhase.Throw:
+                    look = animThrowIdle ? animThrowIdle : animThrowStart;
+                    glow.sprite = Chain(animThrowStart, animThrowIdle, phaseAge);
+                    break;
+                default:
+                    look = animHoldIdle;
+                    glow.sprite = Chain(animHoldStart, animHoldIdle, phaseAge);
+                    break;
+            }
+
+            t.rotation = Quaternion.identity;
+            if (phase == AnimPhase.Throw)
+            {
+                // The trail's ball sits on the item (its pivot), pointing the way it flies.
+                t.position = new Vector3(centre.x, centre.y, centre.z + 0.01f);
+                t.localScale = Vector3.one * k * (look ? look.scale : 1f);
+                t.rotation = Quaternion.Euler(0f, 0f, flightAngle);
+            }
+            else if (tap && tap.HeldGlowShowsThrowArea && tap.TryGetThrowArea(item, out var areaCentre, out var areaSize))
+            {
+                // The aura's rim = where a throw swipe can start (same rule as the single-frame glow).
+                Vector2 cs = animHoldIdle.contentSize != Vector2.zero ? animHoldIdle.contentSize : (Vector2)animHoldIdle.FirstSprite.bounds.size;
+                float sx = areaSize.x / Mathf.Max(0.001f, cs.x * animatedRimFraction);
+                float sy = areaSize.y / Mathf.Max(0.001f, cs.y * animatedRimFraction);
+                t.position = new Vector3(areaCentre.x, areaCentre.y, centre.z + 0.01f);
+                t.localScale = new Vector3(sx, sy, 1f);
+                centre = new Vector3(areaCentre.x, areaCentre.y, centre.z);
+            }
+            else
+            {
+                Vector2 off = look ? look.offset : Vector2.zero;
+                t.position = new Vector3(centre.x + off.x, centre.y + off.y, centre.z + 0.01f);
+                t.localScale = Vector3.one * k * (look ? look.scale : 1f);
+            }
+            glow.flipX = false;
+            glow.sortingLayerID = art ? art.sortingLayerID : 0;
+            glow.sortingOrder = (art ? art.sortingOrder : 0) + (look ? look.sortingOffset : -2);
+            var c = look ? look.tint : Color.white; c.a *= look ? look.alpha : 1f; glow.color = c;
+
+            if (glowLight)
+            {
+                glowLight.transform.position = centre;
+                if (heldGlow) glowLight.intensity = heldGlow.lightIntensity;
+            }
         }
 
         // ───────────── Held glow ─────────────
 
         void LateUpdate()
         {
+            if (Animated) { UpdateAnimated(); return; }
+            if (phase != AnimPhase.None) { phase = AnimPhase.None; if (glow) glow.transform.rotation = Quaternion.identity; }
             bool held = heldGlow && heldGlow.sprite && item.State == Carryable.ItemState.Carried;
             ShowGlow(held);
             if (!held) return;
@@ -132,7 +282,7 @@ namespace KungFuCrashout.Feedback
             if (show && !glow) MakeGlow();
             if (!glow) return;
             if (show && !glow.gameObject.activeSelf) glowAge = 0f;
-            glow.gameObject.SetActive(show);
+            if (glow.gameObject.activeSelf != show) glow.gameObject.SetActive(show);
             if (glowLight) glowLight.gameObject.SetActive(show && heldLight && heldGlow && heldGlow.light);
         }
 
@@ -141,12 +291,12 @@ namespace KungFuCrashout.Feedback
             // Not parented to the item: the item flips and resizes, the glow sizes itself from the item's bounds instead.
             var go = new GameObject(name + " HeldGlow");
             glow = go.AddComponent<SpriteRenderer>();
-            glow.sprite = heldGlow.sprite;
+            glow.sprite = heldGlow ? heldGlow.sprite : null;
             var player = VfxPlayer.Instance;
             if (player && player.SpriteMaterial) glow.sharedMaterial = player.SpriteMaterial;
             go.SetActive(false);
 
-            if (heldLight && heldGlow.light)
+            if (heldLight && heldGlow && heldGlow.light)
             {
                 var lgo = new GameObject(name + " HeldLight");
                 lgo.transform.SetParent(go.transform, false);

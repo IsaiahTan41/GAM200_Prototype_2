@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15f6afe0f751df2439656cab081bb059, type: 3}
+  m_Name: VFX_Anim_Parry_Main
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.VfxCue
+  sprite: {fileID: 300743779, guid: 1611dae12fd5798419d6bcbf976d778a, type: 3}
+  frames:
+  - {fileID: 300743779, guid: 1611dae12fd5798419d6bcbf976d778a, type: 3}
+  - {fileID: -761659107, guid: 1611dae12fd5798419d6bcbf976d778a, type: 3}
+  - {fileID: -652409165, guid: 1611dae12fd5798419d6bcbf976d778a, type: 3}
+  - {fileID: 1465506785, guid: 1611dae12fd5798419d6bcbf976d778a, type: 3}
+  - {fileID: 1863501378, guid: 1611dae12fd5798419d6bcbf976d778a, type: 3}
+  fps: 30
+  loop: 0
+  next: {fileID: 0}
+  startDelayFrames: 0
+  popAndFade: 0
+  followOwner: 0
+  contentSize: {x: 1.888, y: 1.794}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  alpha: 1
+  offset: {x: 0, y: 0}
+  flipWithFacing: 0
+  paintedFacingLeft: 0
+  rotation: 0
+  randomRotation: 0
+  sortingOffset: 3
+  scale: 1
+  startScale: 0.7
+  peakScale: 1.1
+  endScale: 1
+  popTime: 0.05
+  lifetime: 0.16666667
+  fadeStart: 0.4
+  drift: {x: 0, y: 0}
+  light: 1
+  lightColour: {r: 1, g: 0.85, b: 0.3, a: 1}
+  lightIntensity: 2.5
+  lightRadius: 3
+  lightAngle: 360
+  lightDirection: 0
+  lightTime: 0.2
+  lightOffset: {x: 0, y: 0.8}
+  pulseSpeed: 2.5
+  pulseAmount: 0.08

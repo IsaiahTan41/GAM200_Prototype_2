@@ -1,0 +1,535 @@
+fileFormatVersion: 2
+guid: d5ce418aa6e11ea44a5d0afec215fb34
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -3595319112549670353
+    second: VFX_Anim_Parry_Impact_0
+  - first:
+      213: -2799713365286510839
+    second: VFX_Anim_Parry_Impact_1
+  - first:
+      213: 5557829895954745544
+    second: VFX_Anim_Parry_Impact_2
+  - first:
+      213: 960535957101303894
+    second: VFX_Anim_Parry_Impact_3
+  - first:
+      213: -7348705107833250829
+    second: VFX_Anim_Parry_Impact_4
+  - first:
+      213: -6177346377214450506
+    second: VFX_Anim_Parry_Impact_5
+  - first:
+      213: -2872170750511469787
+    second: VFX_Anim_Parry_Impact_6
+  - first:
+      213: 4356271333236673730
+    second: VFX_Anim_Parry_Impact_7
+  - first:
+      213: 6337140710630621789
+    second: VFX_Anim_Parry_Impact_8
+  - first:
+      213: -2527020197776213274
+    second: VFX_Anim_Parry_Impact_9
+  - first:
+      213: 3956479583139927496
+    second: VFX_Anim_Parry_Impact_10
+  - first:
+      213: -4929510408474680155
+    second: VFX_Anim_Parry_Impact_11
+  - first:
+      213: -7461567875514022614
+    second: VFX_Anim_Parry_Impact_12
+  - first:
+      213: 498885863908619827
+    second: VFX_Anim_Parry_Impact_13
+  - first:
+      213: 6441911536690978726
+    second: VFX_Anim_Parry_Impact_14
+  - first:
+      213: -2226406786625747204
+    second: VFX_Anim_Parry_Impact_15
+  - first:
+      213: 6170730127962207116
+    second: VFX_Anim_Parry_Impact_16
+  - first:
+      213: -8807136040167481497
+    second: VFX_Anim_Parry_Impact_17
+  - first:
+      213: 1876237665335297394
+    second: VFX_Anim_Parry_Impact_18
+  - first:
+      213: -5976655825321440158
+    second: VFX_Anim_Parry_Impact_19
+  - first:
+      213: 8650816473799369103
+    second: VFX_Anim_Parry_Impact_20
+  - first:
+      213: 8001590951452940246
+    second: VFX_Anim_Parry_Impact_21
+  - first:
+      213: -7515249937055767114
+    second: VFX_Anim_Parry_Impact_22
+  - first:
+      213: 3569831674164223141
+    second: VFX_Anim_Parry_Impact_23
+  - first:
+      213: -7522553853429456361
+    second: VFX_Anim_Parry_Impact_24
+  - first:
+      213: -3250339516965157950
+    second: VFX_Anim_Parry_Impact_25
+  - first:
+      213: -7324365549543532452
+    second: VFX_Anim_Parry_Impact_26
+  - first:
+      213: 5676800703467945201
+    second: VFX_Anim_Parry_Impact_27
+  - first:
+      213: 3133748804141099745
+    second: VFX_Anim_Parry_Impact_28
+  - first:
+      213: 7085504774610332186
+    second: VFX_Anim_Parry_Impact_29
+  - first:
+      213: -2166663045352963570
+    second: VFX_Anim_Parry_Impact_30
+  - first:
+      213: -3119754826108167152
+    second: VFX_Anim_Parry_Impact_31
+  - first:
+      213: 4844040737925189072
+    second: VFX_Anim_Parry_Impact_32
+  - first:
+      213: -5665652893995022099
+    second: VFX_Anim_Parry_Impact_33
+  - first:
+      213: 7727937579955230633
+    second: VFX_Anim_Parry_Impact_34
+  - first:
+      213: 7464586708550849937
+    second: VFX_Anim_Parry_Impact_35
+  - first:
+      213: -1669247669435798092
+    second: VFX_Anim_Parry_Impact_36
+  - first:
+      213: 6143846871413922336
+    second: VFX_Anim_Parry_Impact_37
+  - first:
+      213: -1978245101268353818
+    second: VFX_Anim_Parry_Impact_38
+  - first:
+      213: -8640442396349337359
+    second: VFX_Anim_Parry_Impact_39
+  - first:
+      213: 89329872811084314
+    second: VFX_Anim_Parry_Impact_40
+  - first:
+      213: -3537823584759272776
+    second: VFX_Anim_Parry_Impact_41
+  - first:
+      213: 4946577782031016155
+    second: VFX_Anim_Parry_Impact_42
+  - first:
+      213: -4430555689084143924
+    second: VFX_Anim_Parry_Impact_43
+  - first:
+      213: 1883895167666945726
+    second: VFX_Anim_Parry_Impact_44
+  - first:
+      213: 5016806690566279501
+    second: VFX_Anim_Parry_Impact_45
+  - first:
+      213: -2156290333617726028
+    second: VFX_Anim_Parry_Impact_46
+  - first:
+      213: -4207277127076996443
+    second: VFX_Anim_Parry_Impact_47
+  - first:
+      213: -4325056727127290983
+    second: VFX_Anim_Parry_Impact_48
+  - first:
+      213: -694900915728957930
+    second: VFX_Anim_Parry_Impact_49
+  - first:
+      213: -8572917741954275796
+    second: VFX_Anim_Parry_Impact_50
+  - first:
+      213: 6996240432052582628
+    second: VFX_Anim_Parry_Impact_51
+  - first:
+      213: -612437875821052072
+    second: VFX_Anim_Parry_Impact_52
+  - first:
+      213: -1373336543423307076
+    second: VFX_Anim_Parry_Impact_53
+  - first:
+      213: -2183043653731423793
+    second: VFX_Anim_Parry_Impact_54
+  - first:
+      213: -2067909082938945850
+    second: VFX_Anim_Parry_Impact_55
+  - first:
+      213: -8551245923170550505
+    second: VFX_Anim_Parry_Impact_56
+  - first:
+      213: -7717593432584764111
+    second: VFX_Anim_Parry_Impact_57
+  - first:
+      213: 1321136426650014233
+    second: VFX_Anim_Parry_Impact_58
+  - first:
+      213: -8093553202879380947
+    second: VFX_Anim_Parry_Impact_59
+  - first:
+      213: -1351243108820041003
+    second: VFX_Anim_Parry_Impact_60
+  - first:
+      213: 1358552621822261251
+    second: VFX_Anim_Parry_Impact_61
+  - first:
+      213: -5803404486448710257
+    second: VFX_Anim_Parry_Impact_62
+  - first:
+      213: 6619134217194648270
+    second: VFX_Anim_Parry_Impact_63
+  - first:
+      213: -1613827787587179470
+    second: VFX_Anim_Parry_Impact_64
+  - first:
+      213: 3188020453260754566
+    second: VFX_Anim_Parry_Impact_65
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 570.24
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1502
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d5c06c90b6499d94f8156ab15d6433f1
+      internalID: 276073268
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_01
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 1502
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 16d1970b421752442a21991e4589edcd
+      internalID: 836334463
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_02
+      rect:
+        serializedVersion: 2
+        x: 1684
+        y: 1502
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 02ccfab9d86f74e44a1aac43ef3bb40a
+      internalID: -896386569
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_03
+      rect:
+        serializedVersion: 2
+        x: 2526
+        y: 1502
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 725de7ca214aa524994d20264622f4e4
+      internalID: -531669320
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 751
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ab84bd3c952a7164ea219a84a2e1561a
+      internalID: -705814105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_05
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 751
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ba70635a064594a4d99b3df70dd3ba13
+      internalID: -1609934762
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_06
+      rect:
+        serializedVersion: 2
+        x: 1684
+        y: 751
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 687e280f84fd9b048b7019c00749d06d
+      internalID: 2093655438
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_07
+      rect:
+        serializedVersion: 2
+        x: 2526
+        y: 751
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5d34b2a50da923443beea3c5961bc9d5
+      internalID: 1545099983
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Impact_08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 842
+        height: 751
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 94daf61f1f1314640b1f67b720a0ad29
+      internalID: -2090277258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 4c834853bcab8234a85ee297f9e0a67d
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Parry_Impact_00: 276073268
+      VFX_Anim_Parry_Impact_01: 836334463
+      VFX_Anim_Parry_Impact_02: -896386569
+      VFX_Anim_Parry_Impact_03: -531669320
+      VFX_Anim_Parry_Impact_04: -705814105
+      VFX_Anim_Parry_Impact_05: -1609934762
+      VFX_Anim_Parry_Impact_06: 2093655438
+      VFX_Anim_Parry_Impact_07: 1545099983
+      VFX_Anim_Parry_Impact_08: -2090277258
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

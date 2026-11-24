@@ -1,0 +1,357 @@
+fileFormatVersion: 2
+guid: a3dd1af4492b29e43af0dfee932894d6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5084257664154502083
+    second: VFX_Anim_Jump_Up_0
+  - first:
+      213: 2657955241785674679
+    second: VFX_Anim_Jump_Up_1
+  - first:
+      213: 483683159173905313
+    second: VFX_Anim_Jump_Up_2
+  - first:
+      213: -302037514927810773
+    second: VFX_Anim_Jump_Up_3
+  - first:
+      213: 715823011260930455
+    second: VFX_Anim_Jump_Up_4
+  - first:
+      213: 1984571716192824857
+    second: VFX_Anim_Jump_Up_5
+  - first:
+      213: 7570817874280539388
+    second: VFX_Anim_Jump_Up_6
+  - first:
+      213: -7425668227149131654
+    second: VFX_Anim_Jump_Up_7
+  - first:
+      213: -8612456299178333686
+    second: VFX_Anim_Jump_Up_8
+  - first:
+      213: -6834894865028730041
+    second: VFX_Anim_Jump_Up_9
+  - first:
+      213: 8468312209678344941
+    second: VFX_Anim_Jump_Up_10
+  - first:
+      213: 5138815723876401889
+    second: VFX_Anim_Jump_Up_11
+  - first:
+      213: -5459134745896723228
+    second: VFX_Anim_Jump_Up_12
+  - first:
+      213: 6803427714136991783
+    second: VFX_Anim_Jump_Up_13
+  - first:
+      213: -2017567235549722546
+    second: VFX_Anim_Jump_Up_14
+  - first:
+      213: -5138405955371534027
+    second: VFX_Anim_Jump_Up_15
+  - first:
+      213: -6869048877208898174
+    second: VFX_Anim_Jump_Up_16
+  - first:
+      213: -5496552562948842076
+    second: VFX_Anim_Jump_Up_17
+  - first:
+      213: -6524583936374350879
+    second: VFX_Anim_Jump_Up_18
+  - first:
+      213: 4954248030845859411
+    second: VFX_Anim_Jump_Up_19
+  - first:
+      213: -4090059197235654762
+    second: VFX_Anim_Jump_Up_20
+  - first:
+      213: 283165233406504490
+    second: VFX_Anim_Jump_Up_21
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 635.93
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f84d986a655b37946836de33c8cb07e7
+      internalID: 1149529767
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_01
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 534b5675945fdd549acccfc62eab1664
+      internalID: -2013830753
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_02
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bed78d230d58d32458828090b9e4e8da
+      internalID: -824929115
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_03
+      rect:
+        serializedVersion: 2
+        x: 1263
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6525102898229774792931efbf55c524
+      internalID: -2135699657
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_04
+      rect:
+        serializedVersion: 2
+        x: 1684
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 57eabfa14adebd547b9402c7ee0e357c
+      internalID: 1947566400
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_05
+      rect:
+        serializedVersion: 2
+        x: 2105
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3fa94f9cf39aa5749af3c381121e3cac
+      internalID: 2146357836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Jump_Up_06
+      rect:
+        serializedVersion: 2
+        x: 2526
+        y: 0
+        width: 421
+        height: 500
+      alignment: 9
+      pivot: {x: 0.5, y: 0.002}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c6381fcd2128bb246ba38dcde4acb306
+      internalID: -1144031250
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: c3967848da78b3843aaad0436b485afd
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Jump_Up_00: 1149529767
+      VFX_Anim_Jump_Up_01: -2013830753
+      VFX_Anim_Jump_Up_02: -824929115
+      VFX_Anim_Jump_Up_03: -2135699657
+      VFX_Anim_Jump_Up_04: 1947566400
+      VFX_Anim_Jump_Up_05: 2146357836
+      VFX_Anim_Jump_Up_06: -1144031250
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

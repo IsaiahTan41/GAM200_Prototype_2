@@ -320,7 +320,7 @@ namespace KungFuCrashout.EditorTools
                 if (!fv.Set)
                 {
                     var so = new SerializedObject(fv);
-                    so.FindProperty("set").objectReferenceValue = set;
+                    so.FindProperty("staticSet").objectReferenceValue = set;
                     so.ApplyModifiedProperties();
                 }
             }

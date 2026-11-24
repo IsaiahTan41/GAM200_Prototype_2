@@ -260,5 +260,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.ItemVfx
   heldGlow: {fileID: 11400000, guid: 0e1577bd89dfe1f42af2815a7273d071, type: 2}
   heldLight: 1
+  glowRimFraction: {x: 0.69, y: 0.62}
   breakBurst: {fileID: 11400000, guid: c29bb7287e8210c42b882a067a548d8e, type: 2}
   landDust: {fileID: 11400000, guid: 0934e9cf501b5e54692c99e408bf3fe9, type: 2}
+  animHoldStart: {fileID: 11400000, guid: 9b38c5965ad7a2744bbfbdf5548c3e29, type: 2}
+  animHoldIdle: {fileID: 11400000, guid: f3a667d9557b49c43af2889b1dfe6b51, type: 2}
+  animHoldAim: {fileID: 11400000, guid: 61c185fa158d22b43aba6f259afb4122, type: 2}
+  animThrowStart: {fileID: 11400000, guid: 20aed49a9cb535b4ca020e2b4c59b2e3, type: 2}
+  animThrowIdle: {fileID: 11400000, guid: f9c1629e004937842a1d49f0a52effbf, type: 2}
+  animHit: {fileID: 11400000, guid: 746d2541de57a894e97d6a3ad76f2e21, type: 2}
+  animatedAuraScale: 1.3
+  animatedRimFraction: 0.9

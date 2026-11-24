@@ -1,0 +1,368 @@
+fileFormatVersion: 2
+guid: cd047feeab7a12541a312dc1432e0a00
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5037965198692641900
+    second: VFX_Anim_Attack1_Impact_Slash_0
+  - first:
+      213: -4877973735772281942
+    second: VFX_Anim_Attack1_Impact_Slash_1
+  - first:
+      213: 5589848701262152647
+    second: VFX_Anim_Attack1_Impact_Slash_2
+  - first:
+      213: -1960612178388181601
+    second: VFX_Anim_Attack1_Impact_Slash_3
+  - first:
+      213: 8017764942826465164
+    second: VFX_Anim_Attack1_Impact_Slash_4
+  - first:
+      213: 6700861099833726542
+    second: VFX_Anim_Attack1_Impact_Slash_5
+  - first:
+      213: 1492366076920765781
+    second: VFX_Anim_Attack1_Impact_Slash_6
+  - first:
+      213: 7516958593225191262
+    second: VFX_Anim_Attack1_Impact_Slash_7
+  - first:
+      213: 7600924572494609941
+    second: VFX_Anim_Attack1_Impact_Slash_8
+  - first:
+      213: 5900517362136575598
+    second: VFX_Anim_Attack1_Impact_Slash_9
+  - first:
+      213: 7356155218888975547
+    second: VFX_Anim_Attack1_Impact_Slash_10
+  - first:
+      213: 3020104885750121109
+    second: VFX_Anim_Attack1_Impact_Slash_11
+  - first:
+      213: -498405568361430163
+    second: VFX_Anim_Attack1_Impact_Slash_12
+  - first:
+      213: -5209857666868648579
+    second: VFX_Anim_Attack1_Impact_Slash_13
+  - first:
+      213: -1296079344361803852
+    second: VFX_Anim_Attack1_Impact_Slash_14
+  - first:
+      213: 4260042318770252628
+    second: VFX_Anim_Attack1_Impact_Slash_15
+  - first:
+      213: -219028827566942203
+    second: VFX_Anim_Attack1_Impact_Slash_16
+  - first:
+      213: -1470404834217600572
+    second: VFX_Anim_Attack1_Impact_Slash_17
+  - first:
+      213: 774756904699875051
+    second: VFX_Anim_Attack1_Impact_Slash_18
+  - first:
+      213: -1593656628683797579
+    second: VFX_Anim_Attack1_Impact_Slash_19
+  - first:
+      213: 7100846844991984888
+    second: VFX_Anim_Attack1_Impact_Slash_20
+  - first:
+      213: -1494003580260310786
+    second: VFX_Anim_Attack1_Impact_Slash_21
+  - first:
+      213: 1185529910122747449
+    second: VFX_Anim_Attack1_Impact_Slash_22
+  - first:
+      213: -7899798882742691265
+    second: VFX_Anim_Attack1_Impact_Slash_23
+  - first:
+      213: 1965917637993022030
+    second: VFX_Anim_Attack1_Impact_Slash_24
+  - first:
+      213: -177474766494004899
+    second: VFX_Anim_Attack1_Impact_Slash_25
+  - first:
+      213: 5500831452208178740
+    second: VFX_Anim_Attack1_Impact_Slash_26
+  - first:
+      213: -196328514249420510
+    second: VFX_Anim_Attack1_Impact_Slash_27
+  - first:
+      213: 1583387104098583459
+    second: VFX_Anim_Attack1_Impact_Slash_28
+  - first:
+      213: 9016840421879898018
+    second: VFX_Anim_Attack1_Impact_Slash_29
+  - first:
+      213: -6957161513849630166
+    second: VFX_Anim_Attack1_Impact_Slash_30
+  - first:
+      213: 1401286915425430213
+    second: VFX_Anim_Attack1_Impact_Slash_31
+  - first:
+      213: 9019188458961730804
+    second: VFX_Anim_Attack1_Impact_Slash_32
+  - first:
+      213: 7329132931589555569
+    second: VFX_Anim_Attack1_Impact_Slash_33
+  - first:
+      213: -3615801815640076832
+    second: VFX_Anim_Attack1_Impact_Slash_34
+  - first:
+      213: -6197858471649322708
+    second: VFX_Anim_Attack1_Impact_Slash_35
+  - first:
+      213: 4627968207110783090
+    second: VFX_Anim_Attack1_Impact_Slash_36
+  - first:
+      213: -1457791117352541074
+    second: VFX_Anim_Attack1_Impact_Slash_37
+  - first:
+      213: 7303444236810041332
+    second: VFX_Anim_Attack1_Impact_Slash_38
+  - first:
+      213: -5187918022712837927
+    second: VFX_Anim_Attack1_Impact_Slash_39
+  - first:
+      213: 1187074240081106033
+    second: VFX_Anim_Attack1_Impact_Slash_40
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 355.3
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Slash_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 440
+        height: 238
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5ee27aa4d8276fc4d9fac2b48fd986da
+      internalID: 102739157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Slash_01
+      rect:
+        serializedVersion: 2
+        x: 440
+        y: 0
+        width: 440
+        height: 238
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 405cf1f0bfb91fc42812809201d33c43
+      internalID: -454436579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Slash_02
+      rect:
+        serializedVersion: 2
+        x: 880
+        y: 0
+        width: 440
+        height: 238
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5b99e2764389b844da78aac610c9bbe7
+      internalID: -1972303363
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Slash_03
+      rect:
+        serializedVersion: 2
+        x: 1320
+        y: 0
+        width: 440
+        height: 238
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 151e473307727624cb48d95e7961da3e
+      internalID: -362747738
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Slash_04
+      rect:
+        serializedVersion: 2
+        x: 1760
+        y: 0
+        width: 440
+        height: 238
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 217e6a8fbeeb1984f80e25aa68956a76
+      internalID: -2120760932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 3046953a96ada1646803063d363f22e9
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Attack1_Impact_Slash_00: 102739157
+      VFX_Anim_Attack1_Impact_Slash_01: -454436579
+      VFX_Anim_Attack1_Impact_Slash_02: -1972303363
+      VFX_Anim_Attack1_Impact_Slash_03: -362747738
+      VFX_Anim_Attack1_Impact_Slash_04: -2120760932
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

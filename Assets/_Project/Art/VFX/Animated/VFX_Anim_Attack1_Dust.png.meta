@@ -1,0 +1,460 @@
+fileFormatVersion: 2
+guid: 3428e9919752d2244acff0670d188682
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6305064002582363792
+    second: VFX_Anim_Attack1_Dust_0
+  - first:
+      213: -2375233624243566963
+    second: VFX_Anim_Attack1_Dust_1
+  - first:
+      213: -9020815403156414884
+    second: VFX_Anim_Attack1_Dust_2
+  - first:
+      213: 3009780280015174834
+    second: VFX_Anim_Attack1_Dust_3
+  - first:
+      213: 7623516744224777191
+    second: VFX_Anim_Attack1_Dust_4
+  - first:
+      213: -4368111572948134365
+    second: VFX_Anim_Attack1_Dust_5
+  - first:
+      213: 554504086763437050
+    second: VFX_Anim_Attack1_Dust_6
+  - first:
+      213: -8390293011939400846
+    second: VFX_Anim_Attack1_Dust_7
+  - first:
+      213: -8451651064261841004
+    second: VFX_Anim_Attack1_Dust_8
+  - first:
+      213: -1998843434531483937
+    second: VFX_Anim_Attack1_Dust_9
+  - first:
+      213: 5852710390678404439
+    second: VFX_Anim_Attack1_Dust_10
+  - first:
+      213: 7386291339217071126
+    second: VFX_Anim_Attack1_Dust_11
+  - first:
+      213: 6305189900858481040
+    second: VFX_Anim_Attack1_Dust_12
+  - first:
+      213: -5584877261448905500
+    second: VFX_Anim_Attack1_Dust_13
+  - first:
+      213: 21342561741578802
+    second: VFX_Anim_Attack1_Dust_14
+  - first:
+      213: -4704935818461622110
+    second: VFX_Anim_Attack1_Dust_15
+  - first:
+      213: -4501283278588656656
+    second: VFX_Anim_Attack1_Dust_16
+  - first:
+      213: 626136159269888203
+    second: VFX_Anim_Attack1_Dust_17
+  - first:
+      213: -6699164995363670673
+    second: VFX_Anim_Attack1_Dust_18
+  - first:
+      213: -6709237063830054981
+    second: VFX_Anim_Attack1_Dust_19
+  - first:
+      213: -8756606736448855379
+    second: VFX_Anim_Attack1_Dust_20
+  - first:
+      213: -1704745290388888229
+    second: VFX_Anim_Attack1_Dust_21
+  - first:
+      213: -8704540107883761675
+    second: VFX_Anim_Attack1_Dust_22
+  - first:
+      213: 1633061337989197393
+    second: VFX_Anim_Attack1_Dust_23
+  - first:
+      213: -4279893013497134937
+    second: VFX_Anim_Attack1_Dust_24
+  - first:
+      213: -543501739156949452
+    second: VFX_Anim_Attack1_Dust_25
+  - first:
+      213: 4406628855698595894
+    second: VFX_Anim_Attack1_Dust_26
+  - first:
+      213: -3029075018616883864
+    second: VFX_Anim_Attack1_Dust_27
+  - first:
+      213: -1629238115698347314
+    second: VFX_Anim_Attack1_Dust_28
+  - first:
+      213: 8455434184523472708
+    second: VFX_Anim_Attack1_Dust_29
+  - first:
+      213: 8265734122307419546
+    second: VFX_Anim_Attack1_Dust_30
+  - first:
+      213: 7774449007000196155
+    second: VFX_Anim_Attack1_Dust_31
+  - first:
+      213: -7247235965779097923
+    second: VFX_Anim_Attack1_Dust_32
+  - first:
+      213: 8527221342581799899
+    second: VFX_Anim_Attack1_Dust_33
+  - first:
+      213: -1429319683471663406
+    second: VFX_Anim_Attack1_Dust_34
+  - first:
+      213: -7023378314331898513
+    second: VFX_Anim_Attack1_Dust_35
+  - first:
+      213: -4841283966892076959
+    second: VFX_Anim_Attack1_Dust_36
+  - first:
+      213: 1306855005230502145
+    second: VFX_Anim_Attack1_Dust_37
+  - first:
+      213: 1278492614407155869
+    second: VFX_Anim_Attack1_Dust_38
+  - first:
+      213: -4911520613619695394
+    second: VFX_Anim_Attack1_Dust_39
+  - first:
+      213: 9158815923873812526
+    second: VFX_Anim_Attack1_Dust_40
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 355.3
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7852067ae298a414e8f156e96fe9b2c9
+      internalID: 668869765
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_01
+      rect:
+        serializedVersion: 2
+        x: 485
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0bfcc27df5a1c3d46a4ea96f2ea06a82
+      internalID: -2020238493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_02
+      rect:
+        serializedVersion: 2
+        x: 970
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f91fac66e14e989419346c14e227bb4d
+      internalID: -342796554
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_03
+      rect:
+        serializedVersion: 2
+        x: 1455
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 677e7bc0be075c848be59e6a7ce088e2
+      internalID: 381392978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_04
+      rect:
+        serializedVersion: 2
+        x: 1940
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c6c066cee13d053488a475d77fb207a1
+      internalID: 1166791229
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_05
+      rect:
+        serializedVersion: 2
+        x: 2425
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 808e5163bde4cf049841a4dcd7e2030e
+      internalID: 1870539771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_06
+      rect:
+        serializedVersion: 2
+        x: 2910
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a7052f9e351760747906b2c4593c0e1c
+      internalID: -209052121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_07
+      rect:
+        serializedVersion: 2
+        x: 3395
+        y: 178
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4eddf0e4aad92d44baac1ff1ce0c705f
+      internalID: -608381115
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Dust_08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 485
+        height: 178
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0112}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5068c69fdcabc6849a81ec63ffcdf689
+      internalID: -1980446770
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: f3230b74a5b08014f8c36d3bfd933a64
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Attack1_Dust_00: 668869765
+      VFX_Anim_Attack1_Dust_01: -2020238493
+      VFX_Anim_Attack1_Dust_02: -342796554
+      VFX_Anim_Attack1_Dust_03: 381392978
+      VFX_Anim_Attack1_Dust_04: 1166791229
+      VFX_Anim_Attack1_Dust_05: 1870539771
+      VFX_Anim_Attack1_Dust_06: -209052121
+      VFX_Anim_Attack1_Dust_07: -608381115
+      VFX_Anim_Attack1_Dust_08: -1980446770
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

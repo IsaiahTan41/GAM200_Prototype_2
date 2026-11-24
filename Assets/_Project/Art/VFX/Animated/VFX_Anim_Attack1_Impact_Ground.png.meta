@@ -1,0 +1,347 @@
+fileFormatVersion: 2
+guid: bd3cf2a2a27000e4cac1c54279abf1ee
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7163982462714486566
+    second: VFX_Anim_Attack1_Impact_Ground_0
+  - first:
+      213: 1518880439847446739
+    second: VFX_Anim_Attack1_Impact_Ground_1
+  - first:
+      213: -6299254642978550174
+    second: VFX_Anim_Attack1_Impact_Ground_2
+  - first:
+      213: -6812631643025022713
+    second: VFX_Anim_Attack1_Impact_Ground_3
+  - first:
+      213: -5550753007503888731
+    second: VFX_Anim_Attack1_Impact_Ground_4
+  - first:
+      213: 9204078997102784820
+    second: VFX_Anim_Attack1_Impact_Ground_5
+  - first:
+      213: 4190816754034789817
+    second: VFX_Anim_Attack1_Impact_Ground_6
+  - first:
+      213: 7231527300503416748
+    second: VFX_Anim_Attack1_Impact_Ground_7
+  - first:
+      213: -3299102722305139783
+    second: VFX_Anim_Attack1_Impact_Ground_8
+  - first:
+      213: -7093829338678236413
+    second: VFX_Anim_Attack1_Impact_Ground_9
+  - first:
+      213: -1328948153697802019
+    second: VFX_Anim_Attack1_Impact_Ground_10
+  - first:
+      213: -7613960348212469292
+    second: VFX_Anim_Attack1_Impact_Ground_11
+  - first:
+      213: -1773936071313274943
+    second: VFX_Anim_Attack1_Impact_Ground_12
+  - first:
+      213: 5471096031405716543
+    second: VFX_Anim_Attack1_Impact_Ground_13
+  - first:
+      213: 9045294476566527488
+    second: VFX_Anim_Attack1_Impact_Ground_14
+  - first:
+      213: 6823785063128612192
+    second: VFX_Anim_Attack1_Impact_Ground_15
+  - first:
+      213: 3599398618561219835
+    second: VFX_Anim_Attack1_Impact_Ground_16
+  - first:
+      213: 1923218685151991634
+    second: VFX_Anim_Attack1_Impact_Ground_17
+  - first:
+      213: 9184905035244392715
+    second: VFX_Anim_Attack1_Impact_Ground_18
+  - first:
+      213: -1425290317058574722
+    second: VFX_Anim_Attack1_Impact_Ground_19
+  - first:
+      213: -8173042519147036772
+    second: VFX_Anim_Attack1_Impact_Ground_20
+  - first:
+      213: 670115075065394978
+    second: VFX_Anim_Attack1_Impact_Ground_21
+  - first:
+      213: 4114263328724300040
+    second: VFX_Anim_Attack1_Impact_Ground_22
+  - first:
+      213: -1894408375548961635
+    second: VFX_Anim_Attack1_Impact_Ground_23
+  - first:
+      213: -7865557056946149911
+    second: VFX_Anim_Attack1_Impact_Ground_24
+  - first:
+      213: -2591261038937036545
+    second: VFX_Anim_Attack1_Impact_Ground_25
+  - first:
+      213: -8448912569246973013
+    second: VFX_Anim_Attack1_Impact_Ground_26
+  - first:
+      213: 6218101901734676830
+    second: VFX_Anim_Attack1_Impact_Ground_27
+  - first:
+      213: 8126392982439195586
+    second: VFX_Anim_Attack1_Impact_Ground_28
+  - first:
+      213: -5420461481716323147
+    second: VFX_Anim_Attack1_Impact_Ground_29
+  - first:
+      213: 1793803478813231005
+    second: VFX_Anim_Attack1_Impact_Ground_30
+  - first:
+      213: -3644091682462306969
+    second: VFX_Anim_Attack1_Impact_Ground_31
+  - first:
+      213: 7097300186615870899
+    second: VFX_Anim_Attack1_Impact_Ground_32
+  - first:
+      213: 4742776270527048314
+    second: VFX_Anim_Attack1_Impact_Ground_33
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 355.3
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Ground_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 483
+        height: 69
+      alignment: 9
+      pivot: {x: 0.5, y: 0.029}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 089b335f98dbf1e41ad3b2a19abebcf6
+      internalID: -976925715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Ground_01
+      rect:
+        serializedVersion: 2
+        x: 483
+        y: 0
+        width: 483
+        height: 69
+      alignment: 9
+      pivot: {x: 0.5, y: 0.029}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 731b0fc80efee2641af0890f9b8129e4
+      internalID: -1402585713
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Ground_02
+      rect:
+        serializedVersion: 2
+        x: 966
+        y: 0
+        width: 483
+        height: 69
+      alignment: 9
+      pivot: {x: 0.5, y: 0.029}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8f3b66f6439fe27429b50766534d2817
+      internalID: 547279459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Ground_03
+      rect:
+        serializedVersion: 2
+        x: 1449
+        y: 0
+        width: 483
+        height: 69
+      alignment: 9
+      pivot: {x: 0.5, y: 0.029}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a06196e214bd1ab4389784617d2577d6
+      internalID: -1732714429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Attack1_Impact_Ground_04
+      rect:
+        serializedVersion: 2
+        x: 1932
+        y: 0
+        width: 483
+        height: 69
+      alignment: 9
+      pivot: {x: 0.5, y: 0.029}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 49210aa4f74f8fa4fb0b6e2c7c7b1dc6
+      internalID: 976444743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 2db40e23b80a3994599464e5b1e8b6a2
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Attack1_Impact_Ground_00: -976925715
+      VFX_Anim_Attack1_Impact_Ground_01: -1402585713
+      VFX_Anim_Attack1_Impact_Ground_02: 547279459
+      VFX_Anim_Attack1_Impact_Ground_03: -1732714429
+      VFX_Anim_Attack1_Impact_Ground_04: 976444743
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

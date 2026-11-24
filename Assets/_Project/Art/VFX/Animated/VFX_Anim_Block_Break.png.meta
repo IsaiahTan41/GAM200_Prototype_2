@@ -1,0 +1,299 @@
+fileFormatVersion: 2
+guid: 35602f9edd3184944a9dbaacb095e3dd
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1248939797969331331
+    second: VFX_Anim_Block_Break_0
+  - first:
+      213: -8491983278849439838
+    second: VFX_Anim_Block_Break_1
+  - first:
+      213: -446553238199494851
+    second: VFX_Anim_Block_Break_2
+  - first:
+      213: -5508565251005931338
+    second: VFX_Anim_Block_Break_3
+  - first:
+      213: 649234127716868596
+    second: VFX_Anim_Block_Break_4
+  - first:
+      213: -4734426427096361286
+    second: VFX_Anim_Block_Break_5
+  - first:
+      213: 8554025801789661524
+    second: VFX_Anim_Block_Break_6
+  - first:
+      213: 984559964194656015
+    second: VFX_Anim_Block_Break_7
+  - first:
+      213: 3681686385088341176
+    second: VFX_Anim_Block_Break_8
+  - first:
+      213: 632105556400210187
+    second: VFX_Anim_Block_Break_9
+  - first:
+      213: -1811593758313886120
+    second: VFX_Anim_Block_Break_10
+  - first:
+      213: -6217608431678288597
+    second: VFX_Anim_Block_Break_11
+  - first:
+      213: 6078888526037905389
+    second: VFX_Anim_Block_Break_12
+  - first:
+      213: -7658662474405186842
+    second: VFX_Anim_Block_Break_13
+  - first:
+      213: -8979494311932646699
+    second: VFX_Anim_Block_Break_14
+  - first:
+      213: 4415837523511155746
+    second: VFX_Anim_Block_Break_15
+  - first:
+      213: 2943379637854092811
+    second: VFX_Anim_Block_Break_16
+  - first:
+      213: 4068623164742479564
+    second: VFX_Anim_Block_Break_17
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 237.78
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Block_Break_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 658
+        width: 964
+        height: 658
+      alignment: 9
+      pivot: {x: 0.5, y: 0.003}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dac14d3f52b26c1449fee8391b86e543
+      internalID: -1127314311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Block_Break_01
+      rect:
+        serializedVersion: 2
+        x: 964
+        y: 658
+        width: 964
+        height: 658
+      alignment: 9
+      pivot: {x: 0.5, y: 0.003}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: be56c32c971647b4bb1281c3168c364f
+      internalID: -1048970624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Block_Break_02
+      rect:
+        serializedVersion: 2
+        x: 1928
+        y: 658
+        width: 964
+        height: 658
+      alignment: 9
+      pivot: {x: 0.5, y: 0.003}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b91b9c528072cc4bb639c33137cc7f1
+      internalID: -1171447801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Block_Break_03
+      rect:
+        serializedVersion: 2
+        x: 2892
+        y: 658
+        width: 964
+        height: 658
+      alignment: 9
+      pivot: {x: 0.5, y: 0.003}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b6694e3b72f07745adb6762386774f0
+      internalID: 417790802
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Block_Break_04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 964
+        height: 658
+      alignment: 9
+      pivot: {x: 0.5, y: 0.003}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c7bbb7db2c1fcba40b1ba2e5383bc249
+      internalID: -729881267
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 6c7c6dc7ca2a50340b5f735f792bb5fd
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Block_Break_00: -1127314311
+      VFX_Anim_Block_Break_01: -1048970624
+      VFX_Anim_Block_Break_02: -1171447801
+      VFX_Anim_Block_Break_03: 417790802
+      VFX_Anim_Block_Break_04: -729881267
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

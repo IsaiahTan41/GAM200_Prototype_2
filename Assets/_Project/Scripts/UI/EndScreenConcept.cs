@@ -6,6 +6,7 @@ using UnityEngine.Rendering;
 using UnityEngine.UI;
 using KungFuCrashout.Core;
 using KungFuCrashout.Fighters;
+using KungFuCrashout.Sound;
 
 namespace KungFuCrashout.UI
 {
@@ -38,6 +39,12 @@ namespace KungFuCrashout.UI
         [SerializeField] RectTransform content;
 
         [Header("Art")]
+        [Header("Announcer (Audio → Set Up Win / Lose Announcer)")]
+        [Tooltip("Played as the VICTORY screen appears (the player won): Player 1 Wins.")]
+        [SerializeField] SfxCue victoryVoice;
+        [Tooltip("Played as the DEFEAT screen appears (the player lost): Player 2 Wins. A draw plays neither.")]
+        [SerializeField] SfxCue defeatVoice;
+
         [SerializeField] Sprite victoryBackground;
         [SerializeField] Sprite defeatBackground;
         [SerializeField] Image banner;
@@ -172,6 +179,10 @@ namespace KungFuCrashout.UI
                 }
             }
             if (drawText) drawText.gameObject.SetActive(!won && !lost);
+
+            // Announcer: "Player 1 wins" on the victory screen, "Player 2 wins" on the defeat screen.
+            if (won && victoryVoice) AudioManager.Play(victoryVoice);
+            else if (lost && defeatVoice) AudioManager.Play(defeatVoice);
 
             SetName(playerName, player, won ? winnerColour : lost ? loserColour : drawColour);
             SetName(opponentName, opponent, lost ? winnerColour : won ? loserColour : drawColour);

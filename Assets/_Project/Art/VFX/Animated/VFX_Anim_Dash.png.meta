@@ -1,0 +1,401 @@
+fileFormatVersion: 2
+guid: 68aab8199022c3d4c910cc2f91d82021
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 9008343480125661867
+    second: VFX_Anim_Dash_0
+  - first:
+      213: -5534868716762585658
+    second: VFX_Anim_Dash_1
+  - first:
+      213: -1844779481487182138
+    second: VFX_Anim_Dash_2
+  - first:
+      213: -3574460546010778115
+    second: VFX_Anim_Dash_3
+  - first:
+      213: 6123909822161900015
+    second: VFX_Anim_Dash_4
+  - first:
+      213: 595562494968734574
+    second: VFX_Anim_Dash_5
+  - first:
+      213: -6840506963388517203
+    second: VFX_Anim_Dash_6
+  - first:
+      213: 3392631072410731196
+    second: VFX_Anim_Dash_7
+  - first:
+      213: 8035494637307396486
+    second: VFX_Anim_Dash_8
+  - first:
+      213: 3264616993652113395
+    second: VFX_Anim_Dash_9
+  - first:
+      213: -2926578289599451210
+    second: VFX_Anim_Dash_10
+  - first:
+      213: 4474965405325566740
+    second: VFX_Anim_Dash_11
+  - first:
+      213: -160981053183593336
+    second: VFX_Anim_Dash_12
+  - first:
+      213: -1371355663169066074
+    second: VFX_Anim_Dash_13
+  - first:
+      213: 255657924599741391
+    second: VFX_Anim_Dash_14
+  - first:
+      213: -1802436621599340749
+    second: VFX_Anim_Dash_15
+  - first:
+      213: 8929091144509058372
+    second: VFX_Anim_Dash_16
+  - first:
+      213: -6535274938197334968
+    second: VFX_Anim_Dash_17
+  - first:
+      213: -250713811452292031
+    second: VFX_Anim_Dash_18
+  - first:
+      213: 8987743110780750269
+    second: VFX_Anim_Dash_19
+  - first:
+      213: -5681319643905105283
+    second: VFX_Anim_Dash_20
+  - first:
+      213: -4430747122033600864
+    second: VFX_Anim_Dash_21
+  - first:
+      213: -2271091831641621461
+    second: VFX_Anim_Dash_22
+  - first:
+      213: -8163025691578187106
+    second: VFX_Anim_Dash_23
+  - first:
+      213: -7723033966594017975
+    second: VFX_Anim_Dash_24
+  - first:
+      213: -7226595007946463924
+    second: VFX_Anim_Dash_25
+  - first:
+      213: -3676066493983995386
+    second: VFX_Anim_Dash_26
+  - first:
+      213: 3907353436473059850
+    second: VFX_Anim_Dash_27
+  - first:
+      213: -1517955598024174603
+    second: VFX_Anim_Dash_28
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 492.86
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ac314becdb241e14ea6e9b4cbdeb3343
+      internalID: -500313246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_01
+      rect:
+        serializedVersion: 2
+        x: 494
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a9e25602776a66849bd3bfcff88c0261
+      internalID: 365835511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_02
+      rect:
+        serializedVersion: 2
+        x: 988
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3238b3994f2f3fd418ec0bec4e467a29
+      internalID: 800851194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_03
+      rect:
+        serializedVersion: 2
+        x: 1482
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e959981686095aa47a977d160488a261
+      internalID: 2072035517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_04
+      rect:
+        serializedVersion: 2
+        x: 1976
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 98021b9c10739f04fa53799c7ecd88bf
+      internalID: -400290904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_05
+      rect:
+        serializedVersion: 2
+        x: 2470
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d8520e20f0c86894fbf044afd606eb95
+      internalID: 1312148336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_06
+      rect:
+        serializedVersion: 2
+        x: 2964
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c6604ec000a496b43a5d5423fc37fbcf
+      internalID: 978195308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Dash_07
+      rect:
+        serializedVersion: 2
+        x: 3458
+        y: 0
+        width: 494
+        height: 222
+      alignment: 9
+      pivot: {x: 0.5, y: 0.009}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b4222a37f65fd3244adf23e175662941
+      internalID: 1683663203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 97457d21ed2ccf5479e77a5055070ea8
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Dash_00: -500313246
+      VFX_Anim_Dash_01: 365835511
+      VFX_Anim_Dash_02: 800851194
+      VFX_Anim_Dash_03: 2072035517
+      VFX_Anim_Dash_04: -400290904
+      VFX_Anim_Dash_05: 1312148336
+      VFX_Anim_Dash_06: 978195308
+      VFX_Anim_Dash_07: 1683663203
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

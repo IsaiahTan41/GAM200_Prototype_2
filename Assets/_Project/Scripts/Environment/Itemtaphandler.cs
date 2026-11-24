@@ -102,6 +102,9 @@ namespace KungFuCrashout.Props
         /// <summary>The throw key, so KeyboardDebugInput can stop moving while it's held (aiming).</summary>
         public Key ThrowKey => throwKey;
 
+        /// <summary>A finger is resting on the carried item (claimed for a throw swipe / tap-to-drop): the aim effect shows.</summary>
+        public bool FingerOnHeldItem => holder && holder.Held && onCarriedItem.Count > 0;
+
         /// <summary>Held glow mode (see the Inspector tooltip). Settable at runtime for A/B testing.</summary>
         public bool HeldGlowShowsThrowArea { get => heldGlowShowsThrowArea; set => heldGlowShowsThrowArea = value; }
 

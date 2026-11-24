@@ -56,10 +56,18 @@ namespace KungFuCrashout.Feedback
         public VfxCue heavyHit;
         [Tooltip("The round-ending hit (played on top of the hit). Empty = none.")]
         public VfxCue ko;
+        [Tooltip("Animated sets: clean hit on a GROUNDED target, at the target's feet (Impact Ground). Empty = none.")]
+        public VfxCue hitGround;
+        [Tooltip("Animated sets: clean hit on an AIRBORNE target, at the contact point (Impact Slash). Empty = none.")]
+        public VfxCue hitAir;
+        [Tooltip("Animated sets: the down special's hit, along the ground at the target's feet (Impact Slash). Empty = Hit Ground.")]
+        public VfxCue downSpecialHit;
 
         [Header("Defending (played by the defender)")]
-        [Tooltip("Blocked a hit (blue lotus at the feet).")]
+        [Tooltip("Blocked a hit (blue lotus at the feet). Animated: the looping Block Idle.")]
         public VfxCue block;
+        [Tooltip("Animated sets: the lotus forming when block starts, then Block loops. Empty = straight to Block.")]
+        public VfxCue blockStart;
         [Tooltip("Parried a hit (yellow lotus at the feet).")]
         public VfxCue parry;
         [Tooltip("Parried a hit: the burst at the contact point, on top of Parry.")]

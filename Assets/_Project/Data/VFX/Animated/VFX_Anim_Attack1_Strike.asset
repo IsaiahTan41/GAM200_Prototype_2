@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15f6afe0f751df2439656cab081bb059, type: 3}
+  m_Name: VFX_Anim_Attack1_Strike
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Feedback.VfxCue
+  sprite: {fileID: 378877142, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  frames:
+  - {fileID: 378877142, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: 1861628063, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: -1996703467, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: 222926528, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: 786958064, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: 474072327, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: 1316463777, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: -988018262, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  - {fileID: -1858866451, guid: ca57f22fa39c4ed43af17a7de3b6e0c1, type: 3}
+  fps: 30
+  loop: 0
+  next: {fileID: 0}
+  startDelayFrames: 0
+  popAndFade: 0
+  followOwner: 1
+  contentSize: {x: 1.386, y: 1.186}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  alpha: 1
+  offset: {x: 0, y: 0}
+  flipWithFacing: 1
+  paintedFacingLeft: 0
+  rotation: 0
+  randomRotation: 0
+  sortingOffset: 5
+  scale: 1
+  startScale: 0.7
+  peakScale: 1.1
+  endScale: 1
+  popTime: 0.05
+  lifetime: 0.3
+  fadeStart: 0.4
+  drift: {x: 0, y: 0}
+  light: 1
+  lightColour: {r: 1, g: 0.95, b: 0.72, a: 1}
+  lightIntensity: 1.2
+  lightRadius: 1.5
+  lightAngle: 360
+  lightDirection: 0
+  lightTime: 0.1
+  lightOffset: {x: 0, y: 0}
+  pulseSpeed: 2.5
+  pulseAmount: 0.08

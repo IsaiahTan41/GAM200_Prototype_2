@@ -2247,6 +2247,16 @@ namespace KungFuCrashout.Fighters
 
         // ───────────── Dash / block ─────────────
 
+        /// <summary>Stop a dash where it is (the CPU holding still for a round call / slow motion). Jumps, knockback and
+        /// attacks carry on.</summary>
+        public void HaltDash()
+        {
+            pendingMove = MoveKind.None;
+            if (State != FighterState.Dashing) return;
+            nextDashTime = Time.time + dashCooldown;
+            SetState(FighterState.Idle);
+        }
+
         void UpdateDash(float dt)
         {
             dashElapsed += dt;

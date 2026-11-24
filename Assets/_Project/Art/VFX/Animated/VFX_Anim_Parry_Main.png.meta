@@ -1,0 +1,290 @@
+fileFormatVersion: 2
+guid: 1611dae12fd5798419d6bcbf976d778a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5081009349313172840
+    second: VFX_Anim_Parry_Main_0
+  - first:
+      213: -4177015846140143629
+    second: VFX_Anim_Parry_Main_1
+  - first:
+      213: -9054753973980919068
+    second: VFX_Anim_Parry_Main_2
+  - first:
+      213: -7115831956662977092
+    second: VFX_Anim_Parry_Main_3
+  - first:
+      213: -3365027357021559496
+    second: VFX_Anim_Parry_Main_4
+  - first:
+      213: 5514247508624006060
+    second: VFX_Anim_Parry_Main_5
+  - first:
+      213: -5293684231025693908
+    second: VFX_Anim_Parry_Main_6
+  - first:
+      213: 9087991611041149075
+    second: VFX_Anim_Parry_Main_7
+  - first:
+      213: 4850162831974084894
+    second: VFX_Anim_Parry_Main_8
+  - first:
+      213: 6829128540033696416
+    second: VFX_Anim_Parry_Main_9
+  - first:
+      213: -699310711854095461
+    second: VFX_Anim_Parry_Main_10
+  - first:
+      213: 438571966057743529
+    second: VFX_Anim_Parry_Main_11
+  - first:
+      213: -1561269502179164379
+    second: VFX_Anim_Parry_Main_12
+  - first:
+      213: -7396659556135807081
+    second: VFX_Anim_Parry_Main_13
+  - first:
+      213: -8979258167849335559
+    second: VFX_Anim_Parry_Main_14
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 422.24
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Main_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 801
+        height: 762
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0026}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2ed9e3a51c8769c428f740cbabcf26da
+      internalID: 300743779
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Main_01
+      rect:
+        serializedVersion: 2
+        x: 801
+        y: 0
+        width: 801
+        height: 762
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0026}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c7011f0b0ab34784faa30846aafef6f0
+      internalID: -761659107
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Main_02
+      rect:
+        serializedVersion: 2
+        x: 1602
+        y: 0
+        width: 801
+        height: 762
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0026}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 685034d2f2f3f534fbc587019908569b
+      internalID: -652409165
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Main_03
+      rect:
+        serializedVersion: 2
+        x: 2403
+        y: 0
+        width: 801
+        height: 762
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0026}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c2f6957645c0f34f84503175ee84a80
+      internalID: 1465506785
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_Anim_Parry_Main_04
+      rect:
+        serializedVersion: 2
+        x: 3204
+        y: 0
+        width: 801
+        height: 762
+      alignment: 9
+      pivot: {x: 0.5, y: 0.0026}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4e7348cd1c14bde43bdf5c7b8b29c030
+      internalID: 1863501378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: be150537658d46a4c9ab443b51e970d5
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      VFX_Anim_Parry_Main_00: 300743779
+      VFX_Anim_Parry_Main_01: -761659107
+      VFX_Anim_Parry_Main_02: -652409165
+      VFX_Anim_Parry_Main_03: 1465506785
+      VFX_Anim_Parry_Main_04: 1863501378
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

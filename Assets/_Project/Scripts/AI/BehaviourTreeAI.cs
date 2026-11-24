@@ -135,6 +135,16 @@ namespace KungFuCrashout.AI
         [Tooltip("Seconds before impact to press block for a catch (the thrown-item parry window is ~0.2 s).")]
         [SerializeField, Range(0.02f, 0.2f)] float catchLead = 0.09f;
 
+        [Header("Holding still (playtest fix)")]
+        [Tooltip("The CPU stands completely still while the round isn't live: the ROUND / FIGHT call at the start of a " +
+                 "round, the KO slow motion and the round-over / match-over beat. Its walk target, planned follow-ups and " +
+                 "held block are dropped and a dash in progress stops where it is. Off = only its commands are locked (old).")]
+        [SerializeField] bool freezeOutsideFighting = true;
+        [Tooltip("Also hold still during gameplay slow motion (e.g. a heavy item hit: Time Scale between 0 and 1): no " +
+                 "thinking, walking or dashing until it ends (a dash in progress stops). Its block and planned follow-ups " +
+                 "are kept, so it resumes where it was. Off = the CPU keeps acting in slow motion (old).")]
+        [SerializeField] bool freezeDuringSlowMotion = true;
+
         [Header("Debug")]
         [Tooltip("Shows the current behaviour-tree branch above the AI (on the phone too).")]
         [SerializeField] bool showDebugLabel = false;
@@ -242,9 +252,53 @@ namespace KungFuCrashout.AI
             _ => normal
         };
 
+        MatchManager match;
+        bool heldStill, heldForSlowMo;
+
+        /// <summary>
+        /// Playtest fix: the CPU kept moving during the round call and the KO slow motion (a dash / walk already under way
+        /// carried on while its commands were locked). Outside a live round it now stops dead; in gameplay slow motion it
+        /// pauses its thinking and movement.
+        /// </summary>
+        bool HoldStill()
+        {
+            if (!match) match = FindAnyObjectByType<MatchManager>();
+            bool notLive = self.ControlsLocked || (match && match.Phase != MatchPhase.Fighting);
+            if (freezeOutsideFighting && notLive)
+            {
+                if (!heldStill)
+                {
+                    heldStill = true;
+                    ClearPlans();
+                    CancelGoal();
+                    ReleaseBlock();
+                    self.HaltDash();
+                    Log("hold still (round not live)");
+                }
+                return true;
+            }
+            heldStill = false;
+
+            bool slowMo = freezeDuringSlowMotion && Time.timeScale > 0f && Time.timeScale < 0.999f;
+            if (slowMo)
+            {
+                if (!heldForSlowMo)
+                {
+                    heldForSlowMo = true;
+                    CancelGoal();
+                    self.HaltDash();
+                    Log("hold still (slow motion)");
+                }
+                return true;
+            }
+            heldForSlowMo = false;
+            return false;
+        }
+
         void Update()
         {
             if (!self.Opponent || MatchManager.Paused) return; // pause menu open: the CPU doesn't think or act
+            if (HoldStill()) return;
             ScanItems();
             RunPlanned();
             UpdateGuard();

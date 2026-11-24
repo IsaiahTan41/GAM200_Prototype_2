@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using KungFuCrashout.Fighters;
 
 namespace KungFuCrashout.Feedback
@@ -17,8 +18,17 @@ namespace KungFuCrashout.Feedback
     [RequireComponent(typeof(Fighter))]
     public class FighterVfx : MonoBehaviour
     {
-        [Tooltip("This character's effects, e.g. VfxSet_Monk.")]
-        [SerializeField] VfxSet set;
+        [Tooltip("This character's effects, e.g. VfxSet_Monk (the original single-frame effects).")]
+        [FormerlySerializedAs("set")]
+        [SerializeField] VfxSet staticSet;
+        [Tooltip("The animated (sprite sheet) effects, e.g. VfxSet_Monk_Animated. Used while VfxPlayer → Use Animated VFX " +
+                 "is on; empty = always the set above.")]
+        [SerializeField] VfxSet animatedSet;
+        [Tooltip("Animated lotus: tint while the parry window is open (the animated set has no separate parry lotus).")]
+        [SerializeField] Color parryWindowTint = new Color(1f, 0.85f, 0.45f, 1f);
+
+        /// <summary>The set in use now: the animated one while VfxPlayer → Use Animated VFX is on.</summary>
+        VfxSet set => VfxPlayer.AnimatedVfxOn && animatedSet ? animatedSet : staticSet;
 
         [Header("Which effects play")]
         [SerializeField] bool attacks = true;
@@ -72,7 +82,10 @@ namespace KungFuCrashout.Feedback
         Transform visual;
         SpriteRenderer art;
 
-        public VfxSet Set { get => set; set => set = value; }
+        public VfxSet Set { get => staticSet; set => staticSet = value; }
+        public VfxSet AnimatedSet { get => animatedSet; set => animatedSet = value; }
+        /// <summary>Where this fighter's feet effects go (other fighters' impacts land here).</summary>
+        public Vector3 FeetPoint => Feet;
 
         float groundDrop;       // how far the feet are below the Fighter object (the Visual child's offset)
         bool groundMeasured;
@@ -137,6 +150,7 @@ namespace KungFuCrashout.Feedback
         UnityEngine.Rendering.Universal.Light2D lotusLight;
         float lotusShownAt = -1f, lotusAlpha, punchStart = -10f, punchAmount = 1f, parryUntil = -1f;
         VfxCue lotusCue;
+        float lotusAge;
 
         void Start()
         {
@@ -160,14 +174,17 @@ namespace KungFuCrashout.Feedback
             bool parryLook = Time.unscaledTime < parryUntil || (fighter.State == FighterState.Blocking && fighter.IsParryActive);
             bool blocking = fighter.State == FighterState.Blocking && blocks;
             bool show = (blocking || Time.unscaledTime < parryUntil) && (parryLook ? parries : blocks);
-            VfxCue cue = parryLook ? (set.parry ? set.parry : set.block) : set.block;
-            if (!cue || !cue.sprite) { HideLotusNow(); return; }
+            // Animated lotus: Block Start forms it, then Block (Idle) loops; the parry window tints it.
+            bool animLotus = set.block && set.block.IsAnimated;
+            VfxCue cue = animLotus ? set.block : parryLook ? (set.parry ? set.parry : set.block) : set.block;
+            if (!cue || !cue.HasArt) { HideLotusNow(); return; }
 
             float dt = Time.unscaledDeltaTime;
             if (show)
             {
                 if (!lotus) MakeLotus();
-                if (lotusShownAt < 0f) lotusShownAt = Time.unscaledTime;
+                if (lotusShownAt < 0f) { lotusShownAt = Time.unscaledTime; lotusAge = 0f; }
+                else lotusAge += Time.deltaTime; // scaled: freezes in hitstop like the fighters
                 lotusAlpha = 1f;
             }
             else
@@ -177,13 +194,20 @@ namespace KungFuCrashout.Feedback
                 if (!lotus || lotusAlpha <= 0f) { HideLotusNow(); return; }
             }
 
-            if (cue != lotusCue) { lotusCue = cue; lotus.sprite = cue.sprite; }
+            if (animLotus)
+            {
+                var start = set.blockStart && set.blockStart.IsAnimated ? set.blockStart : null;
+                float startLen = start ? start.Duration : 0f;
+                lotus.sprite = start && lotusAge < startLen ? start.FrameAt(lotusAge) : cue.FrameAt(lotusAge - startLen);
+                lotusCue = null; // the single-frame look re-applies its sprite if the toggle is switched off
+            }
+            else if (cue != lotusCue) { lotusCue = cue; lotus.sprite = cue.sprite; }
 
             FindVisual();
             float size = (visual ? Mathf.Abs(visual.lossyScale.y) : 1f) * sizeMultiplier * cue.scale;
             float age = lotusShownAt < 0f ? cue.popTime : Time.unscaledTime - lotusShownAt;
-            float pop = age < cue.popTime ? Mathf.Lerp(cue.startScale, cue.peakScale, age / cue.popTime) : 1f;
-            float breathe = 1f + Mathf.Sin(Time.unscaledTime * cue.pulseSpeed * Mathf.PI * 2f) * cue.pulseAmount * 0.5f;
+            float pop = animLotus ? 1f : age < cue.popTime ? Mathf.Lerp(cue.startScale, cue.peakScale, age / cue.popTime) : 1f;
+            float breathe = animLotus ? 1f : 1f + Mathf.Sin(Time.unscaledTime * cue.pulseSpeed * Mathf.PI * 2f) * cue.pulseAmount * 0.5f;
             float pt = Mathf.Clamp01((Time.unscaledTime - punchStart) / punchTime);
             float punch = Mathf.Lerp(punchAmount, 1f, 1f - (1f - pt) * (1f - pt));
 
@@ -197,6 +221,7 @@ namespace KungFuCrashout.Feedback
 
             float bright = fighter.InBlockstun ? blockstunBrightness : 1f;
             Color c = cue.tint * bright;
+            if (animLotus && parryLook) c *= parryWindowTint;
             c.a = cue.tint.a * cue.alpha * lotusAlpha;
             lotus.color = c;
             lotus.gameObject.SetActive(true);
@@ -263,7 +288,7 @@ namespace KungFuCrashout.Feedback
 
             if (vfx.strike)
             {
-                Play(vfx.strike, StrikePoint, fighter.Facing, s);
+                Play(vfx.strike, StrikePoint, fighter.Facing, s, transform);
             }
             if (vfx.dust) Play(vfx.dust, Feet, fighter.Facing, s);
         }
@@ -274,9 +299,19 @@ namespace KungFuCrashout.Feedback
         {
             if (!set || !hits || result != HitResult.Hit || !target) return;
             bool big = attack && (attack.weight == HitWeight.Heavy || attack is ThrowableData || fighter.IsDoingSpecial);
-            var cue = big && set.heavyHit ? set.heavyHit : set.hit;
             int push = target.X >= fighter.X ? 1 : -1;
-            Play(cue, ContactPoint(target, attack) + Offset(hitOffset, push), push);
+            Vector3 contact = ContactPoint(target, attack) + Offset(hitOffset, push);
+
+            // Animated impacts: a ring at the target's feet (grounded), a slash at the contact point (airborne),
+            // and the slash along the ground for the down special.
+            bool downSpecial = attack && fighter.IsDoingSpecial && attack == fighter.SpecialFor(SpecialMove.Down);
+            var ground = FeetOf(target);
+            if (downSpecial && (set.downSpecialHit || set.hitGround)) Play(set.downSpecialHit ? set.downSpecialHit : set.hitGround, ground, push);
+            else if (target.IsAirborne && set.hitAir) Play(set.hitAir, contact, push);
+            else if (!target.IsAirborne && set.hitGround) Play(set.hitGround, ground, push);
+
+            var cue = big && set.heavyHit ? set.heavyHit : set.hit;
+            if (cue) Play(cue, contact, push);
         }
 
         // ───────────── Defending (this fighter is the defender) ─────────────
@@ -300,7 +335,8 @@ namespace KungFuCrashout.Feedback
             {
                 punchAmount = parryPunch; punchStart = Time.unscaledTime;
                 parryUntil = Time.unscaledTime + parryHold;
-                FlashAtFeet(set.parry);
+                if (set.parry && set.parry.IsAnimated) Play(set.parry, Feet, fighter.Facing); // the animated parry burst
+                else FlashAtFeet(set.parry);
             }
             else Play(set.parry, Feet, fighter.Facing);
             if (set.parryImpact)
@@ -314,6 +350,7 @@ namespace KungFuCrashout.Feedback
         void OnGuardBroken()
         {
             if (!set || !blocks || !set.guardBreak) return;
+            if (set.guardBreak.IsAnimated) HideLotusNow(); // the lotus breaks apart instead of fading
             Play(set.guardBreak, Feet, fighter.Facing);
         }
 
@@ -363,7 +400,8 @@ namespace KungFuCrashout.Feedback
 
         // ───────────── Preview & anchors (FighterVfxEditor) ─────────────
 
-        public enum Preview { Strike1, Strike2, HeavyStrike, Hit, HeavyHit, Block, Parry, Dash, Jump, Land, Knockdown, KO }
+        public enum Preview { Strike1, Strike2, HeavyStrike, Hit, HeavyHit, Block, Parry, Dash, Jump, Land, Knockdown, KO,
+                              ImpactGround, ImpactAir, DownSpecialImpact, BlockForm, GuardBreak }
 
         /// <summary>Plays one effect where it would appear now (Play mode). Used by the Inspector's preview buttons.</summary>
         public void PlayPreview(Preview what)
@@ -386,13 +424,54 @@ namespace KungFuCrashout.Feedback
                 case Preview.Land: Play(set.land, Feet, f); break;
                 case Preview.Knockdown: Play(set.knockdown ? set.knockdown : set.land, Feet, f); break;
                 case Preview.KO: Play(set.ko, Body + Offset(bodyOffset, -f), -f); break;
+                case Preview.ImpactGround: Play(set.hitGround, new Vector3(hitAt.x, Feet.y, Feet.z), f); break;
+                case Preview.ImpactAir: Play(set.hitAir, hitAt, f); break;
+                case Preview.DownSpecialImpact: Play(set.downSpecialHit ? set.downSpecialHit : set.hitGround, new Vector3(hitAt.x, Feet.y, Feet.z), f); break;
+                case Preview.BlockForm: Play(set.blockStart ? set.blockStart : set.block, Feet, f); break;
+                case Preview.GuardBreak: Play(set.guardBreak, Feet, f); break;
+            }
+        }
+
+        /// <summary>The main cue a preview plays (the Inspector shows it for live editing).</summary>
+        public VfxCue PreviewCue(Preview what)
+        {
+            var s = set;
+            if (!s) return null;
+            VfxCue Or(VfxCue a, VfxCue b) => a ? a : b;
+            switch (what)
+            {
+                case Preview.Strike1: return s.lightCombo != null && s.lightCombo.Length > 0 ? s.lightCombo[0].strike : null;
+                case Preview.Strike2: return s.lightCombo != null && s.lightCombo.Length > 1 ? s.lightCombo[1].strike : null;
+                case Preview.HeavyStrike: return s.heavy.strike;
+                case Preview.Hit: return s.hit;
+                case Preview.HeavyHit: return Or(s.heavyHit, s.hit);
+                case Preview.Block: return s.block;
+                case Preview.Parry: return s.parry;
+                case Preview.Dash: return s.dash;
+                case Preview.Jump: return s.jump;
+                case Preview.Land: return s.land;
+                case Preview.Knockdown: return Or(s.knockdown, s.land);
+                case Preview.KO: return s.ko;
+                case Preview.ImpactGround: return s.hitGround;
+                case Preview.ImpactAir: return s.hitAir;
+                case Preview.DownSpecialImpact: return Or(s.downSpecialHit, s.hitGround);
+                case Preview.BlockForm: return Or(s.blockStart, s.block);
+                case Preview.GuardBreak: return s.guardBreak;
+                default: return null;
             }
         }
 
         void PreviewAttack(VfxSet.AttackVfx vfx)
         {
-            if (vfx.strike) Play(vfx.strike, StrikePoint, Facing, vfx.Scale);
+            if (vfx.strike) Play(vfx.strike, StrikePoint, Facing, vfx.Scale, transform);
             if (vfx.dust) Play(vfx.dust, Feet, Facing, vfx.Scale);
+        }
+
+        /// <summary>Another fighter's feet (its own FighterVfx, so its Feet offset counts), else its position.</summary>
+        static Vector3 FeetOf(Fighter target)
+        {
+            var tv = target.GetComponent<FighterVfx>();
+            return tv ? tv.FeetPoint : target.transform.position;
         }
 
         public bool ShowAnchors => showAnchors;
@@ -433,12 +512,12 @@ namespace KungFuCrashout.Feedback
 
         // ───────────── Helpers ─────────────
 
-        void Play(VfxCue cue, Vector3 at, int facing, float extraScale = 1f)
+        void Play(VfxCue cue, Vector3 at, int facing, float extraScale = 1f, Transform follow = null)
         {
             if (!cue) return;
             FindVisual();
             float size = (visual ? Mathf.Abs(visual.lossyScale.y) : 1f) * sizeMultiplier * extraScale;
-            VfxPlayer.Play(cue, at, facing, size, art);
+            VfxPlayer.Play(cue, at, facing, size, art, follow);
         }
 
         /// <summary>The active art (Visual / Visual_Monk / Visual_Rushdown): its scale sizes the effects, its sprite sorts them.</summary>

@@ -77,6 +77,15 @@ namespace KungFuCrashout.Core
         [SerializeField] SfxCue timeCue;
         [SerializeField] SfxCue winCue;
         [SerializeField] SfxCue loseCue;
+        [Tooltip("Match-ending knockout only: the announcer's KO, played as the KO slow motion starts, before the win / lose " +
+                 "screen (a random take each match; Audio → Set Up Match KO Announcer). Rounds that don't end the match " +
+                 "and time-outs don't play it.")]
+        [SerializeField] SfxCue matchKoCue;
+        [Tooltip("The announcer's \"Round 1 / 2 / 3\", played with the ROUND callout at the start of each round. Rounds past " +
+                 "the end of the list reuse the last one (e.g. round 4 after a draw = Round 3). Audio → Set Up Round Announcer.")]
+        [SerializeField] SfxCue[] roundVoices = new SfxCue[3];
+        [Tooltip("Real seconds after the knockout blow's freeze before the match KO voice starts.")]
+        [SerializeField, Min(0f)] float matchKoDelay = 0.05f;
         [SerializeField] AudioMixer mixer;
         [SerializeField] AudioSource announcer;
         [SerializeField] AudioSource music;
@@ -216,6 +225,8 @@ namespace KungFuCrashout.Core
             bool finalRound = PlayerWins == winsNeeded - 1 && OpponentWins == winsNeeded - 1;
             Announce(finalRound ? "FINAL ROUND" : $"ROUND {Round}", roundCallTime,
                      roundCue, finalRound && finalRoundClip ? finalRoundClip : RoundClip(Round));
+            var roundVoice = RoundVoice(Round);
+            if (roundVoice) AudioManager.Play(roundVoice);
             yield return new WaitForSecondsRealtime(roundCallTime);
 
             Announce("FIGHT!", fightCallTime, fightCue, fightClip);
@@ -267,6 +278,10 @@ namespace KungFuCrashout.Core
             while (!timeOut && Time.timeScale == 0f && !Paused && KungFuCrashout.Feedback.HitFeedback.FrozenUntil > Time.realtimeSinceStartup &&
                    Time.realtimeSinceStartup < freezeCap)
                 yield return null;
+
+            // The knockout that ends the whole match: the announcer's KO over the slow motion, before the win screen.
+            bool matchEnds = PlayerWins >= winsNeeded || OpponentWins >= winsNeeded || Round >= maxRounds;
+            if (!timeOut && matchEnds && matchKoCue) StartCoroutine(PlayMatchKo());
             if (!timeOut && koSlowTime > 0f && koSlowScale < 1f && !Paused)
             {
                 Time.timeScale = koSlowScale;
@@ -372,11 +387,26 @@ namespace KungFuCrashout.Core
             PhaseChanged?.Invoke(next);
         }
 
+        IEnumerator PlayMatchKo()
+        {
+            if (matchKoDelay > 0f) yield return new WaitForSecondsRealtime(matchKoDelay);
+            AudioManager.Play(matchKoCue); // real time: not slowed by the KO slow motion
+        }
+
         void Announce(string text, float seconds, SfxCue cue, AudioClip clip)
         {
             Callout?.Invoke(text, seconds);
             AudioManager.Play(cue);
             if (announcer && clip) announcer.PlayOneShot(clip);
+        }
+
+        /// <summary>This round's announcer voice; rounds past the list reuse the last one set.</summary>
+        SfxCue RoundVoice(int round)
+        {
+            if (roundVoices == null) return null;
+            for (int i = Mathf.Min(round, roundVoices.Length) - 1; i >= 0; i--)
+                if (roundVoices[i]) return roundVoices[i];
+            return null;
         }
 
         AudioClip RoundClip(int round)

@@ -525,6 +525,7 @@ namespace KungFuCrashout.UI
             Add("test.playerCanParryMelee", "Testing", toggles, "Player can parry melee", "", 0, 1, 1, Live, () => OnPlayer<Fighter>("canParryMelee"), TuneDisplay.OnOff, testOnly: true);
             Add("test.cpuCanParryMelee", "Testing", toggles, "CPU can parry melee", "", 0, 1, 1, Live, () => OnCpu<Fighter>("canParryMelee"), TuneDisplay.OnOff, testOnly: true);
             Add("test.heldGlowShowsThrowArea", "Testing", toggles, "Held glow shows throw area", "", 0, 1, 1, Live, () => On<ItemTapHandler>("heldGlowShowsThrowArea"), TuneDisplay.OnOff, testOnly: true);
+            Add("test.animatedVfx", "Testing", toggles, "Animated VFX (sprite sheets)", "", 0, 1, 1, Live, () => On<KungFuCrashout.Feedback.VfxPlayer>("useAnimatedVfx"), TuneDisplay.OnOff, testOnly: true);
 
             return list;
         }
