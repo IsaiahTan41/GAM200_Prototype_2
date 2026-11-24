@@ -152,6 +152,22 @@ namespace KungFuCrashout.Fighters
             return true;
         }
 
+        /// <summary>Start the pose's clip again from its first frame if it's the one on screen (a new hit restarts the hit animation).</summary>
+        public void RestartPose(PoseSlot pose)
+        {
+            if (curPose != pose) return; // a different pose: switching to it starts it from frame 0 anyway
+            poseFrame = 0;
+            poseAcc = 0f;
+            poseShown = -1;
+        }
+
+        /// <summary>Length of this pose's clip in 60 fps frames (0 = no clip for it).</summary>
+        public int PoseClipFrames(PoseSlot pose)
+        {
+            var e = PoseClipFor(pose);
+            return e != null ? Mathf.Max(1, Mathf.RoundToInt(e.clip.length * 60f)) : 0;
+        }
+
         void ReleasePose()
         {
             if (curPose == PoseSlot.None) return;

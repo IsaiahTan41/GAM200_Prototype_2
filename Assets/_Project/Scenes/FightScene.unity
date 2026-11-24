@@ -76059,11 +76059,14 @@ MonoBehaviour:
   autoBlockAtNeutral: 1
   autoBlockKnockbackScale: 1.25
   damageOnlyWhenStaggered: 1
+  comebackDamage: 1
+  comebackMaxBonus: 0.03
+  comebackStartsBelow: 1
   heavyAttackStaggers: 0
   heavyStaggerData: {fileID: 0}
   heavyStaggerDealsDamage: 1
   bounceWhenHitStunned: 1
-  stunnedBounceSpeed: 3.75
+  stunnedBounceSpeed: 5.5
   bounceWhenHitDowned: 1
   downedBounceSpeed: 5
   bounceGravity: 30
@@ -118663,6 +118666,8 @@ MonoBehaviour:
   dash: {fileID: 21300000, guid: 0c7ee05bef95b3a41893ab739388b79c, type: 3}
   ko: {fileID: 0}
   throwPoseTime: 0.3
+  finishHitAnimation: 1
+  finishDashAnimation: 1
   artFacesLeft: 0
   dashFacesMovement: 1
   debugBoxAlpha: 0
@@ -118782,7 +118787,7 @@ MonoBehaviour:
   - attack: {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
     clip: {fileID: 7400000, guid: b01b2470fed250542b4beb50c8ff1d37, type: 2}
   - attack: {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
-    clip: {fileID: 7400000, guid: b01b2470fed250542b4beb50c8ff1d37, type: 2}
+    clip: {fileID: 7400000, guid: 9bd3cf28d4a3fe84eb829d69243bc181, type: 2}
   - attack: {fileID: 11400000, guid: f5c2720c4f8120b4ab4053b68a891334, type: 2}
     clip: {fileID: 7400000, guid: 393ec6349e51e14419fa8b9034b9af91, type: 2}
   - attack: {fileID: 11400000, guid: c139f7969cfd7744a82ccba7793a0fcb, type: 2}
@@ -118805,7 +118810,7 @@ MonoBehaviour:
     loop: 1
   - pose: 3
     clip: {fileID: 7400000, guid: c2ab3e301011a2547992c4cfe5177fce, type: 2}
-    loop: 1
+    loop: 0
   - pose: 4
     clip: {fileID: 7400000, guid: 5dde234401f55c64b9c73c84b9a434c1, type: 2}
     loop: 0
@@ -125615,6 +125620,8 @@ MonoBehaviour:
   dash: {fileID: 0}
   ko: {fileID: 0}
   throwPoseTime: 0.3
+  finishHitAnimation: 1
+  finishDashAnimation: 1
   artFacesLeft: 0
   dashFacesMovement: 1
   debugBoxAlpha: 0
@@ -130642,7 +130649,7 @@ MonoBehaviour:
   - attack: {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
     clip: {fileID: 7400000, guid: b01b2470fed250542b4beb50c8ff1d37, type: 2}
   - attack: {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
-    clip: {fileID: 7400000, guid: b01b2470fed250542b4beb50c8ff1d37, type: 2}
+    clip: {fileID: 7400000, guid: 9bd3cf28d4a3fe84eb829d69243bc181, type: 2}
   - attack: {fileID: 11400000, guid: f5c2720c4f8120b4ab4053b68a891334, type: 2}
     clip: {fileID: 7400000, guid: 393ec6349e51e14419fa8b9034b9af91, type: 2}
   - attack: {fileID: 11400000, guid: 6b0dce3be94bb3d4a89c9f03ea51acc9, type: 2}
@@ -130659,7 +130666,7 @@ MonoBehaviour:
     loop: 1
   - pose: 3
     clip: {fileID: 7400000, guid: c2ab3e301011a2547992c4cfe5177fce, type: 2}
-    loop: 1
+    loop: 0
   - pose: 4
     clip: {fileID: 7400000, guid: 5dde234401f55c64b9c73c84b9a434c1, type: 2}
     loop: 0
@@ -130785,6 +130792,8 @@ MonoBehaviour:
   dash: {fileID: 21300000, guid: 0c7ee05bef95b3a41893ab739388b79c, type: 3}
   ko: {fileID: 0}
   throwPoseTime: 0.3
+  finishHitAnimation: 1
+  finishDashAnimation: 1
   artFacesLeft: 0
   dashFacesMovement: 1
   debugBoxAlpha: 0
@@ -143180,7 +143189,7 @@ Camera:
   far clip plane: 5000
   field of view: 40
   orthographic: 1
-  orthographic size: 11.794445
+  orthographic size: 2.564767
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -143205,7 +143214,7 @@ Transform:
   m_GameObject: {fileID: 1950963569}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.1450843, y: 9.405166, z: 4.2844915}
+  m_LocalPosition: {x: 1.1450843, y: 1.0799954, z: 4.2844915}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -144507,11 +144516,14 @@ MonoBehaviour:
   autoBlockAtNeutral: 1
   autoBlockKnockbackScale: 1.25
   damageOnlyWhenStaggered: 1
+  comebackDamage: 1
+  comebackMaxBonus: 0.03
+  comebackStartsBelow: 1
   heavyAttackStaggers: 0
   heavyStaggerData: {fileID: 0}
   heavyStaggerDealsDamage: 1
   bounceWhenHitStunned: 1
-  stunnedBounceSpeed: 3.75
+  stunnedBounceSpeed: 5.5
   bounceWhenHitDowned: 1
   downedBounceSpeed: 5
   bounceGravity: 30
@@ -149665,7 +149677,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 40
-    OrthographicSize: 11.794445
+    OrthographicSize: 2.564767
     NearClipPlane: 0.1
     FarClipPlane: 5000
     Dutch: 0
@@ -149692,7 +149704,7 @@ Transform:
   m_GameObject: {fileID: 2044561920}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.2699399, y: 8.36405, z: -10}
+  m_LocalPosition: {x: -1.2699399, y: 0.03887987, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -16,7 +16,7 @@ MonoBehaviour:
   weight: 1
   startup: 0.083333336
   active: 0.10000001
-  recovery: 0.40000004
+  recovery: 0.2
   hitboxOffset: {x: 0.6, y: 0.5}
   hitboxSize: {x: 0.9, y: 1.4}
   knockback: 0.3
@@ -28,4 +28,4 @@ MonoBehaviour:
   lunge: 0.15
   activeTravel: 0
   launchOnHit: {fileID: 11400000, guid: 3924bfc3c7b3d9448ad858de47320ac1, type: 2}
-  launchDirection: {x: 0.1, y: 1}
+  launchDirection: {x: 0, y: 1}

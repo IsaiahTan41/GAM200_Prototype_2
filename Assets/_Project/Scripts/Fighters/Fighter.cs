@@ -297,6 +297,28 @@ namespace KungFuCrashout.Fighters
                  "Off = every clean melee hit deals damage (old behaviour).")]
         [SerializeField] bool damageOnlyWhenStaggered = true;
 
+        [Header("Comeback damage (Inspector only, not in TUNING)")]
+        [Tooltip("The lower this fighter's health, the more damage its hits deal (melee, heavy stagger, downed hits and " +
+                 "thrown items; block chip unchanged).")]
+        [SerializeField] bool comebackDamage = true;
+        [Tooltip("Extra damage at (almost) no health, as a fraction: 0.03 = up to 103 %, 0.1 = up to 110 %.")]
+        [SerializeField, Range(0f, 0.5f)] float comebackMaxBonus = 0.03f;
+        [Tooltip("The bonus starts once health drops below this fraction (1 = from the first hit, 0.5 = only below half), " +
+                 "growing evenly to the full bonus at 0 health.")]
+        [SerializeField, Range(0.05f, 1f)] float comebackStartsBelow = 1f;
+
+        /// <summary>Damage multiplier for this fighter's hits from its own missing health (1 = no bonus).</summary>
+        public float ComebackMultiplier
+        {
+            get
+            {
+                if (!comebackDamage || comebackMaxBonus <= 0f || !health || health.Max <= 0f) return 1f;
+                float hp = Mathf.Clamp01(health.Normalized);
+                float k = Mathf.Clamp01((comebackStartsBelow - hp) / comebackStartsBelow);
+                return 1f + comebackMaxBonus * k;
+            }
+        }
+
         [Header("Heavy attack stagger")]
         [Tooltip("This fighter's heavy (held) attack staggers like a thrown item: it is NOT auto-blocked at neutral, " +
                  "knocks the target into the air and leaves them Downed (open to damage). Manual block / parry still stop it.")]
@@ -1150,6 +1172,7 @@ namespace KungFuCrashout.Fighters
             bool realPunish = punishing && punishDealsRealDamage;
             if (realPunish) damage = attack.damage;
             if (punishHit) damage *= punishFirstHitMultiplier;
+            if (attacker) damage *= attacker.ComebackMultiplier;
             LastDamageTaken = damage;
             if (realPunish) health.TakeDamage(damage);
             else if (recoverableNeutralDamage) health.TakeRecoverableDamage(damage);
@@ -1236,7 +1259,7 @@ namespace KungFuCrashout.Fighters
             IsParryStunned = false;
             IsGuardBroken = false;
 
-            float damage = attacker.heavyStaggerDealsDamage ? attack.damage : 0f;
+            float damage = attacker.heavyStaggerDealsDamage ? attack.damage * attacker.ComebackMultiplier : 0f;
             LastDamageTaken = damage;
             health.TakeDamage(damage);
             GotHit?.Invoke(attacker, attack);
@@ -1344,8 +1367,9 @@ namespace KungFuCrashout.Fighters
 
             // Recoverable mode: the item cashes in all red health (lost for good) before its own damage.
             float burned = recoverableNeutralDamage ? health.LoseRecoverable() : 0f;
-            LastDamageTaken = data.damage + burned;
-            health.TakeDamage(data.damage);
+            float itemDamage = data.damage * (thrower ? thrower.ComebackMultiplier : 1f);
+            LastDamageTaken = itemDamage + burned;
+            health.TakeDamage(itemDamage);
             GotHit?.Invoke(thrower, data);
             if (logStateChanges && burned > 0f) Debug.Log($"[{name}] the item burned {burned:0.#} red health");
             if (logStateChanges)
@@ -1462,7 +1486,7 @@ namespace KungFuCrashout.Fighters
         HitResult HitWhileDowned(Fighter attacker, AttackData attack, int push)
         {
             float mult = downedData ? downedData.downedDamageMultiplier : 1f;
-            float dmg = attack.damage * mult;
+            float dmg = attack.damage * mult * (attacker ? attacker.ComebackMultiplier : 1f);
             ComboHitsTaken++;
             LastDamageTaken = dmg;
             health.TakeDamage(dmg);

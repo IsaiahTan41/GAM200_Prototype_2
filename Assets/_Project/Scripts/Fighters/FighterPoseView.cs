@@ -60,6 +60,12 @@ namespace KungFuCrashout.Fighters
 
         [Header("Timing")]
         [SerializeField, Min(0f)] float throwPoseTime = 0.3f;
+        [Tooltip("Hit animation (pose clip): if hitstun ends before the animation does, let it finish while the fighter " +
+                 "stands idle (any action cuts it). It restarts on every new hit and holds its last drawing while staggered.")]
+        [SerializeField] bool finishHitAnimation = true;
+        [Tooltip("Dash animation (pose clip): restarts on every dash, and its follow-through drawings finish after the dash " +
+                 "ends while the fighter stands idle (any action cuts it).")]
+        [SerializeField] bool finishDashAnimation = true;
 
         [Header("Facing")]
         [Tooltip("Tick if the drawings face LEFT. The Fighter's own turning flips them for the other side.")]
@@ -168,6 +174,7 @@ namespace KungFuCrashout.Fighters
         {
             flashUntil = Time.unscaledTime + hitFlashTime; // real time, so it shows during the hit freeze
             Squash(hitSquash);
+            if (animator) animator.RestartPose(PoseSlot.Hitstun); // hit again: the hit animation plays from the start
         }
 
         void OnBlocked(Fighter attacker, AttackData attack) => Squash(blockSquash);
@@ -188,6 +195,8 @@ namespace KungFuCrashout.Fighters
         }
 
         FighterAnimator animator;
+        FighterState lastState;
+        int lastDashDir;
         bool swaying;
         Quaternion swayBase = Quaternion.identity;
 
@@ -198,6 +207,11 @@ namespace KungFuCrashout.Fighters
         {
             if (!fighter) return;
 
+            // A new dash: its animation starts again from the anticipation.
+            if (fighter.State == FighterState.Dashing && lastState != FighterState.Dashing && animator)
+                animator.RestartPose(PoseSlot.Dash);
+            lastState = fighter.State;
+
             var slot = PickPose();
             var pose = SpriteFor(slot);
             // Pose clips (FighterAnimator → Use Pose Clips): the Animator draws the pose on its frame counter.
@@ -205,7 +219,11 @@ namespace KungFuCrashout.Fighters
             bool drawn = animator && animator.ShowPose(slot, Time.deltaTime);
             if (!drawn && pose && !(animator && animator.IsPlaying)) art.sprite = pose;
             // The fighter is already turned toward the opponent (root scale = Facing). If the dash goes the other way, mirror the art.
-            bool againstDash = dashFacesMovement && fighter.DashDirection != 0 && fighter.DashDirection != fighter.Facing;
+            // The dash's direction: while dashing, and through its follow-through drawings after it (so a backdash's
+            // landing doesn't snap round to face the opponent mid-animation).
+            if (fighter.DashDirection != 0) lastDashDir = fighter.DashDirection;
+            int moveDir = fighter.DashDirection != 0 ? fighter.DashDirection : slot == PoseSlot.Dash ? lastDashDir : 0;
+            bool againstDash = dashFacesMovement && moveDir != 0 && moveDir != fighter.Facing;
             art.flipX = artFacesLeft ^ againstDash;
             ArtMirrored = againstDash;
 
@@ -304,6 +322,15 @@ namespace KungFuCrashout.Fighters
             }
 
             if (Time.time < throwUntil) return First(PoseSlot.Throw, PoseSlot.Attack, PoseSlot.Idle);
+
+            // Short hitstun: the hit animation finishes while the fighter stands (moving, attacking or blocking cuts it).
+            if (finishHitAnimation && fighter.State == FighterState.Idle && animator &&
+                animator.CurrentPose == PoseSlot.Hitstun && animator.PoseFrame < animator.PoseClipFrames(PoseSlot.Hitstun) - 1)
+                return PoseSlot.Hitstun;
+            // After a dash: the follow-through drawings finish while the fighter stands.
+            if (finishDashAnimation && fighter.State == FighterState.Idle && animator &&
+                animator.CurrentPose == PoseSlot.Dash && animator.PoseFrame < animator.PoseClipFrames(PoseSlot.Dash) - 1)
+                return PoseSlot.Dash;
 
             switch (fighter.State)
             {

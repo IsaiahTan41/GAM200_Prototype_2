@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Fighters.AttackData
   damage: 0
   weight: 0
-  startup: 0.3
+  startup: 0.26666668
   active: 0.033333335
-  recovery: 0.2
+  recovery: 0.1
   hitboxOffset: {x: 0, y: 0}
   hitboxSize: {x: 0, y: 0}
   knockback: 0
@@ -31,14 +31,10 @@ MonoBehaviour:
   launchOnHit: {fileID: 0}
   launchDirection: {x: 0.1, y: 1}
   frames:
-    totalFrames: 33
-    activeStart: 18
-    activeEnd: 20
+    totalFrames: 25
+    activeStart: 16
+    activeEnd: 18
     cancelFrame: -1
-    hitboxSets:
-    - frame: 18
-      boxes:
-      - offset: {x: 0, y: 1}
-        size: {x: 0, y: 0}
+    hitboxSets: []
     hurtboxSets: []
     travel: []

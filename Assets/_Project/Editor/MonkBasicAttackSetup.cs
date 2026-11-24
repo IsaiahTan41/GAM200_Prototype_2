@@ -60,7 +60,7 @@ namespace KungFuCrashout.EditorTools
         };
 
         /// <summary>One move built from the four drawings: when each drawing appears and the frame data around it.</summary>
-        struct Spec
+        internal struct Spec
         {
             public string clipPath;
             public int[] drawingFrames;   // first frame of drawings 1–4
@@ -69,7 +69,7 @@ namespace KungFuCrashout.EditorTools
         }
 
         /// <summary>Basic attack (light combo): quick, chains from frame 14.</summary>
-        static readonly Spec Basic = new Spec
+        internal static readonly Spec Basic = new Spec
         {
             clipPath = MonkAttackClipSetup.Folder + "/Monk_BasicAttack.anim",
             drawingFrames = new[] { 0, 3, 6, 10 },
@@ -80,7 +80,7 @@ namespace KungFuCrashout.EditorTools
         public const int HeavyHoldFrames = 16;
 
         /// <summary>Heavy attack: the same drawings, drawing 3 HELD before the slam; no cancel; 48 frames like the old heavy.</summary>
-        static readonly Spec Heavy = new Spec
+        internal static readonly Spec Heavy = new Spec
         {
             clipPath = MonkAttackClipSetup.Folder + "/Monk_HeavyAttack.anim",
             drawingFrames = new[] { 0, 4, 8, 8 + HeavyHoldFrames },
@@ -221,7 +221,7 @@ namespace KungFuCrashout.EditorTools
 
         // ───────────── Import ─────────────
 
-        static Sprite[] ImportDrawings()
+        internal static Sprite[] ImportDrawings()
         {
             var sprites = new Sprite[Drawings.Length];
             for (int i = 0; i < Drawings.Length; i++)
@@ -265,7 +265,7 @@ namespace KungFuCrashout.EditorTools
 
         // ───────────── Clip (sprites + the old-style events and keyed hitbox, for Use Frame Data off) ─────────────
 
-        static AnimationClip BuildClip(Spec spec, Sprite[] sprites)
+        internal static AnimationClip BuildClip(Spec spec, Sprite[] sprites)
         {
             var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(spec.clipPath);
             bool created = !clip;
@@ -318,7 +318,7 @@ namespace KungFuCrashout.EditorTools
 
         // ───────────── Frame data ─────────────
 
-        static FrameData BuildFrameData(Spec spec)
+        internal static FrameData BuildFrameData(Spec spec)
         {
             var fd = new FrameData
             {
@@ -346,7 +346,7 @@ namespace KungFuCrashout.EditorTools
             return new FrameBox { offset = centre, size = size };
         }
 
-        static FrameData Clone(FrameData src) => JsonUtility.FromJson<FrameData>(JsonUtility.ToJson(src));
+        internal static FrameData Clone(FrameData src) => JsonUtility.FromJson<FrameData>(JsonUtility.ToJson(src));
     }
 }
 #endif

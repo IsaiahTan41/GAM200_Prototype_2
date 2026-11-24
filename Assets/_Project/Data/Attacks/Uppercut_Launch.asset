@@ -39,7 +39,7 @@ MonoBehaviour:
     hurtboxSets: []
     travel: []
   launchSpeed: 8
-  launchGravity: 20
+  launchGravity: 17
   minLaunchAngle: 80
   maxLaunchAngle: 89
   koLaunchMultiplier: 1.3

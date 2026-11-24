@@ -108,6 +108,11 @@ namespace KungFuCrashout.UI
         [SerializeField] Material flashMaterial;
         [SerializeField, Min(0.05f)] float flashTime = 0.45f;
         [SerializeField, Min(1)] int flashCount = 2;
+        [Tooltip("Play the UI tap sound (Press Start) the moment a fighter's card is tapped to confirm.")]
+        [SerializeField] bool tapSoundOnConfirm = true;
+        [Tooltip("The fighter's name voice waits at least this long after the tap (seconds), so the tap sound plays first. " +
+                 "It never comes before the flash ends.")]
+        [SerializeField, Min(0f)] float voiceAfterTap = 0.7f;
         [Tooltip("Portrait fade / slide-in time after the flash.")]
         [SerializeField, Min(0f)] float revealTime = 0.25f;
         [Tooltip("How far (px) the portrait slides in from the screen edge.")]
@@ -142,7 +147,7 @@ namespace KungFuCrashout.UI
         float timeLeft, toastUntil, popT = 1f, loadAt = -1f;
         bool committed;
         int shownP1 = -1, shownP2 = -1;            // tap-to-confirm: what the sides show (-1 = blank)
-        float flashT = -1f, p1RevealT = 1f;
+        float flashT = -1f, p1RevealT = 1f, tapTime = -10f, voiceAt = -1f;
         Image flashImg;
         Vector2 p1Base, p1Size, p1Target, p2Base, p2Size;
 
@@ -215,6 +220,7 @@ namespace KungFuCrashout.UI
             }
 
             UpdateFlash(dt);
+            if (voiceAt > 0f && Time.unscaledTime >= voiceAt) { voiceAt = -1f; Voice(Get(shownP1)); }
             if (p1RevealT < 1f) { p1RevealT = revealTime > 0f ? Mathf.Min(1f, p1RevealT + dt / revealTime) : 1f; Slide(p1, p1Target, -1f, p1RevealT); }
 
             if (toastText && toastText.gameObject.activeSelf && Time.unscaledTime >= toastUntil) toastText.gameObject.SetActive(false);
@@ -255,7 +261,13 @@ namespace KungFuCrashout.UI
             {
                 p1Pick = i;
                 if (p2Pick == p1Pick && !Locked && CountPlayable() > 1) p2Pick = NextPlayable(p1Pick, 1, p1Pick);
-                if (tapToConfirm && tapped) StartFlash();
+                if (tapToConfirm && tapped)
+                {
+                    tapTime = Time.unscaledTime;
+                    voiceAt = -1f;                                        // a re-tap replaces a voice still waiting
+                    if (tapSoundOnConfirm) KungFuCrashout.Sound.UiTapSound.PlayTap();
+                    StartFlash();
+                }
                 else if (!tapToConfirm) shownP1 = p1Pick;
             }
             Refresh();
@@ -390,7 +402,10 @@ namespace KungFuCrashout.UI
             p1RevealT = 0f;
             Refresh();                                   // sets the P1 layout (p1Target) for this fighter
             Slide(p1, p1Target, -1f, 0f);
-            Voice(Get(shownP1));
+            // The name voice comes after the tap sound: now, or once Voice After Tap has passed since the tap.
+            float due = tapTime + voiceAfterTap;
+            if (Time.unscaledTime >= due) Voice(Get(shownP1));
+            else voiceAt = due;
         }
 
         /// <summary>P1 portrait rect: its own layout, or for Mirror On P1 an exact mirror of the P2 portrait's rect
