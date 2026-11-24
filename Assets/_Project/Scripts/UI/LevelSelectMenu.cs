@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using KungFuCrashout.Core;
+using KungFuCrashout.Sound;
 
 namespace KungFuCrashout.UI
 {
@@ -64,6 +65,8 @@ namespace KungFuCrashout.UI
         [SerializeField] GameObject scrollP2Marker;
         [SerializeField] Button leftArrow;
         [SerializeField] Button rightArrow;
+        [Tooltip("Played when an arrow (or the keyboard arrows) switches the stage. Random take each time.")]
+        [SerializeField] SfxCue arrowSound;
 
         [Header("Card markers")]
         [Tooltip("Markers sit this far below the card's centre; when both are on one card they move apart by Spread.")]
@@ -113,8 +116,8 @@ namespace KungFuCrashout.UI
                 int index = i;
                 if (cards[i] != null && cards[i].button) cards[i].button.onClick.AddListener(() => View(index));
             }
-            if (leftArrow) leftArrow.onClick.AddListener(() => View(Wrap(viewed - 1)));
-            if (rightArrow) rightArrow.onClick.AddListener(() => View(Wrap(viewed + 1)));
+            if (leftArrow) leftArrow.onClick.AddListener(() => Step(-1));
+            if (rightArrow) rightArrow.onClick.AddListener(() => Step(1));
             if (readyButton) readyButton.onClick.AddListener(Ready);
             if (backButton) backButton.onClick.AddListener(Back);
         }
@@ -135,12 +138,20 @@ namespace KungFuCrashout.UI
             if (!committed && kb != null)
             {
                 if (kb.escapeKey.wasPressedThisFrame) Back();
-                if (kb.leftArrowKey.wasPressedThisFrame) View(Wrap(viewed - 1));
-                if (kb.rightArrowKey.wasPressedThisFrame) View(Wrap(viewed + 1));
+                if (kb.leftArrowKey.wasPressedThisFrame) Step(-1);
+                if (kb.rightArrowKey.wasPressedThisFrame) Step(1);
                 if (kb.enterKey.wasPressedThisFrame) Ready();
             }
             if (toastText && toastText.gameObject.activeSelf && Time.unscaledTime >= toastUntil) toastText.gameObject.SetActive(false);
             if (loadAt > 0f && Time.unscaledTime >= loadAt) { loadAt = -1f; SceneLoader.Load(fightScene); }
+        }
+
+        /// <summary>Arrow: switch to the next / previous stage with the swipe sound.</summary>
+        void Step(int dir)
+        {
+            if (committed || Count == 0) return;
+            AudioManager.Play(arrowSound);
+            View(Wrap(viewed + dir));
         }
 
         void View(int i)
@@ -157,6 +168,7 @@ namespace KungFuCrashout.UI
             if (s == null) return;
             if (!s.playable) { Toast($"{s.displayName}: coming soon"); return; }
             committed = true;
+            KungFuCrashout.Sound.UiTapSound.PlayBeforeDelayedLoad(); // on the press; the delayed load won't play it again
             MatchSetup.Stage = s.id;
             SetReadyLook(true);
             foreach (var c in cards) if (c != null && c.button) c.button.interactable = false;

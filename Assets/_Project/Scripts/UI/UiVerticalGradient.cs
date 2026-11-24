@@ -4,28 +4,34 @@ using UnityEngine.UI;
 namespace KungFuCrashout.UI
 {
     /// <summary>
-    /// A plain two-colour vertical gradient filling its rect (no texture). Used as a stand-in screen background where the
-    /// art isn't supplied yet (Level Select). Place in: Assets/_Project/Scripts/UI/UiVerticalGradient.cs
+    /// Colours a UI Graphic top-to-bottom (vertex colours), e.g. a plain black Image as a dim that is darker at the top.
+    /// The Graphic's own colour multiplies in. No texture needed.
+    /// Place in: Assets/_Project/Scripts/UI/UiVerticalGradient.cs
     /// </summary>
-    [RequireComponent(typeof(CanvasRenderer))]
-    public class UiVerticalGradient : MaskableGraphic
+    [RequireComponent(typeof(Graphic))]
+    public class UiVerticalGradient : BaseMeshEffect
     {
-        [SerializeField] Color top = new Color32(0x45, 0x44, 0x39, 0xFF);
-        [SerializeField] Color bottom = new Color32(0x91, 0x81, 0x60, 0xFF);
+        [SerializeField] Color top = new Color(0f, 0f, 0f, 0.65f);
+        [SerializeField] Color bottom = new Color(0f, 0f, 0f, 0.25f);
 
-        public void SetColours(Color t, Color b) { top = t; bottom = b; SetVerticesDirty(); }
-
-        protected override void OnPopulateMesh(VertexHelper vh)
+        public override void ModifyMesh(VertexHelper vh)
         {
-            vh.Clear();
-            Rect r = GetPixelAdjustedRect();
-            var v = UIVertex.simpleVert;
-            v.color = bottom * color; v.position = new Vector3(r.xMin, r.yMin); vh.AddVert(v);
-            v.color = top * color;    v.position = new Vector3(r.xMin, r.yMax); vh.AddVert(v);
-            v.color = top * color;    v.position = new Vector3(r.xMax, r.yMax); vh.AddVert(v);
-            v.color = bottom * color; v.position = new Vector3(r.xMax, r.yMin); vh.AddVert(v);
-            vh.AddTriangle(0, 1, 2);
-            vh.AddTriangle(2, 3, 0);
+            if (!IsActive() || vh.currentVertCount == 0) return;
+            var v = new UIVertex();
+            float min = float.MaxValue, max = float.MinValue;
+            for (int i = 0; i < vh.currentVertCount; i++)
+            {
+                vh.PopulateUIVertex(ref v, i);
+                min = Mathf.Min(min, v.position.y);
+                max = Mathf.Max(max, v.position.y);
+            }
+            float h = Mathf.Max(0.0001f, max - min);
+            for (int i = 0; i < vh.currentVertCount; i++)
+            {
+                vh.PopulateUIVertex(ref v, i);
+                v.color = (Color)v.color * Color.Lerp(bottom, top, (v.position.y - min) / h);
+                vh.SetUIVertex(v, i);
+            }
         }
     }
 }

@@ -119,11 +119,224 @@ namespace KungFuCrashout.EditorTools
                       (n > 0 ? "MatchManager → Round Voices set. Save the scene (Ctrl+S)." : "Open FightScene and run again to assign them."));
         }
 
+        /// <summary>
+        /// Menu: Window → KungFu Crashout → Audio → Set Up Start Screen Voice + UI Tap Sound
+        ///   • Start screen voice: VO_KungFuCrashout* → SFX_StartScreenVoice, played right after the startup logos
+        ///     (StartScreen gets an AudioManager if it has none, and Start Screen Voice).
+        ///   • UI tap: PressStart* → SFX_PressStart, played by every button / icon that changes scene (UI Tap Sound in
+        ///     StartScreen, Roster, LevelSelect and FightScene).
+        /// Same import as the KO takes. Opens each scene, sets it up and saves it.
+        /// </summary>
+        [MenuItem("Window/KungFu Crashout/Audio/Set Up Start Screen Voice + UI Tap Sound", priority = 10079)]
+        public static void SetUpStartVoice()
+        {
+            const string title = "Start Screen Voice + UI Tap";
+            const string scenes = "Assets/_Project/Scenes/";
+            if (EditorApplication.isPlaying) { EditorUtility.DisplayDialog(title, "Stop Play mode first.", "OK"); return; }
+            var voiceClips = ImportVoices("VO_KungFuCrashout");
+            var tapClips = ImportVoices("PressStart");
+            var voiceCue = voiceClips.Length > 0 ? VoiceCue("Assets/_Project/Audio/Cues/SFX_StartScreenVoice.asset", voiceClips) : null;
+            var tapCue = tapClips.Length > 0 ? VoiceCue("Assets/_Project/Audio/Cues/SFX_PressStart.asset", tapClips) : null;
+            if (tapCue) { tapCue.maxVoices = 1; tapCue.cooldown = 0.1f; EditorUtility.SetDirty(tapCue); }
+            AssetDatabase.SaveAssets();
+            if (!voiceCue && !tapCue) { EditorUtility.DisplayDialog(title, $"No VO_KungFuCrashout / PressStart clips in {Folder}.", "OK"); return; }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            var done = new System.Collections.Generic.List<string>();
+            foreach (var name in new[] { "StartScreen", "Roster", "LevelSelect", "FightScene" })
+            {
+                string path = scenes + name + ".unity";
+                if (!System.IO.File.Exists(path)) continue;
+                var active = EditorSceneManager.GetActiveScene();
+                bool opened = active.path != path;
+                var scene = opened ? EditorSceneManager.OpenScene(path, OpenSceneMode.Additive) : active;
+
+                T Find<T>() where T : Component
+                {
+                    foreach (var root in scene.GetRootGameObjects())
+                    {
+                        var c = root.GetComponentInChildren<T>(true);
+                        if (c) return c;
+                    }
+                    return null;
+                }
+                T Make<T>(string goName) where T : Component
+                {
+                    var go = new GameObject(goName);
+                    EditorSceneManager.MoveGameObjectToScene(go, scene);
+                    return go.AddComponent<T>();
+                }
+
+                if (tapCue)
+                {
+                    var tap = Find<UiTapSound>() ?? Make<UiTapSound>("UI Tap Sound");
+                    var so = new SerializedObject(tap);
+                    so.FindProperty("tap").objectReferenceValue = tapCue;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+                if (name == "StartScreen" && voiceCue)
+                {
+                    if (!Find<AudioManager>()) Make<AudioManager>("AudioManager");
+                    var voice = Find<StartScreenVoice>() ?? Make<StartScreenVoice>("Start Screen Voice");
+                    var so = new SerializedObject(voice);
+                    so.FindProperty("voice").objectReferenceValue = voiceCue;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                if (opened) EditorSceneManager.CloseScene(scene, true);
+                done.Add(name);
+            }
+            Debug.Log($"[Audio] Start screen voice: {(voiceCue ? voiceClips[0].name : "none")}; UI tap: {(tapCue ? tapClips[0].name : "none")} " +
+                      $"(every scene-changing button). Saved: {string.Join(", ", done)}.");
+        }
+
+        /// <summary>
+        /// Menu: Window → KungFu Crashout → Audio → Set Up Roster Character Voices
+        ///   • VO_MonkWu* → SFX_Voice_MonkWu, VO_LordYuan* → SFX_Voice_LordYuan (same import as the announcer takes).
+        ///   • Roster: each fighter card's Voice (matched by name: "Monk" / "Yuan"), Lord Yuan's portrait mirrored on the
+        ///     P1 side, the yellow confirm-flash material, and an AudioManager if the scene has none. Saves Roster.
+        /// </summary>
+        [MenuItem("Window/KungFu Crashout/Audio/Set Up Roster Character Voices", priority = 10080)]
+        public static void SetUpRosterVoices()
+        {
+            const string title = "Roster Character Voices";
+            const string path = "Assets/_Project/Scenes/Roster.unity";
+            if (EditorApplication.isPlaying) { EditorUtility.DisplayDialog(title, "Stop Play mode first.", "OK"); return; }
+            var monk = ImportVoices("VO_MonkWu");
+            var yuan = ImportVoices("VO_LordYuan");
+            var monkCue = monk.Length > 0 ? VoiceCue("Assets/_Project/Audio/Cues/SFX_Voice_MonkWu.asset", monk) : null;
+            var yuanCue = yuan.Length > 0 ? VoiceCue("Assets/_Project/Audio/Cues/SFX_Voice_LordYuan.asset", yuan) : null;
+            foreach (var c in new[] { monkCue, yuanCue }) if (c) { c.cooldown = 0.3f; EditorUtility.SetDirty(c); }
+
+            const string matPath = "Assets/_Project/Art/UI/CharacterSelect/Mat_UI_ConfirmFlash.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            var sh = Shader.Find("GUI/Text Shader");
+            if (!mat && sh) { mat = new Material(sh); AssetDatabase.CreateAsset(mat, matPath); }
+            AssetDatabase.SaveAssets();
+            if (!System.IO.File.Exists(path)) { EditorUtility.DisplayDialog(title, "No Roster scene at " + path, "OK"); return; }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            var active = EditorSceneManager.GetActiveScene();
+            bool opened = active.path != path;
+            var scene = opened ? EditorSceneManager.OpenScene(path, OpenSceneMode.Additive) : active;
+            KungFuCrashout.UI.CharacterSelectMenu menu = null;
+            bool hasAudio = false;
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                if (!menu) menu = root.GetComponentInChildren<KungFuCrashout.UI.CharacterSelectMenu>(true);
+                hasAudio |= root.GetComponentInChildren<AudioManager>(true);
+            }
+            // Without an AudioListener nothing is heard in the scene (the Roster camera had none).
+            bool hasListener = false;
+            Camera cam = null;
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                hasListener |= root.GetComponentInChildren<AudioListener>(true);
+                if (!cam) cam = root.GetComponentInChildren<Camera>(true);
+            }
+            if (!hasListener && cam) cam.gameObject.AddComponent<AudioListener>();
+            if (!hasAudio)
+            {
+                var go = new GameObject("AudioManager");
+                EditorSceneManager.MoveGameObjectToScene(go, scene);
+                go.AddComponent<AudioManager>();
+            }
+            var set = new System.Collections.Generic.List<string>();
+            if (menu)
+            {
+                var so = new SerializedObject(menu);
+                if (mat) so.FindProperty("flashMaterial").objectReferenceValue = mat;
+                var entries = so.FindProperty("entries");
+                for (int i = 0; i < entries.arraySize; i++)
+                {
+                    var e = entries.GetArrayElementAtIndex(i);
+                    string n = e.FindPropertyRelative("displayName").stringValue ?? "";
+                    bool isMonk = n.Contains("Monk"), isYuan = n.Contains("Yuan");
+                    if (isMonk && monkCue) { e.FindPropertyRelative("voice").objectReferenceValue = monkCue; set.Add(n); }
+                    if (isYuan && yuanCue) { e.FindPropertyRelative("voice").objectReferenceValue = yuanCue; set.Add(n); }
+                    if (isYuan) e.FindPropertyRelative("mirrorOnP1").boolValue = true; // faces left in the art → face the centre on P1
+                }
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            if (opened) EditorSceneManager.CloseScene(scene, true);
+            Debug.Log(menu ? $"[Audio] Roster voices set on: {string.Join(", ", set)}. Lord Yuan mirrored on the P1 side. " +
+                             $"Flash material: {(mat ? "ok" : "GUI/Text Shader missing — tint fallback")}. " +
+                             $"Audio Listener: {(hasListener ? "already there" : cam ? "added to " + cam.name : "NO CAMERA FOUND")}. Roster saved."
+                           : "[Audio] Voice cues made, but the Roster scene has no Character Select Menu.");
+        }
+
+        /// <summary>
+        /// Menu: Window → KungFu Crashout → Audio → Set Up Carousel Swipe Sounds
+        ///   • Swipe_* in Audio/SFX/UI → Audio/Cues/SFX_UI_Swipe: a RANDOM take each press (never the same twice in a row),
+        ///     levels as mastered, no pitch / volume variation.
+        ///   • Roster → Character Select Menu → Turn Sound, LevelSelect → Level Select Menu → Arrow Sound.
+        ///     Adds an AudioManager to a scene that has none (LevelSelect had none). Saves both scenes.
+        /// </summary>
+        [MenuItem("Window/KungFu Crashout/Audio/Set Up Carousel Swipe Sounds", priority = 10081)]
+        public static void SetUpSwipe()
+        {
+            const string title = "Carousel Swipe Sounds";
+            if (EditorApplication.isPlaying) { EditorUtility.DisplayDialog(title, "Stop Play mode first.", "OK"); return; }
+            var clips = ImportVoices("Swipe", "Assets/_Project/Audio/SFX/UI");
+            if (clips.Length == 0) { EditorUtility.DisplayDialog(title, "No Swipe_* clips in Assets/_Project/Audio/SFX/UI.", "OK"); return; }
+            var cue = VoiceCue("Assets/_Project/Audio/Cues/SFX_UI_Swipe.asset", clips);
+            cue.order = SfxCue.Order.Random;
+            cue.avoidRepeatingLast = 1;
+            cue.maxVoices = 2;
+            cue.cooldown = 0.05f;
+            cue.priority = 64;
+            EditorUtility.SetDirty(cue);
+            AssetDatabase.SaveAssets();
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            var done = new System.Collections.Generic.List<string>();
+            foreach (var (name, menuType, field) in new[]
+                     {
+                         ("Roster", typeof(KungFuCrashout.UI.CharacterSelectMenu), "turnSound"),
+                         ("LevelSelect", typeof(KungFuCrashout.UI.LevelSelectMenu), "arrowSound"),
+                     })
+            {
+                string path = "Assets/_Project/Scenes/" + name + ".unity";
+                if (!System.IO.File.Exists(path)) continue;
+                var active = EditorSceneManager.GetActiveScene();
+                bool opened = active.path != path;
+                var scene = opened ? EditorSceneManager.OpenScene(path, OpenSceneMode.Additive) : active;
+                Component menu = null;
+                bool hasAudio = false;
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    if (!menu) menu = root.GetComponentInChildren(menuType, true);
+                    hasAudio |= root.GetComponentInChildren<AudioManager>(true);
+                }
+                if (!hasAudio)
+                {
+                    var go = new GameObject("AudioManager");
+                    EditorSceneManager.MoveGameObjectToScene(go, scene);
+                    go.AddComponent<AudioManager>();
+                }
+                if (menu)
+                {
+                    var so = new SerializedObject(menu);
+                    so.FindProperty(field).objectReferenceValue = cue;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    done.Add(name);
+                }
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                if (opened) EditorSceneManager.CloseScene(scene, true);
+            }
+            Debug.Log($"[Audio] Swipe sounds ({clips.Length} takes, random) on the carousel arrows in: {string.Join(", ", done)}. Scenes saved.");
+        }
+
         /// <summary>Announcer clips in the folder whose name starts with Prefix: stereo, levels as mastered, Vorbis 0.7,
         /// compressed in memory, preloaded.</summary>
-        static AudioClip[] ImportVoices(string prefix)
+        static AudioClip[] ImportVoices(string prefix, string folder = Folder)
         {
-            return AssetDatabase.FindAssets("t:AudioClip", new[] { Folder })
+            return AssetDatabase.FindAssets("t:AudioClip", new[] { folder })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(p => System.IO.Path.GetFileNameWithoutExtension(p).StartsWith(prefix))
                 .OrderBy(p => p).Select(path =>

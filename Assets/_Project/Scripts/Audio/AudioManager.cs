@@ -61,6 +61,19 @@ namespace KungFuCrashout.Sound
             }
         }
 
+        [Tooltip("Safety net: if the scene has no AudioListener (nothing would be heard), add one to this object.")]
+        [SerializeField] bool addListenerIfMissing = true;
+
+        void Start()
+        {
+            if (addListenerIfMissing && enabled && !FindAnyObjectByType<AudioListener>())
+            {
+                gameObject.AddComponent<AudioListener>();
+                Debug.LogWarning("[AudioManager] The scene had no AudioListener, so no sound could be heard; added one here. " +
+                                 "Put one on the scene's camera to silence this.", this);
+            }
+        }
+
         void OnDestroy()
         {
             if (Instance == this) Instance = null;

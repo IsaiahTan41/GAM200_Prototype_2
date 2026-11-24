@@ -1326,6 +1326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eb2484fdb7f4dc4f9b8ed569db9aa2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.UI.SafeAreaFitter
+  fillWholeScreen: 0
 --- !u!1 &425210284
 GameObject:
   m_ObjectHideFlags: 0
@@ -2270,7 +2271,7 @@ RectTransform:
   m_GameObject: {fileID: 784605036}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.20776688, y: 0.20776688, z: 1}
+  m_LocalScale: {x: 0.9554455, y: 0.9554455, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 581946042}
@@ -3436,6 +3437,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1225538459}
   m_CullTransparentMesh: 1
+--- !u!1 &1228428411
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1228428413}
+  - component: {fileID: 1228428412}
+  m_Layer: 0
+  m_Name: UI Tap Sound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1228428412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228428411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82c13737760527e4497c1da2708fcc85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.UiTapSound
+  tap: {fileID: 11400000, guid: c4ca9475bcaaa154787319607af888a4, type: 2}
+  playOnSceneChange: 1
+--- !u!4 &1228428413
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228428411}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1268201807
 GameObject:
   m_ObjectHideFlags: 0
@@ -3611,7 +3658,7 @@ RectTransform:
   m_GameObject: {fileID: 1290056395}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.20776688, y: 0.20776688, z: 1}
+  m_LocalScale: {x: 0.9554455, y: 0.9554455, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1737657368}
@@ -4845,6 +4892,7 @@ MonoBehaviour:
   scrollP2Marker: {fileID: 211258998}
   leftArrow: {fileID: 425210286}
   rightArrow: {fileID: 385284853}
+  arrowSound: {fileID: 11400000, guid: 4ea1c213b0e422742b970643a3bb9653, type: 2}
   markerDrop: 68
   markerSpread: 30
   cpuStage: 0
@@ -5279,6 +5327,54 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -68}
   m_SizeDelta: {x: 90, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1820509429
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1820509431}
+  - component: {fileID: 1820509430}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1820509430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820509429}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2e06ca33a3c83647b1a98043bbae0c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.AudioManager
+  voices: 12
+  sfxGroup: {fileID: 0}
+  logPlays: 0
+  addListenerIfMissing: 1
+--- !u!4 &1820509431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820509429}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1851905654
 GameObject:
   m_ObjectHideFlags: 0
@@ -6310,3 +6406,5 @@ SceneRoots:
   - {fileID: 725578048}
   - {fileID: 1127308084}
   - {fileID: 1674019843}
+  - {fileID: 1228428413}
+  - {fileID: 1820509431}

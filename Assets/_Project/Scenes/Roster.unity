@@ -1044,7 +1044,7 @@ RectTransform:
   m_GameObject: {fileID: 195208646}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.9554455, y: 0.9554455, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 794064539}
@@ -1208,6 +1208,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 203545848}
   m_CullTransparentMesh: 1
+--- !u!1 &236264924
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 236264926}
+  - component: {fileID: 236264925}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &236264925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 236264924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2e06ca33a3c83647b1a98043bbae0c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.AudioManager
+  voices: 12
+  sfxGroup: {fileID: 0}
+  logPlays: 0
+  addListenerIfMissing: 1
+--- !u!4 &236264926
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 236264924}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &284696037
 GameObject:
   m_ObjectHideFlags: 0
@@ -2350,6 +2398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eb2484fdb7f4dc4f9b8ed569db9aa2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.UI.SafeAreaFitter
+  fillWholeScreen: 0
 --- !u!1 &497461038
 GameObject:
   m_ObjectHideFlags: 0
@@ -2538,7 +2587,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 1212, y: -1080}
-  m_SizeDelta: {x: 1000, y: 1130.3628}
+  m_SizeDelta: {x: 1000, y: 5198.133}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &556795144
 MonoBehaviour:
@@ -4025,6 +4074,7 @@ GameObject:
   m_Component:
   - component: {fileID: 683162881}
   - component: {fileID: 683162880}
+  - component: {fileID: 683162882}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -4098,6 +4148,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &683162882
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 683162879}
+  m_Enabled: 1
 --- !u!1 &695962056
 GameObject:
   m_ObjectHideFlags: 0
@@ -4271,18 +4329,27 @@ MonoBehaviour:
     skill: 
     card: {fileID: 21300000, guid: 17786129ee40e014b838690b17506b5e, type: 3}
     illustration: {fileID: 0}
+    voice: {fileID: 0}
+    mirrorOnP1: 0
+    mirrorOnP2: 0
   - archetype: {fileID: 11400000, guid: e1e9574a3199b4e42b8f66f72c25d772, type: 2}
     displayName: Monk Wu
     classLabel: Shoto
     skill: 'Hold: Palm Strike'
     card: {fileID: 21300000, guid: 04842c3b04adaa74089b3276003a3125, type: 3}
     illustration: {fileID: 21300000, guid: 75a9aaf76ee8c674bbce5d27069258fe, type: 3}
+    voice: {fileID: 11400000, guid: dc29be467678d004f9e02672345dcf02, type: 2}
+    mirrorOnP1: 0
+    mirrorOnP2: 0
   - archetype: {fileID: 11400000, guid: a195b3958fdac1e488dd7de801089bd6, type: 2}
     displayName: Lord Yuan
     classLabel: Rushdown
     skill: Close-ranged combat
     card: {fileID: 21300000, guid: dcf5150eb1724314e97bd30b2b5b73a7, type: 3}
     illustration: {fileID: 21300000, guid: 96c3ee0db120d2e42a4b4604e34e6876, type: 3}
+    voice: {fileID: 11400000, guid: 94de9eff929d0344f96d6840cd72acb9, type: 2}
+    mirrorOnP1: 1
+    mirrorOnP2: 0
   leftCard:
     root: {fileID: 1566192732}
     art: {fileID: 372643589}
@@ -4310,6 +4377,7 @@ MonoBehaviour:
   leftArrow: {fileID: 625413424}
   rightArrow: {fileID: 1454791075}
   turnPop: 1.06
+  turnSound: {fileID: 11400000, guid: 4ea1c213b0e422742b970643a3bb9653, type: 2}
   p1:
     illustration: {fileID: 885924623}
     classText: {fileID: 853097660}
@@ -4321,6 +4389,15 @@ MonoBehaviour:
     nameText: {fileID: 329571696}
     skillText: {fileID: 849212944}
   p2CycleButton: {fileID: 1334440627}
+  tapToConfirm: 1
+  flashColour: {r: 1, g: 0.84, b: 0.12, a: 0.9}
+  flashSilhouette: 1
+  flashMaterial: {fileID: 2100000, guid: 651133082e29cf442bf71704b56a5549, type: 2}
+  flashTime: 0.45
+  flashCount: 2
+  revealTime: 0.25
+  revealSlide: 60
+  lockOnlyCpu: 1
   timerText: {fileID: 888046977}
   timeLimit: 90
   autoReadyAtZero: 1
@@ -9480,6 +9557,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eb2484fdb7f4dc4f9b8ed569db9aa2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.UI.SafeAreaFitter
+  fillWholeScreen: 1
 --- !u!1 &1261466337
 GameObject:
   m_ObjectHideFlags: 0
@@ -11190,6 +11268,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1472411918}
   m_CullTransparentMesh: 1
+--- !u!1 &1475176975
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1475176977}
+  - component: {fileID: 1475176976}
+  m_Layer: 0
+  m_Name: UI Tap Sound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1475176976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1475176975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82c13737760527e4497c1da2708fcc85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Sound.UiTapSound
+  tap: {fileID: 11400000, guid: c4ca9475bcaaa154787319607af888a4, type: 2}
+  playOnSceneChange: 1
+--- !u!4 &1475176977
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1475176975}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1484923440
 GameObject:
   m_ObjectHideFlags: 0
@@ -15640,3 +15764,5 @@ SceneRoots:
   - {fileID: 1545306458}
   - {fileID: 935019415}
   - {fileID: 1674019843}
+  - {fileID: 1475176977}
+  - {fileID: 236264926}

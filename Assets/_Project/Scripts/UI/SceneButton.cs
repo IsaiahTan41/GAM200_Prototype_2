@@ -72,6 +72,8 @@ namespace KungFuCrashout.UI
         public static void Load(string sceneName)
         {
             if (string.IsNullOrEmpty(sceneName)) return;
+            // The UI tap (Press Start) on every button / icon that changes scene; skipped if a READY press just played it.
+            KungFuCrashout.Sound.UiTapSound.PlayForSceneChange();
             Time.timeScale = 1f;
             TouchClaims.Clear();
 

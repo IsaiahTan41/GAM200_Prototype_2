@@ -15,8 +15,12 @@ namespace KungFuCrashout.UI
     [RequireComponent(typeof(RectTransform))]
     public class SafeAreaFitter : MonoBehaviour
     {
+        [Tooltip("Ignore the safe area (camera cutout / notch) and fill the whole screen. For screens whose art is laid " +
+                 "out edge to edge (Roster), so it isn't cut off and shrunk by the cutout strip. OFF = keep inside the safe area.")]
+        [SerializeField] bool fillWholeScreen;
         RectTransform rt;
         Rect lastSafeArea;
+        bool lastFill;
         Vector2Int lastScreen;
 
         void OnEnable()
@@ -27,7 +31,7 @@ namespace KungFuCrashout.UI
 
         void Update()
         {
-            if (Screen.safeArea != lastSafeArea || lastScreen.x != Screen.width || lastScreen.y != Screen.height)
+            if (fillWholeScreen != lastFill || Screen.safeArea != lastSafeArea || lastScreen.x != Screen.width || lastScreen.y != Screen.height)
                 Fit();
         }
 
@@ -37,13 +41,14 @@ namespace KungFuCrashout.UI
 
             Rect safe = Screen.safeArea;
             lastSafeArea = safe;
+            lastFill = fillWholeScreen;
             lastScreen = new Vector2Int(Screen.width, Screen.height);
 
             var min = Vector2.zero;
             var max = Vector2.one;
             bool fits = safe.width > 0f && safe.height > 0f && safe.xMin >= 0f && safe.yMin >= 0f &&
                         safe.xMax <= Screen.width + 1f && safe.yMax <= Screen.height + 1f;
-            if (Application.isPlaying && fits)
+            if (Application.isPlaying && fits && !fillWholeScreen)
             {
                 min = new Vector2(safe.xMin / Screen.width, safe.yMin / Screen.height);
                 max = new Vector2(safe.xMax / Screen.width, safe.yMax / Screen.height);
