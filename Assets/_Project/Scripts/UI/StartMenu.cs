@@ -28,7 +28,7 @@ namespace KungFuCrashout.UI
         void Update()
         {
             var kb = Keyboard.current;
-            if (backButtonQuits && kb != null && kb.escapeKey.wasPressedThisFrame) SceneLoader.Quit();
+            if (backButtonQuits && kb != null && kb.escapeKey.wasPressedThisFrame && !OptionsMenu.Busy) SceneLoader.Quit();
         }
 
         public void StartGame() => SceneLoader.Load(fightScene);

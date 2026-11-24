@@ -69,6 +69,8 @@ namespace KungFuCrashout.UI
         [Header("Keyboard")]
         [Tooltip("Key that opens / closes the menu on desktop (Esc / Android Back always works too). None = Esc only.")]
         [SerializeField] Key openKey = Key.P;
+        [Tooltip("Android Back / Esc also OPENS the menu. OFF (Start screen): it only closes it, so Back still quits there.")]
+        [SerializeField] bool escapeOpens = true;
 
         [Header("Behaviour")]
         [Tooltip("Freeze the fight while the menu is open (music keeps playing).")]
@@ -82,6 +84,20 @@ namespace KungFuCrashout.UI
         const string KeyEnemyMode = "kfc.enemy.stateMachine";
 
         public bool IsOpen => panel && panel.activeSelf;
+
+        /// <summary>Frame an options menu last opened / closed (so the Start screen's Back-to-quit ignores that press).</summary>
+        public static int LastToggleFrame { get; private set; } = -10;
+
+        /// <summary>True while any options menu is open, or one was opened / closed this or last frame.</summary>
+        public static bool Busy
+        {
+            get
+            {
+                if (Time.frameCount - LastToggleFrame <= 1) return true;
+                foreach (var m in FindObjectsByType<OptionsMenu>(FindObjectsSortMode.None)) if (m.IsOpen) return true;
+                return false;
+            }
+        }
 
         readonly List<Behaviour> pausedInput = new List<Behaviour>();
         readonly List<int> buttonTouches = new List<int>(); // fingers that started on the Options button
@@ -144,7 +160,7 @@ namespace KungFuCrashout.UI
 
             // Android Back button arrives as Escape.
             var kb = Keyboard.current;
-            if (kb != null && (kb.escapeKey.wasPressedThisFrame ||
+            if (kb != null && ((kb.escapeKey.wasPressedThisFrame && (IsOpen || escapeOpens)) ||
                                (openKey != Key.None && kb[openKey].wasPressedThisFrame))) Toggle();
         }
 
@@ -165,6 +181,7 @@ namespace KungFuCrashout.UI
         {
             if (!panel || IsOpen) return;
             panel.SetActive(true);
+            LastToggleFrame = Time.frameCount;
             transform.SetAsLastSibling(); // draw over the HUD
             ShowTab(reopenLastTab ? currentTab : GameTab);
             PauseFightInput();
@@ -179,6 +196,7 @@ namespace KungFuCrashout.UI
         {
             if (!panel || !IsOpen) return;
             panel.SetActive(false);
+            LastToggleFrame = Time.frameCount;
             if (pauseWhileOpen) Time.timeScale = timeScaleBeforeOpen;
             if (rememberSettings) PlayerPrefs.Save();
             if (resumeInput != null) StopCoroutine(resumeInput);
