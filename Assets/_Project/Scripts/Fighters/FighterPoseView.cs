@@ -66,12 +66,18 @@ namespace KungFuCrashout.Fighters
         [Tooltip("Dash animation (pose clip): restarts on every dash, and its follow-through drawings finish after the dash " +
                  "ends while the fighter stands idle (any action cuts it).")]
         [SerializeField] bool finishDashAnimation = true;
+        [Tooltip("Jump animation (pose clip): timed from take-off, so after an air attack it carries on where the jump is " +
+                 "(not from the start); its last drawing holds while still in the air. Off = it restarts whenever it reappears.")]
+        [SerializeField] bool jumpTimedFromTakeOff = true;
 
         [Header("Facing")]
         [Tooltip("Tick if the drawings face LEFT. The Fighter's own turning flips them for the other side.")]
         [SerializeField] bool artFacesLeft = true;
         [Tooltip("While dashing, the dash pose faces the way you're moving (backdashes and cross-ups included), not the opponent.")]
         [SerializeField] bool dashFacesMovement = true;
+        [Tooltip("Tick if the DASH animation's drawings (the pose clip, e.g. DASH-1…5) are drawn facing the opposite way to " +
+                 "the rest of this fighter's art. They're mirrored while they play, so the dash always faces the way you move.")]
+        [SerializeField] bool dashArtFacesLeft = true;
 
         [Header("Fighter's debug box")]
         [Tooltip("Opacity of the Fighter's coloured box behind the art. 0 = hidden, ~0.25 = faint state-colour overlay for debugging.")]
@@ -196,6 +202,8 @@ namespace KungFuCrashout.Fighters
 
         FighterAnimator animator;
         FighterState lastState;
+        bool wasAirborne;
+        float jumpStartTime;
         int lastDashDir;
         bool swaying;
         Quaternion swayBase = Quaternion.identity;
@@ -210,13 +218,22 @@ namespace KungFuCrashout.Fighters
             // A new dash: its animation starts again from the anticipation.
             if (fighter.State == FighterState.Dashing && lastState != FighterState.Dashing && animator)
                 animator.RestartPose(PoseSlot.Dash);
+            // A new block: its animation starts again (then holds its last drawing while the block is held).
+            if (fighter.State == FighterState.Blocking && lastState != FighterState.Blocking && animator)
+                animator.RestartPose(PoseSlot.Block);
             lastState = fighter.State;
+            // Take-off: the jump animation is timed from here.
+            bool airborneNow = fighter.IsAirborne && !fighter.IsLaunched;
+            if (airborneNow && !wasAirborne) jumpStartTime = Time.time;
+            wasAirborne = airborneNow;
 
             var slot = PickPose();
             var pose = SpriteFor(slot);
             // Pose clips (FighterAnimator → Use Pose Clips): the Animator draws the pose on its frame counter.
             // While an attack clip plays (e.g. Monk_BasicAttack), the Animator owns the sprite too.
-            bool drawn = animator && animator.ShowPose(slot, Time.deltaTime);
+            int jumpFrame = jumpTimedFromTakeOff && slot == PoseSlot.Airborne && wasAirborne
+                ? Mathf.Max(0, Mathf.FloorToInt((Time.time - jumpStartTime) * 60f)) : -1; // scaled time: hitstop freezes it
+            bool drawn = animator && animator.ShowPose(slot, Time.deltaTime, jumpFrame);
             if (!drawn && pose && !(animator && animator.IsPlaying)) art.sprite = pose;
             // The fighter is already turned toward the opponent (root scale = Facing). If the dash goes the other way, mirror the art.
             // The dash's direction: while dashing, and through its follow-through drawings after it (so a backdash's
@@ -224,7 +241,9 @@ namespace KungFuCrashout.Fighters
             if (fighter.DashDirection != 0) lastDashDir = fighter.DashDirection;
             int moveDir = fighter.DashDirection != 0 ? fighter.DashDirection : slot == PoseSlot.Dash ? lastDashDir : 0;
             bool againstDash = dashFacesMovement && moveDir != 0 && moveDir != fighter.Facing;
-            art.flipX = artFacesLeft ^ againstDash;
+            // The dash clip's drawings face the other way from the rest of the art: mirror them while they're on screen.
+            bool dashArtReversed = dashArtFacesLeft && drawn && slot == PoseSlot.Dash;
+            art.flipX = artFacesLeft ^ againstDash ^ dashArtReversed;
             ArtMirrored = againstDash;
 
             // Colour: hit flash, invincibility flicker.

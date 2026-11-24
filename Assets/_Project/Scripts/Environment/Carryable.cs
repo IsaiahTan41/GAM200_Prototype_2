@@ -129,6 +129,10 @@ namespace KungFuCrashout.Props
         [Tooltip("Smash played when the item BREAKS: hits a block without being caught, or its last throw (Max Holds) ends. " +
                  "Never on pick-up or catch. Set by KungFu Crashout → Set Up Item Audio.")]
         [SerializeField] SfxCue breakCue;
+        [Tooltip("Clatter played when the item hits the floor: knocked loose by a shockwave, dropped, popped up off a hit, " +
+                 "or a throw that comes down on the floor. Not when it breaks there (the break sound plays instead). " +
+                 "Set by Window → KungFu Crashout → Audio → Set Up Item Material Audio.")]
+        [SerializeField] SfxCue landCue;
         [Tooltip("Also play the break sound when the item simply runs out of Lifetime. Off = it vanishes quietly.")]
         [SerializeField] bool breakSoundOnLifetimeEnd = false;
 
@@ -533,6 +537,7 @@ namespace KungFuCrashout.Props
             spriteRenderer.sortingOrder = restSortingOrder;
             if (backToStageSizeWhenDropped) ResizeTo(stageScale);
             State = !popUp && transform.position.y <= groundY ? ItemState.OnStage : ItemState.Falling;
+            if (State == ItemState.OnStage && !destroyWhenLanded) AudioManager.Play(landCue); // a throw that came down on the floor
             FlightEnded?.Invoke();
         }
 
@@ -592,6 +597,7 @@ namespace KungFuCrashout.Props
             {
                 p.y = groundY;
                 State = ItemState.OnStage;
+                if (!destroyWhenLanded) AudioManager.Play(landCue); // about to break: the break sound plays instead
             }
             transform.position = p;
         }

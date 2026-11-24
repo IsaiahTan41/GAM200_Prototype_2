@@ -76004,6 +76004,9 @@ MonoBehaviour:
   specialBufferTime: 0.15
   upSpecialStopsRise: 1
   upSpecialGroundSnapHeight: 0.6
+  jumpCancelsLauncher: 1
+  launcherRelaunchLockout: 0.6
+  tapAfterLauncherQueuesAirAttack: 1
   sideSpecialInAir: 1
   airSideSpecialNoGravity: 1
   airSideSpecialKeepsTargetAirborne: 1
@@ -95815,7 +95818,7 @@ MonoBehaviour:
   dropInsAtFightSize: 1
   dropHeight: 6
   dropGravity: 25
-  landCue: {fileID: 0}
+  landCue: {fileID: 11400000, guid: 90f7e334836dff84d93f870bc1af8418, type: 2}
   shadowColour: {r: 0, g: 0, b: 0, a: 0.35}
   logWakes: 0
 --- !u!4 &1284957349
@@ -118661,15 +118664,17 @@ MonoBehaviour:
   throwPose: {fileID: 21300000, guid: d076f35f7fa4818409ac4c8beb50dc73, type: 3}
   carry: {fileID: 0}
   hitstun: {fileID: 21300000, guid: 7180783790c4cb24d9a6f0b74ba6ece6, type: 3}
-  downed: {fileID: 21300000, guid: f0de5132ab1ec594c82c30e9ff6a854a, type: 3}
+  downed: {fileID: 0}
   airborne: {fileID: 21300000, guid: 8d09334ec8fffa94c94df1487fbd5646, type: 3}
   dash: {fileID: 21300000, guid: 0c7ee05bef95b3a41893ab739388b79c, type: 3}
-  ko: {fileID: 0}
+  ko: {fileID: 21300000, guid: 1690b23fe5f9d084d9baa365267b1c43, type: 3}
   throwPoseTime: 0.3
   finishHitAnimation: 1
   finishDashAnimation: 1
+  jumpTimedFromTakeOff: 1
   artFacesLeft: 0
   dashFacesMovement: 1
+  dashArtFacesLeft: 1
   debugBoxAlpha: 0
   showBlockShield: 1
   shieldColour: {r: 0.35, g: 0.65, b: 1, a: 0.45}
@@ -118807,7 +118812,7 @@ MonoBehaviour:
     loop: 1
   - pose: 2
     clip: {fileID: 7400000, guid: 258cf9fda4a6d2347bc9d21e0ac4190c, type: 2}
-    loop: 1
+    loop: 0
   - pose: 3
     clip: {fileID: 7400000, guid: c2ab3e301011a2547992c4cfe5177fce, type: 2}
     loop: 0
@@ -118816,9 +118821,6 @@ MonoBehaviour:
     loop: 0
   - pose: 5
     clip: {fileID: 7400000, guid: ca9256f83e614d24f93524c37c963594, type: 2}
-    loop: 1
-  - pose: 6
-    clip: {fileID: 7400000, guid: 375bd8a941644034f981f26f173fe56b, type: 2}
     loop: 0
   - pose: 9
     clip: {fileID: 7400000, guid: f499f08f751d2574b89a2801cbfeaa0b, type: 2}
@@ -118834,6 +118836,9 @@ MonoBehaviour:
     loop: 0
   - pose: 16
     clip: {fileID: 7400000, guid: 213b228e2c2e6f04b91e2989d586ea06, type: 2}
+    loop: 0
+  - pose: 7
+    clip: {fileID: 7400000, guid: d4b37feebdf1ab846bcd7dccf81090f0, type: 2}
     loop: 0
 --- !u!114 &1592441794
 MonoBehaviour:
@@ -125622,8 +125627,10 @@ MonoBehaviour:
   throwPoseTime: 0.3
   finishHitAnimation: 1
   finishDashAnimation: 1
+  jumpTimedFromTakeOff: 1
   artFacesLeft: 0
   dashFacesMovement: 1
+  dashArtFacesLeft: 1
   debugBoxAlpha: 0
   showBlockShield: 1
   shieldColour: {r: 0.35, g: 0.65, b: 1, a: 0.45}
@@ -130663,7 +130670,7 @@ MonoBehaviour:
     loop: 1
   - pose: 2
     clip: {fileID: 7400000, guid: 258cf9fda4a6d2347bc9d21e0ac4190c, type: 2}
-    loop: 1
+    loop: 0
   - pose: 3
     clip: {fileID: 7400000, guid: c2ab3e301011a2547992c4cfe5177fce, type: 2}
     loop: 0
@@ -130672,9 +130679,6 @@ MonoBehaviour:
     loop: 0
   - pose: 5
     clip: {fileID: 7400000, guid: ca9256f83e614d24f93524c37c963594, type: 2}
-    loop: 1
-  - pose: 6
-    clip: {fileID: 7400000, guid: 375bd8a941644034f981f26f173fe56b, type: 2}
     loop: 0
   - pose: 9
     clip: {fileID: 7400000, guid: f499f08f751d2574b89a2801cbfeaa0b, type: 2}
@@ -130690,6 +130694,9 @@ MonoBehaviour:
     loop: 0
   - pose: 16
     clip: {fileID: 7400000, guid: 213b228e2c2e6f04b91e2989d586ea06, type: 2}
+    loop: 0
+  - pose: 7
+    clip: {fileID: 7400000, guid: d4b37feebdf1ab846bcd7dccf81090f0, type: 2}
     loop: 0
 --- !u!4 &1777582054
 Transform:
@@ -130787,15 +130794,17 @@ MonoBehaviour:
   throwPose: {fileID: 21300000, guid: d076f35f7fa4818409ac4c8beb50dc73, type: 3}
   carry: {fileID: 0}
   hitstun: {fileID: 21300000, guid: 7180783790c4cb24d9a6f0b74ba6ece6, type: 3}
-  downed: {fileID: 21300000, guid: f0de5132ab1ec594c82c30e9ff6a854a, type: 3}
+  downed: {fileID: 0}
   airborne: {fileID: 21300000, guid: 8d09334ec8fffa94c94df1487fbd5646, type: 3}
   dash: {fileID: 21300000, guid: 0c7ee05bef95b3a41893ab739388b79c, type: 3}
-  ko: {fileID: 0}
+  ko: {fileID: 21300000, guid: 1690b23fe5f9d084d9baa365267b1c43, type: 3}
   throwPoseTime: 0.3
   finishHitAnimation: 1
   finishDashAnimation: 1
+  jumpTimedFromTakeOff: 1
   artFacesLeft: 0
   dashFacesMovement: 1
+  dashArtFacesLeft: 1
   debugBoxAlpha: 0
   showBlockShield: 1
   shieldColour: {r: 0.35, g: 0.65, b: 1, a: 0.45}
@@ -144461,6 +144470,9 @@ MonoBehaviour:
   specialBufferTime: 0.15
   upSpecialStopsRise: 1
   upSpecialGroundSnapHeight: 0.6
+  jumpCancelsLauncher: 1
+  launcherRelaunchLockout: 0.6
+  tapAfterLauncherQueuesAirAttack: 1
   sideSpecialInAir: 1
   airSideSpecialNoGravity: 1
   airSideSpecialKeepsTargetAirborne: 1

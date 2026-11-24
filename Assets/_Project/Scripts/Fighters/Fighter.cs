@@ -139,6 +139,17 @@ namespace KungFuCrashout.Fighters
                  "ground first, so it's a grounded Uppercut. 0 = never.")]
         [SerializeField, Range(0f, 2f)] float upSpecialGroundSnapHeight = 0.6f;
 
+        [Header("Launcher follow-up (Up special hit → jump → air combo)")]
+        [Tooltip("Once the Up special has HIT, a jump (swipe up) cancels its recovery straight away instead of waiting, so " +
+                 "you can chase the launched opponent into an air combo.")]
+        [SerializeField] bool jumpCancelsLauncher = true;
+        [Tooltip("After the Up special hits, another Up special can't start (or be buffered) for this long (seconds). " +
+                 "A swipe-up + tap in that time is a jump + air attack instead of a second launcher. 0 = off.")]
+        [SerializeField, Range(0f, 1.5f)] float launcherRelaunchLockout = 0.6f;
+        [Tooltip("A tap after the Up special hit but before the jump has started is remembered and becomes the first air " +
+                 "attack as soon as you leave the ground (within the lockout above).")]
+        [SerializeField] bool tapAfterLauncherQueuesAirAttack = true;
+
         [Header("Air side special")]
         [Tooltip("The Side special (Elbow Slide) can be used in the air: from a jump, or cancelling an air combo hit that " +
                  "connected. Once per jump. Off = ground only, as before.")]
@@ -699,6 +710,7 @@ namespace KungFuCrashout.Fighters
 
             UpdateSpecialBuffer(); // before the movement buffer: a special takes over from a queued dash / jump
             UpdateMoveBuffer();
+            UpdateQueuedAirAttack();
 
             UpdateColour();
             UpdateHitboxVisual();
@@ -886,6 +898,8 @@ namespace KungFuCrashout.Fighters
         /// </summary>
         public bool Special(SpecialMove move, int direction)
         {
+            // Just launched with the Up special: not another one (the gesture falls back to a tap = air attack).
+            if (move == SpecialMove.Up && InRelaunchLockout) return false;
             if (TryStartSpecial(move, direction)) return true;
             if (!bufferSpecials || !SpecialFor(move) || ControlsLocked || State == FighterState.KO) return false;
 
@@ -896,6 +910,22 @@ namespace KungFuCrashout.Fighters
             pendingSpecialTime = Time.time;
             if (logStateChanges) Debug.Log($"[{name}] special {move} buffered");
             return true;
+        }
+
+        float launcherHitTime = -99f;   // when our Up special last hit (Launcher follow-up)
+        bool queuedAirAttack;           // a tap after the launcher, waiting for the jump
+
+        /// <summary>Just launched someone with the Up special: no second launcher yet (Launcher Relaunch Lockout).</summary>
+        bool InRelaunchLockout => launcherRelaunchLockout > 0f && Time.time - launcherHitTime < launcherRelaunchLockout;
+
+        /// <summary>A tap remembered after the launcher: start the air combo once the jump is underway.</summary>
+        void UpdateQueuedAirAttack()
+        {
+            if (!queuedAirAttack) return;
+            if (!InRelaunchLockout || State == FighterState.KO || State == FighterState.Hitstun || State == FighterState.Downed) { queuedAirAttack = false; return; }
+            if (State != FighterState.Airborne) return;
+            queuedAirAttack = false;
+            Attack();
         }
 
         float blockPressTime;
@@ -921,6 +951,7 @@ namespace KungFuCrashout.Fighters
         {
             var attack = SpecialFor(move);
             if (!attack || ControlsLocked) return false;
+            if (move == SpecialMove.Up && InRelaunchLockout) return false;
 
             bool ok = CanStartAction;
             if (!ok && State == FighterState.Dashing && specialsCancelDash) ok = true;
@@ -1008,6 +1039,13 @@ namespace KungFuCrashout.Fighters
                 if (oneAirAttackPerJump && airAttackUsed) return;
                 airAttackUsed = true;
                 StartAirHit(0);
+                return;
+            }
+
+            // Tap just after our launcher hit, before the jump: becomes the first air attack once we're airborne.
+            if (tapAfterLauncherQueuesAirAttack && InRelaunchLockout && !IsAirborne && AirHit(0))
+            {
+                queuedAirAttack = true;
                 return;
             }
 
@@ -2014,6 +2052,7 @@ namespace KungFuCrashout.Fighters
                 if (result == HitResult.Ignored) continue;
 
                 if (result == HitResult.Hit || result == HitResult.Blocked) attackConnected = true;
+                if (result == HitResult.Hit && attack == upSpecial) launcherHitTime = Time.time;
                 HitConnected?.Invoke(target, attack, result);
                 if (result == HitResult.Hit) HitLanded?.Invoke(target, attack);
                 if (result == HitResult.Parried) return true; // our attack is over
@@ -2083,7 +2122,12 @@ namespace KungFuCrashout.Fighters
 
         bool TryStartJump(Vector2 direction)
         {
-            if (!CanStartAction || IsAirborne || Time.time < nextJumpTime) return false;
+            // Launcher follow-up: the Up special has hit → the jump cancels its recovery.
+            bool launcherCancel = jumpCancelsLauncher && !ControlsLocked && State == FighterState.Attacking &&
+                                  comboIndex == SpecialIndex && CurrentAttack && CurrentAttack == upSpecial &&
+                                  attackConnected && Phase != AttackPhase.Startup && Time.time - launcherHitTime < 2f;
+            if ((!CanStartAction && !launcherCancel) || IsAirborne || Time.time < nextJumpTime) return false;
+            if (launcherCancel) CancelAttack();
             if (State == FighterState.Blocking) EndBlock();
             pendingMove = MoveKind.None;
 

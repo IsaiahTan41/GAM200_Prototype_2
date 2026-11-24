@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using KungFuCrashout.Core;
 using KungFuCrashout.Fighters;
 
@@ -13,6 +14,10 @@ namespace KungFuCrashout.Props
     /// the floor, falling after a shockwave woke it, or held (by anyone). Sleeping items and items in flight have none.
     /// Grey outline (Sleeping Outline): a steady grey rim on every sleeping item, so it reads as "not in play yet".
     /// When both apply, the white "grab it now" pulse wins.
+    ///
+    /// LIGHT GLOW (testing, Use Light Glow ticked): instead of the outlines, a soft Point Light 2D on the item lights
+    /// the item and the stage around it — subtle white while asleep, light blue while in play, gentle yellow pulse
+    /// when the player can grab it. Untick Use Light Glow to get the outlines back exactly as before.
     ///
     /// Put on each item prefab next to Carryable (the GDD Build setup does this). Silhouette Material = a material using
     /// "GUI/Text Shader" (solid colour); empty = a tinted copy (fainter).
@@ -31,6 +36,33 @@ namespace KungFuCrashout.Props
         [SerializeField, Range(0f, 1f)] float pulseMin = 0.35f;
         [SerializeField] Material silhouetteMaterial;
 
+        [Header("Light glow (testing — untick for the old outlines)")]
+        [Tooltip("On: a soft 2D light glows from the item instead of the outlines. Off: the outlines below, as before.")]
+        [SerializeField] bool useLightGlow = true;
+        [SerializeField] Color glowSleepingColour = new Color(1f, 1f, 1f);
+        [SerializeField, Min(0f)] float glowSleepingIntensity = 0.35f;
+        [SerializeField] Color glowActiveColour = new Color(0.55f, 0.82f, 1f);
+        [SerializeField, Min(0f)] float glowActiveIntensity = 0.7f;
+        [SerializeField] Color glowGrabColour = new Color(1f, 0.84f, 0.35f);
+        [Tooltip("Peak of the yellow 'can pick up' glow (kept low so it doesn't wash out the stage).")]
+        [SerializeField, Min(0f)] float glowGrabIntensity = 0.85f;
+        [Tooltip("Yellow pulses between this fraction of its intensity and full. 1 = steady.")]
+        [SerializeField, Range(0f, 1f)] float glowGrabPulseMin = 0.6f;
+        [Tooltip("Full-brightness radius around the item's centre (world units).")]
+        [SerializeField, Min(0f)] float glowInnerRadius = 0.4f;
+        [Tooltip("Where the glow fades to nothing (world units).")]
+        [SerializeField, Min(0.01f)] float glowOuterRadius = 2f;
+        [SerializeField, Range(0f, 1f)] float glowFalloff = 0.6f;
+        [Tooltip("Glow while a fighter holds the item (light blue).")]
+        [SerializeField] bool glowWhileHeld = true;
+        [Tooltip("With the light glow: also a very thin outline in the glow's colour — light blue while in play, yellow when " +
+                 "the player can grab it. Sleeping items get no outline. Off = light glow only.")]
+        [SerializeField] bool glowOutline = true;
+        [Tooltip("Glow outline width (world units). Very thin by default.")]
+        [SerializeField, Range(0.005f, 0.3f)] float glowOutlineThickness = 0.02f;
+        [Tooltip("Glow outline opacity.")]
+        [SerializeField, Range(0f, 1f)] float glowOutlineAlpha = 0.9f;
+
         [Header("Throwable outline")]
         [Tooltip("Green rim on every item that's in play and can be thrown (not sleeping, not mid-flight).")]
         [SerializeField] bool throwableOutline = true;
@@ -46,6 +78,7 @@ namespace KungFuCrashout.Props
         Carryable item;
         SpriteRenderer art;
         SpriteRenderer glow;
+        Light2D glowLight;
         ItemHolder playerHolder;
         Fighter cachedPlayer;
 
@@ -59,21 +92,30 @@ namespace KungFuCrashout.Props
             glow = go.AddComponent<SpriteRenderer>();
             if (silhouetteMaterial) glow.sharedMaterial = silhouetteMaterial;
             glow.enabled = false;
+
+            var lightGo = new GameObject("Glow Light 2D");
+            lightGo.transform.SetParent(transform, false);
+            glowLight = lightGo.AddComponent<Light2D>(); // Point light by default, all sorting layers, no shadows
+            glowLight.shadowsEnabled = false;
+            glowLight.enabled = false;
+        }
+
+        void OnDisable()
+        {
+            if (glow) glow.enabled = false;
+            if (glowLight) glowLight.enabled = false;
         }
 
         void LateUpdate()
         {
             bool visible = art.enabled && art.sprite;
+            if (useLightGlow) { UpdateLightGlow(visible); return; }
+            if (glowLight.enabled) glowLight.enabled = false;
             bool grab = visible && PlayerCanGrab();
             bool throwable = visible && !grab && throwableOutline && IsThrowable();
             bool sleeping = visible && !grab && !throwable && sleepingOutline && item.IsDormant;
             glow.enabled = grab || throwable || sleeping;
             if (!glow.enabled) return;
-
-            glow.sprite = art.sprite;
-            glow.flipX = art.flipX;
-            glow.sortingLayerID = art.sortingLayerID;
-            glow.sortingOrder = art.sortingOrder - 1;
 
             if (grab)
             {
@@ -84,14 +126,77 @@ namespace KungFuCrashout.Props
             }
             else glow.color = sleeping ? sleepingColour : throwableColour; // steady grey (asleep) / green (in play)
 
-            // Scale about the sprite's centre so the rim is even all round (same maths as SpriteOutline).
+            FitOutline(thickness);
+        }
+
+        /// <summary>Copy the art onto the outline sprite, just behind it, scaled about the sprite's centre so the rim
+        /// is width world units all round (same maths as SpriteOutline).</summary>
+        void FitOutline(float width)
+        {
+            glow.sprite = art.sprite;
+            glow.flipX = art.flipX;
+            glow.sortingLayerID = art.sortingLayerID;
+            glow.sortingOrder = art.sortingOrder - 1;
             var sprite = art.sprite;
             Vector3 size = sprite.bounds.size;
             Vector3 centre = sprite.bounds.center;
-            float sx = size.x > 0.0001f ? 1f + 2f * thickness / (size.x * Mathf.Abs(transform.lossyScale.x)) : 1f;
-            float sy = size.y > 0.0001f ? 1f + 2f * thickness / (size.y * Mathf.Abs(transform.lossyScale.y)) : 1f;
+            float sx = size.x > 0.0001f ? 1f + 2f * width / (size.x * Mathf.Abs(transform.lossyScale.x)) : 1f;
+            float sy = size.y > 0.0001f ? 1f + 2f * width / (size.y * Mathf.Abs(transform.lossyScale.y)) : 1f;
             glow.transform.localScale = new Vector3(sx, sy, 1f);
             glow.transform.localPosition = new Vector3(centre.x * (1f - sx), centre.y * (1f - sy), 0f);
+        }
+
+        void UpdateLightGlow(bool visible)
+        {
+            bool grab = visible && PlayerCanGrab();
+            bool sleeping = visible && !grab && item.IsDormant;
+            bool active = visible && !grab && !sleeping && IsInPlay();
+            glowLight.enabled = grab || sleeping || active;
+            glow.enabled = glowOutline && (grab || active); // thin rim: in play (blue) / grab (yellow); none while asleep
+            if (!glowLight.enabled) return;
+
+            Color c; float i;
+            if (grab)
+            {
+                float pulse = pulseSpeed > 0f ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * pulseSpeed * Mathf.PI * 2f) : 1f;
+                c = glowGrabColour; i = glowGrabIntensity * Mathf.Lerp(glowGrabPulseMin, 1f, pulse);
+            }
+            else if (sleeping) { c = glowSleepingColour; i = glowSleepingIntensity; }
+            else { c = glowActiveColour; i = glowActiveIntensity; }
+            c.a = 1f;
+            glowLight.color = c;
+            glowLight.intensity = i;
+            glowLight.pointLightInnerRadius = Mathf.Min(glowInnerRadius, glowOuterRadius);
+            glowLight.pointLightOuterRadius = glowOuterRadius;
+            glowLight.falloffIntensity = glowFalloff;
+
+            if (glow.enabled)
+            {
+                var oc = (grab ? glowGrabColour : glowActiveColour);
+                oc.a = glowOutlineAlpha * (grab ? i / Mathf.Max(0.0001f, glowGrabIntensity) : 1f); // yellow rim pulses with the light
+                glow.color = oc;
+                FitOutline(glowOutlineThickness);
+            }
+
+            // Centre the light on the sprite (mirrored when flipped).
+            Vector3 centre = art.sprite.bounds.center;
+            if (art.flipX) centre.x = -centre.x;
+            glowLight.transform.localPosition = new Vector3(centre.x, centre.y, 0f);
+        }
+
+        /// <summary>Light-blue glow: on the floor, falling, or held (if Glow While Held). Not asleep or mid-flight.</summary>
+        bool IsInPlay()
+        {
+            switch (item.State)
+            {
+                case Carryable.ItemState.OnStage:
+                case Carryable.ItemState.Falling:
+                    return true;
+                case Carryable.ItemState.Carried:
+                    return glowWhileHeld;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>In play and throwable: on the floor, falling to it, or held. Not asleep, not mid-flight.</summary>

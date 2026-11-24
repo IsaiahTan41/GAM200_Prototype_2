@@ -70,6 +70,9 @@ namespace KungFuCrashout.Feedback
         readonly List<Fx> pool = new List<Fx>();
         readonly List<Flash> flashes = new List<Flash>();
 
+        /// <summary>The Global Scale every effect is multiplied by (so art-anchored effects can cancel it out).</summary>
+        public static float GlobalScale => Instance ? Mathf.Max(0.0001f, Instance.globalScale) : 1f;
+
         public static VfxPlayer Instance
         {
             get

@@ -32,6 +32,8 @@ namespace KungFuCrashout.EditorTools
             PoseSlot.Hitstun, PoseSlot.Downed, PoseSlot.KO, PoseSlot.Throw, PoseSlot.WindUp, PoseSlot.Attack,
             PoseSlot.HeavyAttack, PoseSlot.Recovery, PoseSlot.SideSpecial, PoseSlot.UpSpecial, PoseSlot.DownSpecial,
             PoseSlot.Dash, // the dash animation plays once per dash (restarted on each dash, follow-through after it)
+            PoseSlot.Airborne, // the jump animation plays once per jump and holds its last drawing while still in the air
+            PoseSlot.Block, // the block animation plays once per block and holds its last drawing while the block is held
         };
 
         [MenuItem("Window/KungFu Crashout/Animation/Set Up Pose Clips (all sprites)", priority = 10016)]

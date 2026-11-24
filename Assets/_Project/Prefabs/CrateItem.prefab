@@ -152,12 +152,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KungFuCrashout.Props.Carryable
   stage: {fileID: 0}
+  groundSprite: {fileID: 0}
+  heldSprite: {fileID: 0}
+  sleepingSprite: {fileID: 0}
+  fightScale: 1
+  resizeTime: 0.12
+  backToStageSizeWhenDropped: 0
+  canMoveWhileHeld: 1
+  dimWhileDormant: 1
+  dormantBrightness: 0.65
+  wakePopSpeed: 3
+  wakeChance: -1
+  wakePriority: 0
+  carryOffset: {x: 0, y: 0}
   carryDistance: 1
   carryAngle: 135
   carryTilt: 20
   bobAmount: 0.06
   bobSpeed: 2
   followSharpness: 25
+  useCarrierCarryPoint: 1
   carriedSortingOrder: 10
   throwSpeed: 40
   maxThrowDistance: 40
@@ -167,7 +181,8 @@ MonoBehaviour:
   dropDistance: 0.8
   gravity: 30
   throwCue: {fileID: 11400000, guid: b9d07d56ae1b8ff47b51fee7d23daf6a, type: 2}
-  breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
+  breakCue: {fileID: 11400000, guid: 804f26e25cd648449bb0479d184050e6, type: 2}
+  landCue: {fileID: 11400000, guid: 90f7e334836dff84d93f870bc1af8418, type: 2}
   breakSoundOnLifetimeEnd: 0
   lifetime: 300
   maxHolds: 9

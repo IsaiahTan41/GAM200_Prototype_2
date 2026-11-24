@@ -80,6 +80,13 @@ namespace KungFuCrashout.Feedback
         public Vector2 offset;
         [Tooltip("Mirror the sprite and the offset when the owner faces left.")]
         public bool flipWithFacing = true;
+        [Tooltip("Attack strikes only: place this effect on the fighter's ART instead of the hitbox — at Art Position in the " +
+                 "Visual's own units (the drawing's pivot = 0,0, drawn facing right) and sized 1:1 with the drawing (Scale = " +
+                 "effect size relative to the art; FighterVfx Size Multiplier, the VFX Set scale and Global Scale are ignored). " +
+                 "Use it to lay an effect exactly over a swing painted into the attack drawing.")]
+        public bool anchorToArt = false;
+        [Tooltip("Anchor To Art: where the effect's centre sits, in the Visual's local units (pixels / the art's PPU).")]
+        public Vector2 artPosition;
         [Tooltip("Tick if the art is painted facing LEFT (so it needs mirroring when facing right).")]
         public bool paintedFacingLeft = false;
         [Tooltip("Fixed rotation (degrees). Mirrored with facing.")]

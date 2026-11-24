@@ -111,7 +111,7 @@ namespace KungFuCrashout.Fighters
         /// Show this pose through its clip, advancing its own 60 fps frame counter by dt (0 during hitstop). Called by
         /// FighterPoseView every LateUpdate. False = no clip for it (or an attack clip owns the sprite): set the sprite yourself.
         /// </summary>
-        public bool ShowPose(PoseSlot pose, float dt)
+        public bool ShowPose(PoseSlot pose, float dt, int frameOverride = -1)
         {
             if (IsPlaying) { curPose = PoseSlot.None; curPoseClip = null; return false; } // an attack owns the Animator
             var entry = usePoseClips && pose != PoseSlot.None && animator && animator.runtimeAnimatorController ? PoseClipFor(pose) : null;
@@ -139,6 +139,7 @@ namespace KungFuCrashout.Fighters
                 if (steps >= 8) poseAcc = 0f;
             }
 
+            if (frameOverride >= 0) { poseFrame = frameOverride; poseAcc = 0f; } // e.g. the jump, timed from take-off
             var clip = entry.clip;
             int total = Mathf.Max(1, Mathf.RoundToInt(clip.length * 60f));
             int f = entry.loop ? poseFrame % total : Mathf.Min(poseFrame, total - 1);

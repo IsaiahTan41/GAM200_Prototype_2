@@ -288,7 +288,8 @@ namespace KungFuCrashout.Feedback
 
             if (vfx.strike)
             {
-                Play(vfx.strike, StrikePoint, fighter.Facing, s, transform);
+                if (vfx.strike.anchorToArt) PlayOnArt(vfx.strike);
+                else Play(vfx.strike, StrikePoint, fighter.Facing, s, transform);
             }
             if (vfx.dust) Play(vfx.dust, Feet, fighter.Facing, s);
         }
@@ -511,6 +512,16 @@ namespace KungFuCrashout.Feedback
             a == Anchor.Feet ? feetOffset : a == Anchor.Strike ? strikeOffset : a == Anchor.Hit ? hitOffset : bodyOffset;
 
         // ───────────── Helpers ─────────────
+
+        /// <summary>Anchor To Art cues: centred on a point of the drawing, sized 1:1 with it (follows the fighter).</summary>
+        void PlayOnArt(VfxCue cue)
+        {
+            FindVisual();
+            if (!visual) { Play(cue, StrikePoint, fighter.Facing, 1f, transform); return; }
+            Vector3 at = visual.TransformPoint(new Vector3(cue.artPosition.x, cue.artPosition.y, 0f)); // root scale mirrors it with facing
+            float size = Mathf.Abs(visual.lossyScale.y) / VfxPlayer.GlobalScale;
+            VfxPlayer.Play(cue, at, fighter.Facing, size, art, transform);
+        }
 
         void Play(VfxCue cue, Vector3 at, int facing, float extraScale = 1f, Transform follow = null)
         {

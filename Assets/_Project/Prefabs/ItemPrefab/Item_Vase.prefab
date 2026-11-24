@@ -184,7 +184,8 @@ MonoBehaviour:
   dropDistance: 0.8
   gravity: 30
   throwCue: {fileID: 11400000, guid: b9d07d56ae1b8ff47b51fee7d23daf6a, type: 2}
-  breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
+  breakCue: {fileID: 11400000, guid: d3bd4f376a517704cb93e76d73d00a0a, type: 2}
+  landCue: {fileID: 11400000, guid: 90f7e334836dff84d93f870bc1af8418, type: 2}
   breakSoundOnLifetimeEnd: 0
   lifetime: 300
   maxHolds: 3
@@ -206,6 +207,21 @@ MonoBehaviour:
   pulseSpeed: 2.5
   pulseMin: 0.35
   silhouetteMaterial: {fileID: 2100000, guid: 638f19287ac4c794eabc059c06ecf4eb, type: 2}
+  useLightGlow: 1
+  glowSleepingColour: {r: 1, g: 1, b: 1, a: 1}
+  glowSleepingIntensity: 0.35
+  glowActiveColour: {r: 0.55, g: 0.82, b: 1, a: 1}
+  glowActiveIntensity: 0.7
+  glowGrabColour: {r: 1, g: 0.84, b: 0.35, a: 1}
+  glowGrabIntensity: 0.85
+  glowGrabPulseMin: 0.6
+  glowInnerRadius: 0.4
+  glowOuterRadius: 2
+  glowFalloff: 0.6
+  glowWhileHeld: 1
+  glowOutline: 1
+  glowOutlineThickness: 0.02
+  glowOutlineAlpha: 0.9
   throwableOutline: 1
   throwableColour: {r: 0.2, g: 0.9, b: 0.3, a: 0.9}
   whileHeld: 1
@@ -226,7 +242,7 @@ MonoBehaviour:
   weight: 0
   breakOnCleanHit: 0
   blocksBeforeBreaking: 0
-  breakCue: {fileID: 11400000, guid: ea3fd889364517f4aa0531f7923a3a9d, type: 2}
+  breakCue: {fileID: 11400000, guid: d3bd4f376a517704cb93e76d73d00a0a, type: 2}
 --- !u!114 &3464741164988028838
 MonoBehaviour:
   m_ObjectHideFlags: 0
