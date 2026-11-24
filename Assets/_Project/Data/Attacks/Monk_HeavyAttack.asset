@@ -53,7 +53,7 @@ MonoBehaviour:
       boxes:
       - offset: {x: 0.07714286, y: 0.62142855}
         size: {x: 1.2571429, y: 1.2142857}
-    - frame: 8
+    - frame: 20
       boxes:
       - offset: {x: -0.071428575, y: 1.1071428}
         size: {x: 0.9142857, y: 2.1}
@@ -64,7 +64,7 @@ MonoBehaviour:
     travel:
     - frame: 4
       distance: 0.12571429
-    - frame: 8
+    - frame: 20
       distance: 0.09142857
     - frame: 24
       distance: 0.09428571

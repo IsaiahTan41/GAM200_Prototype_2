@@ -30,7 +30,7 @@ namespace KungFuCrashout.EditorTools
 
         const string FinisherClip = MonkAttackClipSetup.Folder + "/Monk_BasicAttack_Finisher.anim";
 
-        Target target = Target.FinisherOnly;
+        Target target = Target.Heavy; // the light hits play ATTACK 1–10 now (MonkLightAttackAnimSetup); this edits the heavy
         int ready = 3, drawnBack = 3, heldUp = 4, active = 4, recovery = 9;
         bool keepCombo = true;
         string status = "";
@@ -57,7 +57,7 @@ namespace KungFuCrashout.EditorTools
             EditorGUILayout.LabelField("Hold each drawing (frames)", EditorStyles.boldLabel);
             ready = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("1  Ready stance"), ready));
             drawnBack = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("2  Drawn back (startup)"), drawnBack));
-            heldUp = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("3  Held up (leap)", "The pose before the slam."), heldUp));
+            heldUp = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("3  Leap (staff raised)", "The pose before the slam."), heldUp));
             active = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("4  Slam: active frames", "Hitbox live."), active));
             recovery = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("4  Slam: recovery hold", "After the hitbox ends."), recovery));
 
@@ -68,6 +68,12 @@ namespace KungFuCrashout.EditorTools
             EditorGUILayout.LabelField($"Active {spec.activeStart}–{spec.activeEnd - 1}, " +
                                        (spec.cancelFrame >= 0 ? $"cancel from {spec.cancelFrame}, " : "no cancel, ") +
                                        $"{spec.lastFrame + 1} frames ({(spec.lastFrame + 1) / 60f:0.00} s)");
+
+            bool lightLocked = target != Target.Heavy && MonkLightAttackAnimSetup.LightHitsUseNewAnimation();
+            if (lightLocked)
+                EditorGUILayout.HelpBox("The light hits play the ATTACK 1–10 animation now. Applying here would put the MONKBASIC " +
+                                        "drawings back on them. This window is for the Heavy (MONKBASIC, held draw-back); " +
+                                        "use Restore MONKBASIC Light Hits first if you want the old light hits back.", MessageType.Warning);
 
             if (target != Target.Heavy)
             {
@@ -86,8 +92,11 @@ namespace KungFuCrashout.EditorTools
             EditorGUILayout.Space();
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Apply", GUILayout.Height(28))) Apply();
-                if (GUILayout.Button("Reset To Original", GUILayout.Height(28))) { ResetDefaults(); Apply(); }
+                using (new EditorGUI.DisabledScope(lightLocked))
+                {
+                    if (GUILayout.Button("Apply", GUILayout.Height(28))) Apply();
+                    if (GUILayout.Button("Reset To Original", GUILayout.Height(28))) { ResetDefaults(); Apply(); }
+                }
             }
             if (GUILayout.Button("Show the clip in the Animation window")) ShowClip();
             if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, MessageType.Info);

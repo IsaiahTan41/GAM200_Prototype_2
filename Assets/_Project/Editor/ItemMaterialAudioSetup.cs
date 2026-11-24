@@ -104,6 +104,46 @@ namespace KungFuCrashout.EditorTools
             Debug.Log($"[{Title}] Restored the single Smash break on every item, clatter off. Save the scene.{report}");
         }
 
+        const string BlockCue = "Assets/_Project/Audio/SFX/Block/SFX_Block.asset";
+
+        /// <summary>ItemCatch_* → SFX_ItemCatch on every fighter's FighterDefenseSfx → Catch Cue (was the block sound).</summary>
+        [MenuItem("Window/KungFu Crashout/Audio/Set Up Item Catch Sound", priority = 10080)]
+        static void SetUpCatch()
+        {
+            if (EditorApplication.isPlaying) { EditorUtility.DisplayDialog(Title, "Stop Play mode first.", "OK"); return; }
+            var cue = MakeCue("ItemCatch_", "SFX_ItemCatch", 0.9f, 2, 56);
+            if (!cue) { EditorUtility.DisplayDialog(Title, $"No ItemCatch_* clips found in {Folder}.", "OK"); return; }
+            AssetDatabase.SaveAssets();
+            int n = SetCatchCue(cue);
+            Debug.Log(n > 0 ? $"[{Title}] Item catch → SFX_ItemCatch on {n} fighter(s). Save the scene."
+                            : $"[{Title}] SFX_ItemCatch made, but no FighterDefenseSfx in the open scene: open FightScene and re-run.");
+        }
+
+        [MenuItem("Window/KungFu Crashout/Audio/Restore Item Catch Sound (block sound)", priority = 10081)]
+        static void RestoreCatch()
+        {
+            var block = AssetDatabase.LoadAssetAtPath<SfxCue>(BlockCue);
+            int n = SetCatchCue(block);
+            Debug.Log($"[{Title}] Item catch back to the block sound on {n} fighter(s). Save the scene.");
+        }
+
+        static int SetCatchCue(SfxCue cue)
+        {
+            int n = 0;
+            foreach (var d in Object.FindObjectsByType<FighterDefenseSfx>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                var so = new SerializedObject(d);
+                var p = so.FindProperty("catchCue");
+                if (p == null) continue;
+                Undo.RecordObject(d, Title);
+                p.objectReferenceValue = cue;
+                so.ApplyModifiedProperties();
+                EditorSceneManager.MarkSceneDirty(d.gameObject.scene);
+                n++;
+            }
+            return n;
+        }
+
         /// <summary>Set the break cue (Carryable + ItemDurability) and the land cue on one item prefab.</summary>
         static string Assign(string prefabName, SfxCue breakCue, SfxCue landCue, string what)
         {

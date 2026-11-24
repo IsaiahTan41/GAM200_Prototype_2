@@ -38,6 +38,8 @@ namespace KungFuCrashout.Feedback
         {
             public AttackData attack;
             public AttackVfx vfx;
+            [Tooltip("This attack plays NO strike / dust effects (e.g. its swing is painted into its animation).")]
+            public bool noEffects;
         }
 
         [Header("Attacks (first active frame)")]
@@ -86,7 +88,11 @@ namespace KungFuCrashout.Feedback
         public AttackVfx For(Fighter fighter, AttackData attack)
         {
             foreach (var o in perAttack)
-                if (o.attack == attack && !o.vfx.IsEmpty) return o.vfx;
+            {
+                if (o.attack != attack) continue;
+                if (o.noEffects) return default; // empty = nothing plays
+                if (!o.vfx.IsEmpty) return o.vfx;
+            }
 
             if (fighter.IsDoingSpecial) return special;
 

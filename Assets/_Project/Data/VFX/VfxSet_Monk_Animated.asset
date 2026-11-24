@@ -31,36 +31,48 @@ MonoBehaviour:
     dust: {fileID: 11400000, guid: c6b59b9766f78914cba4eec1bf9c918e, type: 2}
     scale: 1.3
   perAttack:
-  - attack: {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
-    vfx:
-      strike: {fileID: 11400000, guid: 8160eed6eb0441d5a83da7dd388c7638, type: 2}
-      dust: {fileID: 0}
-      scale: 1
-  - attack: {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
-    vfx:
-      strike: {fileID: 11400000, guid: 8160eed6eb0441d5a83da7dd388c7638, type: 2}
-      dust: {fileID: 0}
-      scale: 1
   - attack: {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
     vfx:
+      strike: {fileID: 0}
+      dust: {fileID: 0}
+      scale: 0
+    noEffects: 1
+  - attack: {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
+    vfx:
+      strike: {fileID: 0}
+      dust: {fileID: 0}
+      scale: 0
+    noEffects: 1
+  - attack: {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
+    vfx:
+      strike: {fileID: 0}
+      dust: {fileID: 0}
+      scale: 0
+    noEffects: 1
+  - attack: {fileID: 11400000, guid: 6b0dce3be94bb3d4a89c9f03ea51acc9, type: 2}
+    vfx:
       strike: {fileID: 11400000, guid: 8160eed6eb0441d5a83da7dd388c7638, type: 2}
       dust: {fileID: 0}
       scale: 1
+    noEffects: 0
   - attack: {fileID: 11400000, guid: c139f7969cfd7744a82ccba7793a0fcb, type: 2}
     vfx:
       strike: {fileID: 11400000, guid: b289d0534623aaa4e8a7a3d2aa56ffd3, type: 2}
       dust: {fileID: 0}
       scale: 1
+    noEffects: 0
   - attack: {fileID: 11400000, guid: 94decb2bc2d3a85489cc4c810b56239c, type: 2}
     vfx:
       strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
       dust: {fileID: 0}
       scale: 1
+    noEffects: 0
   - attack: {fileID: 11400000, guid: 7dacb94f2afce0c4d912066d69dc8864, type: 2}
     vfx:
       strike: {fileID: 11400000, guid: 08078815a8bdb4a41b47ee473449cb4a, type: 2}
       dust: {fileID: 0}
       scale: 1.3
+    noEffects: 0
   hit: {fileID: 0}
   heavyHit: {fileID: 11400000, guid: 9aba4617f59c79c4e9c603d12e7e5ddd, type: 2}
   ko: {fileID: 11400000, guid: ac83c9bc73854954f80f5215c4bbeabc, type: 2}

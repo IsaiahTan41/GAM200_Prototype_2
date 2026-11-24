@@ -76,14 +76,15 @@ namespace KungFuCrashout.EditorTools
             activeStart = 10, activeEnd = 14, cancelFrame = 14, lastFrame = 22, groundBoxFrame = 12,
         };
 
-        /// <summary>How long the heavy holds drawing 3 (the leap, staff raised) before the slam, in frames (60 fps).</summary>
+        /// <summary>How long the heavy holds drawing 2 (staff drawn back) before the leap, in frames (60 fps).</summary>
         public const int HeavyHoldFrames = 16;
 
-        /// <summary>Heavy attack: the same drawings, drawing 3 HELD before the slam; no cancel; 48 frames like the old heavy.</summary>
+        /// <summary>Heavy attack (the MONKBASIC 1–4 system, repurposed: the light hits now play ATTACK 1–10): drawing 2
+        /// (staff drawn back) HELD, then the leap and the slam; no cancel; 48 frames like the old heavy, slam on frame 24.</summary>
         internal static readonly Spec Heavy = new Spec
         {
             clipPath = MonkAttackClipSetup.Folder + "/Monk_HeavyAttack.anim",
-            drawingFrames = new[] { 0, 4, 8, 8 + HeavyHoldFrames },
+            drawingFrames = new[] { 0, 4, 4 + HeavyHoldFrames, 8 + HeavyHoldFrames },
             activeStart = 8 + HeavyHoldFrames, activeEnd = 8 + HeavyHoldFrames + 6, cancelFrame = -1, lastFrame = 47,
             groundBoxFrame = 8 + HeavyHoldFrames + 3,
         };
@@ -160,7 +161,7 @@ namespace KungFuCrashout.EditorTools
                       "Use Frame Data is on. Save the scene (Ctrl+S).");
         }
 
-        [MenuItem("Window/KungFu Crashout/Animation/Set Up Monk Heavy Attack (MONKBASIC, held leap)", priority = 10015)]
+        [MenuItem("Window/KungFu Crashout/Animation/Set Up Monk Heavy Attack (MONKBASIC, held draw-back)", priority = 10015)]
         public static void SetUpHeavy()
         {
             if (EditorApplication.isPlaying) { EditorUtility.DisplayDialog(Title, "Stop Play mode first.", "OK"); return; }
@@ -213,7 +214,7 @@ namespace KungFuCrashout.EditorTools
             Undo.CollapseUndoOperations(group);
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
-            Debug.Log($"[Animation] Heavy = {clip.name} (MONKBASIC 1–4, drawing 3 held {HeavyHoldFrames} frames): " +
+            Debug.Log($"[Animation] Heavy = {clip.name} (MONKBASIC 1–4, drawing 2 (drawn back) held {HeavyHoldFrames} frames): " +
                       $"{string.Join("; ", log)}. Slam on frame {Heavy.activeStart} (active {Heavy.activeStart}–{Heavy.activeEnd - 1}), " +
                       $"{Heavy.lastFrame + 1} frames, no cancel. Fighter → Heavy Uses Animation (or the pause menu) switches back " +
                       "to the original heavy. Save the scene (Ctrl+S).");

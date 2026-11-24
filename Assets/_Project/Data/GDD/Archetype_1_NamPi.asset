@@ -24,7 +24,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fbcc3139fefc85441808f0f1ad791a27, type: 2}
   - {fileID: 11400000, guid: fb92bac1a6094af4d847ee2173739617, type: 2}
   - {fileID: 11400000, guid: 21fed014897724a47b7fbb1dea415d31, type: 2}
-  heavyAttack: {fileID: 11400000, guid: 6fda1495eda6a714385fcc2f5e87efa6, type: 2}
+  heavyAttack: {fileID: 11400000, guid: 6b0dce3be94bb3d4a89c9f03ea51acc9, type: 2}
   sideSpecial: {fileID: 11400000, guid: d30e2950c246862448e18543040e7675, type: 2}
   upSpecial: {fileID: 11400000, guid: 675043d2859f6674989fad6abf052c24, type: 2}
   downSpecial: {fileID: 11400000, guid: d8944ace2923ba347876b444f73943f4, type: 2}
