@@ -64,6 +64,10 @@ namespace KungFuCrashout.Props
         [Tooltip("ON: when it's let go (dropped, or a throw lands) it shrinks back to the size it had on the stage. " +
                  "OFF: it stays at Fight Scale once taken.")]
         [SerializeField] bool backToStageSizeWhenDropped = false;
+        [Tooltip("ON: a sleeping item on the stage is shown at Fight Scale (the size it has in a fighter's hands) from the " +
+                 "start, resting on the same spot (its bottom edge stays put), so it doesn't grow or shrink when it's picked " +
+                 "up, woken or dropped. OFF: it keeps the size it was placed at on the stage until it's taken (old).")]
+        [SerializeField] bool sleepAtHeldSize = true;
 
         [Header("Holding")]
         [Tooltip("ON: the carrier can walk, dash and jump while holding this. OFF: the carrier is rooted (no walk, dash or " +
@@ -242,6 +246,7 @@ namespace KungFuCrashout.Props
             // Spawned from a prefab (which can't reference scene objects): find the stage ourselves.
             if (!stage) stage = FindFirstObjectByType<StageBounds>();
 
+            if (sleepAtHeldSize) MatchHeldSize();
             stageScale = transform.localScale; // as placed / spawned: the stage (background) size
             targetScale = stageScale;
             noStageY = transform.position.y;
@@ -278,6 +283,21 @@ namespace KungFuCrashout.Props
             targetScale = scale;
             Measure(scale);
             if (instant || resizeTime <= 0f) transform.localScale = scale;
+        }
+
+        /// <summary>Sleep At Held Size: switch to Fight Scale now, keeping the bottom of the art where it was.</summary>
+        void MatchHeldSize()
+        {
+            Vector3 s = transform.localScale;
+            var target = new Vector3(fightScale * (s.x < 0f ? -1f : 1f), fightScale * (s.y < 0f ? -1f : 1f), s.z);
+            if ((target - s).sqrMagnitude < 1e-8f) return;
+            var sprite = spriteRenderer ? spriteRenderer.sprite : null;
+            float parentY = transform.parent ? Mathf.Abs(transform.parent.lossyScale.y) : 1f;
+            float minY = sprite ? sprite.bounds.min.y : 0f;
+            float bottomBefore = minY * Mathf.Abs(s.y) * parentY;
+            float bottomAfter = minY * Mathf.Abs(target.y) * parentY;
+            transform.localScale = target;
+            transform.position += new Vector3(0f, bottomBefore - bottomAfter, 0f); // same resting spot
         }
 
         /// <summary>Straight to Fight Scale (e.g. an item that drops into the fight rather than sitting on the stage).</summary>

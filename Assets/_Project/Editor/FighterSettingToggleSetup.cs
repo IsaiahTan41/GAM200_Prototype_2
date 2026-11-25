@@ -13,6 +13,40 @@ namespace KungFuCrashout.EditorTools
     /// </summary>
     public static class FighterSettingToggleSetup
     {
+        static readonly string[] Scenes = { "Assets/_Project/Scenes/FightScene.unity", "Assets/_Project/Scenes/StartScreen.unity" };
+
+        /// <summary>Removes every "Heavy attack" (Heavy Uses Animation) toggle from the options / pause menus in FightScene
+        /// and StartScreen, and saves those scenes. The heavy then always plays its animation (Fighter → Heavy Uses
+        /// Animation stays as set on the fighters). Add Heavy Animation Toggle puts one back.</summary>
+        [MenuItem("Window/KungFu Crashout/GDD Build/Remove Heavy Animation Toggle (options menus)", priority = 10055)]
+        static void Remove()
+        {
+            if (EditorApplication.isPlaying) { EditorUtility.DisplayDialog("Remove Heavy Toggle", "Stop Play mode first.", "OK"); return; }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            var log = new List<string>();
+            var active = EditorSceneManager.GetActiveScene().path;
+            foreach (var path in Scenes)
+            {
+                var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByPath(path);
+                bool opened = false;
+                if (!scene.isLoaded) { scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive); opened = true; }
+                int n = 0;
+                foreach (var root in scene.GetRootGameObjects())
+                    foreach (var t in root.GetComponentsInChildren<FighterSettingToggle>(true))
+                    {
+                        var so = new SerializedObject(t);
+                        if (so.FindProperty("setting").enumValueIndex != (int)FighterSettingToggle.Setting.HeavyUsesAnimation) continue;
+                        Undo.DestroyObjectImmediate(t.gameObject);
+                        n++;
+                    }
+                if (n > 0) { EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); }
+                log.Add($"{System.IO.Path.GetFileNameWithoutExtension(path)}: {n} removed");
+                if (opened && scene.path != active) EditorSceneManager.CloseScene(scene, true);
+            }
+            Debug.Log("[GDD Build] Heavy attack toggle removed from the options menus — " + string.Join(", ", log) +
+                      ". The heavy always plays its animation now.");
+        }
+
         const string HeavyToggleName = "Heavy Animation Toggle";
 
         [MenuItem("Window/KungFu Crashout/GDD Build/Add Heavy Animation Toggle (pause menu)", priority = 10054)]

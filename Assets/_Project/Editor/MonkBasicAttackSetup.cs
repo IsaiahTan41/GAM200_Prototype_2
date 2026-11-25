@@ -209,7 +209,7 @@ namespace KungFuCrashout.EditorTools
                 EditorUtility.SetDirty(a);
             }
 
-            FighterSettingToggleSetup.AddToOpenScene(log);
+            // (The pause-menu "Heavy attack" toggle was removed: the heavy always plays its animation.)
             AssetDatabase.SaveAssets();
             Undo.CollapseUndoOperations(group);
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());

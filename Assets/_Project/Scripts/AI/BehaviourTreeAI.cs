@@ -94,6 +94,19 @@ namespace KungFuCrashout.AI
             [Range(0f, 1f)] public float catchChance = 0.2f;
             [Range(0f, 1f)] public float jumpOverChance = 0.35f;
             [Range(0f, 1f)] public float itemBlockChance = 0.35f;
+
+            [Header("Holding block (turtling)")]
+            [Tooltip("Chance per decision, while the player is within Turtle Range, to put its guard up and HOLD it for a " +
+                     "while — even when attacking would be the better move. 0 = never (Hard).")]
+            [Range(0f, 1f)] public float turtleChance = 0f;
+            [Tooltip("Turtles only when the player is this close (world units).")]
+            [Min(0f)] public float turtleRange = 4f;
+            [Tooltip("How long each turtle lasts (seconds, random between X and Y).")]
+            public Vector2 turtleHoldTime = new Vector2(0.6f, 1.2f);
+            [Tooltip("After a turtle, wait at least this long before turtling again (seconds), so it still attacks.")]
+            [Min(0f)] public float turtleCooldown = 0.8f;
+            [Tooltip("A block it puts up against an attack stays up this much longer after that attack ends (seconds).")]
+            [Min(0f)] public float blockLinger = 0f;
         }
 
         [Header("Difficulty")]
@@ -107,11 +120,15 @@ namespace KungFuCrashout.AI
             walkSpeed = 2.2f, dashWhenFarther = 4.5f, dashPause = 1.2f, retreatChance = 0.1f,
             attackCooldown = 1.6f, comboChance = 0.3f, heavyChance = 0.15f, specialChance = 0.1f, punishChance = 0.4f,
             guardBreakChance = 0f, antiAirChance = 0f,
-            blockChance = 0.15f, parryChance = 0f, comboBreakChance = 0f,
+            blockChance = 0.45f, parryChance = 0f, comboBreakChance = 0f,
             fetchChance = 0.5f, raceForItems = false, throwRange = 7f,
-            catchChance = 0f, jumpOverChance = 0.15f, itemBlockChance = 0.2f
+            catchChance = 0f, jumpOverChance = 0.15f, itemBlockChance = 0.2f,
+            turtleChance = 0.35f, turtleRange = 4.5f, turtleHoldTime = new Vector2(0.8f, 1.6f), turtleCooldown = 0.6f, blockLinger = 0.5f
         };
-        [SerializeField] Profile normal = new Profile();
+        [SerializeField] Profile normal = new Profile
+        {
+            blockChance = 0.65f, turtleChance = 0.3f, turtleRange = 4f, turtleHoldTime = new Vector2(0.6f, 1.3f), turtleCooldown = 0.8f, blockLinger = 0.35f
+        };
         [SerializeField] Profile hard = new Profile
         {
             thinkInterval = 0.16f, reactionTime = 0.14f, telegraphTime = 0f,
@@ -140,6 +157,9 @@ namespace KungFuCrashout.AI
                  "round, the KO slow motion and the round-over / match-over beat. Its walk target, planned follow-ups and " +
                  "held block are dropped and a dash in progress stops where it is. Off = only its commands are locked (old).")]
         [SerializeField] bool freezeOutsideFighting = true;
+        [Tooltip("After the round call (ROUND… FIGHT!) unlocks the fighters, the CPU waits this long (seconds) before it " +
+                 "moves or attacks, so the player gets the first beat. 0 = it acts the moment the round goes live.")]
+        [SerializeField, Range(0f, 1.5f)] float roundStartDelay = 0.4f;
         [Tooltip("Also hold still during gameplay slow motion (e.g. a heavy item hit: Time Scale between 0 and 1): no " +
                  "thinking, walking or dashing until it ends (a dash in progress stops). Its block and planned follow-ups " +
                  "are kept, so it resumes where it was. Off = the CPU keeps acting in slow motion (old).")]
@@ -179,7 +199,7 @@ namespace KungFuCrashout.AI
         BtNode root;
         readonly BtContext ctx = new BtContext();
 
-        float nextThink, nextAttack, nextDash;
+        float nextThink, nextAttack, nextDash, nextTurtle;
         float telegraphUntil = -1f;
         Action telegraphed;
 
@@ -254,6 +274,7 @@ namespace KungFuCrashout.AI
 
         MatchManager match;
         bool heldStill, heldForSlowMo;
+        float liveSince = -1f; // when the current round went live (Fighting phase), for Round Start Delay
 
         /// <summary>
         /// Playtest fix: the CPU kept moving during the round call and the KO slow motion (a dash / walk already under way
@@ -264,7 +285,11 @@ namespace KungFuCrashout.AI
         {
             if (!match) match = FindAnyObjectByType<MatchManager>();
             bool notLive = self.ControlsLocked || (match && match.Phase != MatchPhase.Fighting);
-            if (freezeOutsideFighting && notLive)
+            // Round start: stay still for Round Start Delay after the round goes live.
+            if (match && match.Phase != MatchPhase.Fighting) liveSince = -1f;
+            else if (match && liveSince < 0f) liveSince = Time.time;
+            bool startDelay = match && roundStartDelay > 0f && liveSince >= 0f && Time.time - liveSince < roundStartDelay;
+            if ((freezeOutsideFighting && notLive) || startDelay)
             {
                 if (!heldStill)
                 {
@@ -273,7 +298,7 @@ namespace KungFuCrashout.AI
                     CancelGoal();
                     ReleaseBlock();
                     self.HaltDash();
-                    Log("hold still (round not live)");
+                    Log(startDelay && !notLive ? "hold still (round start delay)" : "hold still (round not live)");
                 }
                 return true;
             }
@@ -379,6 +404,12 @@ namespace KungFuCrashout.AI
                         new Sequence("Fetch item",
                             new Condition("free item worth it", FindFetchTarget),
                             new Act("Go get it", Fetch)),
+
+                        new Sequence("Turtle",
+                            new Condition("player close, free to guard", () => p.turtleChance > 0f && Dist <= p.turtleRange &&
+                                                                               Time.time >= nextTurtle && !(holder && holder.IsCarrying)),
+                            new Condition("roll", () => Random.value < p.turtleChance),
+                            new Act("Hold block", Turtle)),
 
                         new Sequence("Attack",
                             new Condition("in range", () => Dist <= JabReach + rangePadding),
@@ -609,6 +640,17 @@ namespace KungFuCrashout.AI
             return StepTowardGoal();
         }
 
+        /// <summary>Guard up and hold it for a while (Easy / Normal turtle more, even when it isn't the best move).</summary>
+        NodeStatus Turtle()
+        {
+            float hold = Random.Range(Mathf.Min(p.turtleHoldTime.x, p.turtleHoldTime.y), Mathf.Max(p.turtleHoldTime.x, p.turtleHoldTime.y));
+            CancelGoal();
+            SetGuard(Time.time, Time.time + hold);
+            nextTurtle = Time.time + hold + p.turtleCooldown;
+            Log($"turtle {hold:0.0}s");
+            return NodeStatus.Success;
+        }
+
         NodeStatus Spacing()
         {
             if (Random.value < p.retreatChance)
@@ -783,7 +825,7 @@ namespace KungFuCrashout.AI
             // Lights are auto-guarded at neutral; manual blocks are for heavies and specials (which stagger / launch).
             if (heavyOrSpecial && Random.value < p.blockChance && reactAt < hitAt + attack.active)
             {
-                PlanGuard(reactAt, now + attack.TotalDuration + 0.1f);
+                PlanGuard(reactAt, now + attack.TotalDuration + 0.1f + p.blockLinger);
                 Log($"block {attack.name}");
             }
         }

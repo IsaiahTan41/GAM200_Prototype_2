@@ -17,7 +17,7 @@ MonoBehaviour:
   startup: 0.16666667
   active: 0.15
   recovery: 0.25
-  hitboxOffset: {x: 0.5, y: -0.55}
+  hitboxOffset: {x: 0.5, y: -0.25}
   hitboxSize: {x: 1.6, y: 2.2}
   knockback: 0.7
   hitstun: 0.5
@@ -38,7 +38,7 @@ MonoBehaviour:
     hitboxSets:
     - frame: 10
       boxes:
-      - offset: {x: 0.5, y: 0.45}
+      - offset: {x: 0.5, y: 0.75}
         size: {x: 1.6, y: 2.2}
     hurtboxSets: []
     travel: []
