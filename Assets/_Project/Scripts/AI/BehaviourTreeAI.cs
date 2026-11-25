@@ -160,6 +160,16 @@ namespace KungFuCrashout.AI
         [Tooltip("After the round call (ROUND… FIGHT!) unlocks the fighters, the CPU waits this long (seconds) before it " +
                  "moves or attacks, so the player gets the first beat. 0 = it acts the moment the round goes live.")]
         [SerializeField, Range(0f, 1.5f)] float roundStartDelay = 0.4f;
+
+        [Header("Movement")]
+        [Tooltip("ON: the CPU never walks (which slid its idle pose along the floor). Every move toward / away from a spot is " +
+                 "a dash — short ones for small adjustments (no dash invincibility on those) — so the dash animation always " +
+                 "plays. OFF: the old walk for short distances.")]
+        [SerializeField] bool dashInsteadOfWalk = true;
+        [Tooltip("Gaps smaller than this (world units) count as 'arrived': no tiny shuffles.")]
+        [SerializeField, Min(0f)] float minStepDash = 0.4f;
+        [Tooltip("Pause between the short movement dashes (seconds).")]
+        [SerializeField, Min(0f)] float stepDashPause = 0.2f;
         [Tooltip("Also hold still during gameplay slow motion (e.g. a heavy item hit: Time Scale between 0 and 1): no " +
                  "thinking, walking or dashing until it ends (a dash in progress stops). Its block and planned follow-ups " +
                  "are kept, so it resumes where it was. Off = the CPU keeps acting in slow motion (old).")]
@@ -199,7 +209,7 @@ namespace KungFuCrashout.AI
         BtNode root;
         readonly BtContext ctx = new BtContext();
 
-        float nextThink, nextAttack, nextDash, nextTurtle;
+        float nextThink, nextAttack, nextDash, nextTurtle, nextStepDash;
         float telegraphUntil = -1f;
         Action telegraphed;
 
@@ -892,6 +902,17 @@ namespace KungFuCrashout.AI
                 return NodeStatus.Running;
 
             if (self.State == FighterState.Blocking && !self.InBlockstun) ReleaseBlock();
+            if (dashInsteadOfWalk)
+            {
+                // No walking: close the gap in dashes (full ones far away, short ones up close). Too small = arrived.
+                if (gap < minStepDash) { CancelGoal(); return NodeStatus.Success; }
+                if (self.State == FighterState.Idle && Time.time >= nextStepDash && self.StepDash(dir, gap))
+                {
+                    nextStepDash = Time.time + stepDashPause;
+                    Log($"step dash {Mathf.Min(gap, self.DashDistance):0.00}");
+                }
+                return NodeStatus.Running;
+            }
             if (self.State == FighterState.Idle && !self.MovementRooted) // rooted by a heavy item: can't walk
                 self.MoveX(dir * Mathf.Min(p.walkSpeed * Time.deltaTime, gap));
             return NodeStatus.Running;

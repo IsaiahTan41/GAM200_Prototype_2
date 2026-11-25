@@ -82,6 +82,15 @@ namespace KungFuCrashout.UI
         [Tooltip("Show the hints at the start of every match (off = only the first match on this phone).")]
         [SerializeField] bool alwaysShowHints = false;
         [SerializeField, Min(0.5f)] float hintTime = 4f;
+        [Tooltip("ON: the hint bar only shows on Windows / Mac / Linux builds (and in the editor), with the KEYBOARD controls " +
+                 "below, and stays on screen the whole match. Phones never show it. OFF: the old touch hints that fade.")]
+        [SerializeField] bool pcKeyboardHints = true;
+        [Tooltip("Also show the keyboard hint bar when playing in the Unity editor.")]
+        [SerializeField] bool pcHintsInEditor = true;
+        [Tooltip("The keyboard controls shown on PC (rich text). Keep it in step with KeyboardDebugInput / ItemTapHandler keys.")]
+        [SerializeField, TextArea(2, 4)] string pcHintText =
+            "<b>A / D</b> dash   \u00B7   <b>W</b> jump  (<b>Q / E</b> diagonal)   \u00B7   <b>J</b> attack   \u00B7   <b>K</b> heavy   \u00B7   <b>SPACE</b> block (tap to parry)\n" +
+            "<b>U / I / O</b> side / up / down special   \u00B7   <b>F</b> pick up / drop   \u00B7   hold <b>G</b> + direction, release to throw   \u00B7   <b>P / ESC</b> pause";
 
         [Header("Match over")]
         [SerializeField] GameObject matchOverPanel;
@@ -188,9 +197,25 @@ namespace KungFuCrashout.UI
             SetLetterbox(0f);
             RefreshPips();
 
-            bool showHints = hints && (alwaysShowHints || PlayerPrefs.GetInt(HintsSeenKey, 0) == 0);
-            if (hints) hints.alpha = showHints ? 1f : 0f;
-            if (showHints) { hintsUntil = Time.unscaledTime + hintTime; PlayerPrefs.SetInt(HintsSeenKey, 1); }
+            if (pcKeyboardHints)
+            {
+                // Keyboard controls on PC (Windows build / editor), always on screen; nothing on phones.
+                bool pc = KungFuCrashout.Controls.PcInput.IsPcBuild || (Application.isEditor && pcHintsInEditor);
+                if (hints)
+                {
+                    hints.alpha = pc ? 1f : 0f;
+                    hints.gameObject.SetActive(pc);
+                    var label = hints.GetComponentInChildren<TMPro.TMP_Text>(true);
+                    if (pc && label) label.text = pcHintText;
+                }
+                hintsUntil = float.MaxValue;
+            }
+            else
+            {
+                bool showHints = hints && (alwaysShowHints || PlayerPrefs.GetInt(HintsSeenKey, 0) == 0);
+                if (hints) hints.alpha = showHints ? 1f : 0f;
+                if (showHints) { hintsUntil = Time.unscaledTime + hintTime; PlayerPrefs.SetInt(HintsSeenKey, 1); }
+            }
         }
 
         void Update()
@@ -540,7 +565,7 @@ namespace KungFuCrashout.UI
 
         void UpdateHints(float dt)
         {
-            if (!hints || hints.alpha <= 0f) return;
+            if (!hints || hints.alpha <= 0f || pcKeyboardHints) return; // PC keyboard hints stay on screen
             bool touched = UnityEngine.InputSystem.Touchscreen.current != null &&
                            UnityEngine.InputSystem.Touchscreen.current.primaryTouch.press.isPressed &&
                            match && match.Phase == MatchPhase.Fighting;

@@ -727,8 +727,18 @@ namespace KungFuCrashout.Fighters
             if (!TryDash(direction)) BufferMove(MoveKind.Dash, new Vector2(direction, 0f));
         }
 
+        /// <summary>
+        /// A short dash of at most `distance` (capped at Dash Distance), with no dash invincibility. The CPU moves with
+        /// these instead of sliding its idle pose along the floor, so every move it makes plays the dash animation.
+        /// </summary>
+        public bool StepDash(int direction, float distance)
+        {
+            if (direction == 0 || MovementRooted || ControlsLocked || !CanStartAction) return false;
+            return TryDash(direction, distance, invincible: false);
+        }
+
         /// <summary>Start a dash now if allowed (including a combo break out of hitstun). False = not now.</summary>
-        bool TryDash(int direction)
+        bool TryDash(int direction, float distance = -1f, bool invincible = true)
         {
             if (Time.time < nextDashTime) return false;
 
@@ -754,10 +764,11 @@ namespace KungFuCrashout.Fighters
                 if (logStateChanges) Debug.Log($"[{name}] COMBO BREAKER");
             }
 
-            GrantMoveInvincibility(dashInvincibleTime);
+            if (invincible) GrantMoveInvincibility(dashInvincibleTime);
 
             dashStartX = X;
-            dashTargetX = ClampToStage(dashStartX + Mathf.Sign(direction) * dashDistance);
+            float dist = distance > 0f ? Mathf.Min(distance, dashDistance) : dashDistance;
+            dashTargetX = ClampToStage(dashStartX + Mathf.Sign(direction) * dist);
             dashElapsed = 0f;
             pendingMove = MoveKind.None;
             SetState(FighterState.Dashing);
