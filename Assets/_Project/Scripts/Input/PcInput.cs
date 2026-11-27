@@ -31,7 +31,14 @@ namespace KungFuCrashout.Controls
 
         /// <summary>Should the mouse act as one finger (TouchSimulation)? Editor: its own toggle. PC build: the PC toggle.</summary>
         public static bool MouseAsFinger(bool inEditor, bool inPcBuilds) =>
-            Application.isEditor ? inEditor : IsPcBuild && inPcBuilds;
+            Application.isEditor ? inEditor : IsPcBuild && inPcBuilds && !MouseButtonsFight;
+
+        /// <summary>
+        /// Set by KeyboardDebugInput (Mouse Buttons Attack): in PC builds the mouse buttons are the attack buttons (left =
+        /// attack, right = heavy), so the mouse stops acting as a finger there, otherwise a left click would also be read as
+        /// a tap and attack twice. The editor keeps its mouse-as-finger toggle for testing the touch gestures.
+        /// </summary>
+        public static bool MouseButtonsFight { get; set; }
 
         /// <summary>May the keyboard controls run? Always in the editor; in PC builds if the toggle is on; never on phones.</summary>
         public static bool KeyboardAllowed(bool inPcBuilds) => Application.isEditor || (IsPcBuild && inPcBuilds);

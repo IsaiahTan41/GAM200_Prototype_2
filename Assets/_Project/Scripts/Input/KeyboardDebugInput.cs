@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 using KungFuCrashout.Fighters;
 
@@ -12,7 +14,7 @@ namespace KungFuCrashout.Controls
     ///
     ///   A / ←  dash left        D / →  dash right
     ///   W / ↑  jump up          Q / E  jump up-left / up-right (45°)
-    ///   J      attack           K      heavy attack
+    ///   Left click  attack      Right click  heavy attack   (Mouse Buttons Attack; clicks on UI buttons never attack)
     ///   Space  hold to block (tap for parry)
     ///   U      side special (Elbow Slide, the way you face)   I  up special (Uppercut)   O  down special (Leg Sweep)
     ///   Items (ItemTapHandler): F pick up / drop, hold G + direction keys + release G = aimed throw.
@@ -20,6 +22,7 @@ namespace KungFuCrashout.Controls
     ///
     /// Place in: Assets/_Project/Scripts/Input/KeyboardDebugInput.cs
     /// </summary>
+    [DefaultExecutionOrder(-100)] // before the touch handlers start, so PcInput.MouseButtonsFight is set when they read it
     public class KeyboardDebugInput : MonoBehaviour
     {
         [SerializeField] Fighter fighter;
@@ -30,6 +33,10 @@ namespace KungFuCrashout.Controls
         [Tooltip("Optional: the item handler. While its throw key is held, the direction keys aim the throw instead " +
                  "of moving. Empty = found automatically.")]
         [SerializeField] KungFuCrashout.Props.ItemTapHandler itemKeys;
+        [Tooltip("Left mouse button = attack, right mouse button = heavy attack. In PC builds the mouse then stops acting " +
+                 "as a finger (no double attack from a click). In the editor, while the mouse is simulating a finger, a left " +
+                 "click is already a tap (attack), so only the right button is added there.")]
+        [SerializeField] bool mouseButtonsAttack = true;
 
         IFighterCommands commands;
         bool blockHeld;
@@ -37,6 +44,7 @@ namespace KungFuCrashout.Controls
         void Awake()
         {
             if (!PcInput.KeyboardAllowed(workInPcBuilds)) { enabled = false; return; }
+            PcInput.MouseButtonsFight = mouseButtonsAttack;
             commands = fighter;
             if (!itemKeys) itemKeys = FindFirstObjectByType<KungFuCrashout.Props.ItemTapHandler>();
         }
@@ -56,8 +64,14 @@ namespace KungFuCrashout.Controls
             if (!aiming && kb.qKey.wasPressedThisFrame) commands.JumpToward(new Vector2(-1f, 1f));
             if (!aiming && kb.eKey.wasPressedThisFrame) commands.JumpToward(new Vector2(1f, 1f));
 
-            if (kb.jKey.wasPressedThisFrame) commands.Attack();
-            if (kb.kKey.wasPressedThisFrame) commands.HeavyAttack();
+            var mouse = Mouse.current;
+            if (mouseButtonsAttack && mouse != null && !PointerOnUi())
+            {
+                // Editor with the mouse simulating a finger: the left click is already a tap → attack, don't add a second.
+                bool leftIsFinger = TouchSimulation.instance != null && TouchSimulation.instance.isActiveAndEnabled;
+                if (!leftIsFinger && mouse.leftButton.wasPressedThisFrame) commands.Attack();
+                if (mouse.rightButton.wasPressedThisFrame) commands.HeavyAttack();
+            }
 
             if (kb.uKey.wasPressedThisFrame) commands.Special(SpecialMove.Side, fighter ? fighter.Facing : 1);
             if (kb.iKey.wasPressedThisFrame) commands.Special(SpecialMove.Up, 0);
@@ -66,6 +80,11 @@ namespace KungFuCrashout.Controls
             if (kb.spaceKey.wasPressedThisFrame) { commands.BlockStart(); blockHeld = true; }
             if (kb.spaceKey.wasReleasedThisFrame && blockHeld) { commands.BlockEnd(); blockHeld = false; }
         }
+
+        /// <summary>A click on a UI button (pause diamond, menus) is for the UI, never an attack.</summary>
+        static bool PointerOnUi() => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
+        void OnDestroy() { PcInput.MouseButtonsFight = false; }
 
         // Switched off while the pause menu is open: never leave the fighter stuck blocking if Space is let go meanwhile.
         void OnDisable()

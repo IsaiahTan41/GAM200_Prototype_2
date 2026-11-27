@@ -89,7 +89,7 @@ namespace KungFuCrashout.UI
         [SerializeField] bool pcHintsInEditor = true;
         [Tooltip("The keyboard controls shown on PC (rich text). Keep it in step with KeyboardDebugInput / ItemTapHandler keys.")]
         [SerializeField, TextArea(2, 4)] string pcHintText =
-            "<b>A / D</b> dash   \u00B7   <b>W</b> jump  (<b>Q / E</b> diagonal)   \u00B7   <b>J</b> attack   \u00B7   <b>K</b> heavy   \u00B7   <b>SPACE</b> block (tap to parry)\n" +
+            "<b>A / D</b> dash   \u00B7   <b>W</b> jump  (<b>Q / E</b> diagonal)   \u00B7   <b>LEFT CLICK</b> attack   \u00B7   <b>RIGHT CLICK</b> heavy   \u00B7   <b>SPACE</b> block (tap to parry)\n" +
             "<b>U / I / O</b> side / up / down special   \u00B7   <b>F</b> pick up / drop   \u00B7   hold <b>G</b> + direction, release to throw   \u00B7   <b>P / ESC</b> pause";
 
         [Header("Match over")]

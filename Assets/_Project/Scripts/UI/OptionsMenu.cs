@@ -259,7 +259,7 @@ namespace KungFuCrashout.UI
                 foreach (var t in ts.touches)
                     if (t.press.isPressed) return true;
             var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.isPressed;
+            return mouse != null && (mouse.leftButton.isPressed || mouse.rightButton.isPressed);
         }
 
         /// <summary>
